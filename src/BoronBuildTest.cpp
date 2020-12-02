@@ -5,16 +5,14 @@
 #include "Particle.h"
 #line 1 "/Users/guernica0131/Sites/BoronTest/BoronBuildTest/src/BoronBuildTest.ino"
 /*
- * Project BoronBuildTest
- * Description:
- * Author:
- * Date:
+ * Project similie-simple-logger
+ * Description: A never fail basic runtime for our particle borons
+ * Author: Some BadMotherFuckers
+ * Date: 2 of December, the year of all hell breaking loose.
  */
 #include "math.h"
 #include <stdio.h>
-#include <stdlib.h>
 
-void ai_result(const char *event, const char *data);
 char *stringConvert(String value);
 bool isStrapped();
 bool isNotPublishing();
@@ -44,84 +42,72 @@ int setCalibration(String read);
 int rebootRequest(String f);
 void bootstrap();
 int restoreDefaults(String f);
-void setup();
 void timers();
+void setup();
 void loop();
-#line 11 "/Users/guernica0131/Sites/BoronTest/BoronBuildTest/src/BoronBuildTest.ino"
+#line 10 "/Users/guernica0131/Sites/BoronTest/BoronBuildTest/src/BoronBuildTest.ino"
 SYSTEM_THREAD(ENABLED);
 //SYSTEM_MODE(MANUAL);
 #define DIG_PIN D8
 #define AN_PIN A3
-//////// DEFAULTS //////////////////
-const bool DIGITAL_DEFAULT = false;
-const int DEFAULT_PUB_INTERVAL = 1;
-const double DEF_DISTANCE_READ_DIG_CALIBRATION = 0.01724137931;
-const double DEF_DISTANCE_READ_AN_CALIBRATION = 0.335;
-///////////////////////////////////
 
-String readParams[] = {"wl_cl", "hydrometric_level"};
-const size_t length = sizeof(readParams) / sizeof(String);
-const size_t MAX_SEND_TIME = 15;
-const size_t MINUTE_IN_SECONDS = 60;
-const unsigned int MILISECOND = 1000;
-
-int publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
-// size_t currentSendTime =
-// we double this buffer incase we get beached
-const int MAX_VALUE_THRESHOLD = MAX_SEND_TIME; //readSeconds * MAX_SEND_TIME;
-
-size_t readSeconds = 10;
-
-unsigned int READ_TIMER = (MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
-unsigned int PUBLISH_TIMER = publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND;
-
-// double DISTANCE_READ_DIG_CALIBRATION = DEF_DISTANCE_READ_DIG_CALIBRATION;
-// double DISTANCE_READ_AN_CALIBRATION = DEF_DISTANCE_READ_AN_CALIBRATION;
-double currentCalibration = 0;
-
-String publishEvent = "AI_Results";
-// adding a slight buffer to avoid index overflow
-int VALUE_HOLD[length][MAX_VALUE_THRESHOLD + 5];
-
-enum
-{
-  wl_cl,
-  hydrometric_level
-};
-
-const int EPROM_ADDRESS = 20;
-
+SerialLogHandler logHandler;
 struct EpromStruct
 {
   uint8_t version;
-  int pub;
+  uint8_t pub;
   double calibration;
   char digital;
 };
 
-const String PUBLISH_EVENT = "AI_Post";
-
-SerialLogHandler logHandler;
-
+const size_t MINUTE_IN_SECONDS = 60;
+const unsigned int MILISECOND = 1000;
 const int NO_VALUE = -9999;
+//////// DEFAULTS //////////////////
+// this is the number of times it failes before it reboots
+const u8_t ATTEMPT_THRESHOLD = 3;
+// this is the postevent
+const String PUBLISH_EVENT = "AI_Post";
+// do we have a digital wl sensor
+const bool DIGITAL_DEFAULT = false;
+// this is the default publish interval in minutes
+const int DEFAULT_PUB_INTERVAL = 1; // Min 1 - Max 15
+// eprom address for the config struct
+const int EPROM_ADDRESS = 0;
+// default calibration for analgue and digtal sensors
+const double DEF_DISTANCE_READ_DIG_CALIBRATION = 0.01724137931;
+const double DEF_DISTANCE_READ_AN_CALIBRATION = 0.335;
+// this size of the array containing our data. We can have
+// read sends delayed for up to 15 minuites
+const size_t MAX_SEND_TIME = 15;
+const int MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
+// We save our device ID
+const String DEVICE_ID = System.deviceID();
+///////////////////////////////////
+// The params that we will be sending
+String readParams[] = {"wl_cm", "hydrometric_level"};
+// map and enum for loop iterations
+enum
+{
+  wl_cm,
+  hydrometric_level
+};
+
+// The following variables do not need to be directly altered
+const size_t PARAM_LENGTH = sizeof(readParams) / sizeof(String);
+int publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
+unsigned int READ_TIMER = (MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
+unsigned int PUBLISH_TIMER = publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND;
+double currentCalibration = DIGITAL_DEFAULT ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
+
+// adding a slight buffer to avoid index overflow
+int VALUE_HOLD[PARAM_LENGTH][MAX_VALUE_THRESHOLD + 5];
 
 unsigned int read_count = 0;
-
 u8_t attempt_count = 0;
-const u8_t ATTEMPT_THRESHOLD = 2;
 
-void ai_result(const char *event, const char *data)
-{
-  Log.info("AI_Result: event=%s data=%s", event, (data ? data : "NULL"));
-}
-
-char *stringConvert(String value)
-{
-  char *cstr = new char[value.length() + 1];
-  strcpy(cstr, value.c_str());
-  return cstr;
-}
-
+// do not alter. These are state variables
+// and are alter by the application
 bool readReleased = false;
 bool publishReleased = false;
 bool readBusy = false;
@@ -130,6 +116,25 @@ bool digital = DIGITAL_DEFAULT;
 bool rebootEvent = false;
 bool bootstrapped = false;
 
+// more on this later
+// void ai_result(const char *event, const char *data)
+// {
+//   Log.info("AI_Result: event=%s data=%s", event, (data ? data : "NULL"));
+// }
+
+/*
+* stringConvert :: converts string to a char *
+* @param: String value - to be converted 
+*/
+char *stringConvert(String value)
+{
+  char *cstr = new char[value.length() + 1];
+  strcpy(cstr, value.c_str());
+  return cstr;
+}
+/*
+* Functions for mitigating state
+*/
 bool isStrapped()
 {
   return bootstrapped;
@@ -153,13 +158,15 @@ void releasePublishRead()
 {
   publishReleased = true;
 }
-
+/////////////////////////////////////////
+// default times. There is a time that dictates
+// a read event, and a publish event
 Timer readtimer(READ_TIMER, releaseRead);
 Timer publishtimer(PUBLISH_TIMER, releasePublishRead);
-
+// sets the array to default values
 void clearArray()
 {
-  for (size_t i = 0; i < length; i++)
+  for (size_t i = 0; i < PARAM_LENGTH; i++)
   {
     for (size_t j = 0; j < MAX_VALUE_THRESHOLD; j++)
     {
@@ -167,9 +174,10 @@ void clearArray()
     }
   }
 }
+// printes the array for debugging
 void printArray()
 {
-  for (size_t i = 0; i < length; i++)
+  for (size_t i = 0; i < PARAM_LENGTH; i++)
   {
     for (size_t j = 0; j < MAX_VALUE_THRESHOLD; j++)
     {
@@ -177,13 +185,15 @@ void printArray()
     }
   }
 }
-
+// reboots the system
 void reboot()
 {
-  Log.info("REBOOTING THIS SHIT");
+  Log.info("Reboot Event Requested");
   System.reset();
 }
-
+/* 
+ * readWL: this is our primary wl sensor function that takes the .
+ */
 long readWL()
 {
   long timeout = 1000;
@@ -192,6 +202,7 @@ long readWL()
   size_t selectedMedian = 2;
   long lastTime = millis();
   int reads[5];
+  long sum = 0;
 
   for (size_t i = 0; i < doCount; i++)
   {
@@ -212,13 +223,14 @@ long readWL()
       read = analogRead(AN_PIN);
       reads[i] = read;
     }
-
+    sum += read;
     count++;
     // break off it it is taking too long
     if (currentTime - lastTime > timeout)
     {
       break;
     }
+    // we pop a quick delay to let the sensor, breath a bit
     delay(20);
     lastTime = millis();
   }
@@ -229,11 +241,20 @@ long readWL()
     pw = reads[selectedMedian];
     selectedMedian++;
   }
-
-  // double multiple = digital ? DISTANCE_READ_DIG_CALIBRATION : DISTANCE_READ_AN_CALIBRATION;
+  // we can either take the average
+  long avg = sum / count;
+  // or we can take the middle value
   return round(pw * currentCalibration);
 }
-
+/*
+* shift :  Helper fuction that inserts an element in asscending order into
+* the sorted array where we can our median value
+* @param int value - the value to be inserted 
+* @param int index - the index where to insert. 
+*     The other values will be pushed to the next index
+* @param int param - the enum value that represents the param
+* @return void;
+*/
 void shift(int value, int index, int param)
 {
   int last = VALUE_HOLD[param][index];
@@ -252,6 +273,12 @@ void shift(int value, int index, int param)
     }
   }
 }
+/*
+* insertValue : insert a value into a multidimentional array in sorted order
+* @param int value - the value to be inserted 
+* @param int param - the enum value that represents the param
+* @return void;
+*/
 void insertValue(int value, int param)
 {
   int index = 0;
@@ -263,7 +290,10 @@ void insertValue(int value, int param)
   }
   shift(value, index, param);
 }
-
+/*
+* We can start enforcing a reboot event when our send attempts hit our
+* configured threshold
+*/
 void checkBootThreshold()
 {
   if (read_count >= MAX_VALUE_THRESHOLD)
@@ -282,20 +312,16 @@ void checkBootThreshold()
 
 void setRead()
 {
-  // here we have gone over. We assume due to
-  // connnectivty issues;
+  // check of we are online
   checkBootThreshold();
-  // we do this, because we are mearly setting
-  // all the values to the same
-  /*
-  * Every param should have it's own function, but since
-  * we want our params the same, we instantiate them
-  * at the top
-  */
-
+  // our read, normally we would pull this value
+  // in the loop below, but since we are using this value
+  // for the same element, we pull it above
   int read = readWL();
   Log.info("WL Read:: %d", read);
-  for (size_t i = 0; i < length; i++)
+  // for future builds and other sensors, we can use
+  // the loop below to run their selection functions
+  for (size_t i = 0; i < PARAM_LENGTH; i++)
   {
     // int read = NO_VALUE;
     // switch (i)
@@ -311,20 +337,26 @@ void setRead()
     insertValue(read, i);
   }
 }
-
+/*
+* A generic read function. If we set this up as a class, this is our
+* public function
+*/
 void read()
 {
   waitFor(isNotPublishing, 10000);
 
   readBusy = true;
-
   setRead();
+  // uncomment for debugging the order values array
   // printArray();
   read_count++;
   readBusy = false;
   Log.info("READCOUNT=%d", read_count);
 }
-
+/*
+* Get the middle value or the value toward the zero index
+* this is not a NO_VALUE
+*/
 int getMedian(int param, int readparam)
 {
   float center = (float)readparam / 2.0;
@@ -337,17 +369,19 @@ int getMedian(int param, int readparam)
   }
   return value;
 }
-
+/*
+* Put our params into a json string. Native package for particle
+*/
 String packageJSON()
 {
-  Log.info("Prepping to package up %d params", length);
+  Log.info("Prepping to package up %d params", PARAM_LENGTH);
 
   char buf[300];
   memset(buf, 0, sizeof(buf));
   JSONBufferWriter writer(buf, sizeof(buf) - 1);
   writer.beginObject();
 
-  for (size_t i = 0; i < length; i++)
+  for (size_t i = 0; i < PARAM_LENGTH; i++)
   {
     String param = readParams[i];
     int median = getMedian(i, attempt_count);
@@ -359,7 +393,9 @@ String packageJSON()
   clearArray();
   return String(buf);
 }
-
+/*
+* Here we send our data to particle. Future iteration will use an mqtt server+
+*/
 void setEvent()
 {
   String result = packageJSON();
@@ -367,7 +403,9 @@ void setEvent()
   attempt_count = 0;
   read_count = 0;
 }
-
+/*
+* Called to publish our payload
+*/
 void publish()
 {
   Log.info("READY TO PUBLISH: event=%d", isNotReading());
@@ -381,17 +419,21 @@ void publish()
   {
     if (attempt_count < ATTEMPT_THRESHOLD)
     {
+      // force this puppy to try and connect. May not be needed in automatic mode
       Particle.connect();
       attempt_count++;
     }
     else
     {
+      // here we reboot because we have exceeded our attempts
       reboot();
     }
   }
   publishBusy = false;
 }
-
+/*
+* This is running the state based on our released values
+*/
 void process()
 {
 
@@ -407,6 +449,10 @@ void process()
     publishReleased = false;
   }
 }
+/*
+* We represent the digital bool as y or n so as to 
+* have a value for the default
+*/
 char digitalChar(bool value)
 {
   return value ? 'y' : 'n';
@@ -414,37 +460,29 @@ char digitalChar(bool value)
 
 EpromStruct getsavedConfig()
 {
-  Serial.print("SO GAY");
   EpromStruct values;
   EEPROM.get(EPROM_ADDRESS, values);
   if (values.version != 0)
   {
-    // double calibration = DIGITAL_DEFAULT ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
-    // EpromStruct defObject = {0, DEFAULT_PUB_INTERVAL, calibration, digitalChar(DIGITAL_DEFAULT)};
     EpromStruct defObject = {2, 0, 0.0, '!'};
     values = defObject;
   }
-
-  Serial.print(values.version);
-  Serial.print(" ");
-  Serial.print(values.pub);
-  Serial.print(" ");
-  Serial.print(values.calibration);
-  Serial.print(" ");
-  Serial.print(values.digital);
-  Serial.println(" ");
-
   return values;
 }
-
-void putSavedConfig(EpromStruct values)
+/*
+* putSavedConfig: Stores our config struct 
+*/
+void putSavedConfig(EpromStruct config)
 {
-  values.version = 0;
+  config.version = 0;
   EEPROM.clear();
-  Log.info("PUTTING version %d publish: %d, calibrated: %d, digital: %s", values.version, values.pub, values.calibration, values.digital);
-  EEPROM.put(EPROM_ADDRESS, values);
+  Log.info("PUTTING version %d publish: %d, digital: %s", config.version, config.pub, config.digital);
+  EEPROM.put(EPROM_ADDRESS, config);
 }
-
+/*
+* buildSendInterval: using the interval count. we can calculate the timer values and set them
+* to their non-default values 
+*/
 void buildSendInterval(int interval)
 {
   publicationIntervalInMinutes = interval;
@@ -466,11 +504,14 @@ void buildSendInterval(int interval)
   readtimer.start();
   publishtimer.start();
 }
-
+/*
+* setSendInverval: cloud function that is called to set the send interval
+*/
 int setSendInverval(String read)
 {
   int val = (int)atoi(read);
-  if (val <= 0 || val > 15)
+  // we dont let allows less than one or greater than 15
+  if (val < 1 || val > 15)
   {
     return 0;
   }
@@ -482,7 +523,9 @@ int setSendInverval(String read)
 
   return val;
 }
-// 0 or 1
+/*
+* isDigital : Tells us if a config value is digital
+*/
 bool isDigital(char value)
 {
   if (value == 'y')
@@ -498,7 +541,10 @@ bool isDigital(char value)
     return DIGITAL_DEFAULT;
   }
 }
-
+/*
+* setDigital: cloud function that sets a device as digital or analog
+* takes a 1 or 0 input
+*/
 int setDigital(String read)
 {
   int val = (int)atoi(read);
@@ -512,12 +558,14 @@ int setDigital(String read)
   putSavedConfig(config);
   return 1;
 }
-
+/*
+* setCalibration: cloud function that calibration value
+*/
 int setCalibration(String read)
 {
-  // Stream stream;
-  double val = atof(read);
-  Log.info("setting calibration of %s and %d", stringConvert(read), val);
+  const char *stringCal = read.c_str();
+  double val = ::atof(stringCal);
+  Log.info("setting calibration of %s", stringCal);
 
   if (val == 0)
   {
@@ -525,39 +573,42 @@ int setCalibration(String read)
   }
   currentCalibration = val;
   EpromStruct config = getsavedConfig();
-  config.calibration = currentCalibration;
+  config.calibration = val;
   putSavedConfig(config);
 
   return 1;
 }
-
+/*
+* rebootRequest: cloud function that calls a reboot request
+*/
 int rebootRequest(String f)
 {
   Log.info("Reboot requested");
   rebootEvent = true;
   return 1;
 }
-
+/*
+* bootstrap: bootstraps the system with the values sent over post-configured cloud functions
+*/
 void bootstrap()
 {
-
+  delay(5000);
+  // uncomment if you need to clear eeprom on load
   // EEPROM.clear();
-
   EpromStruct values = getsavedConfig();
-
-  Log.info("BOOTSTRAPPING version %d publish: %d, calibrated: %d, digital: %s", values.version, values.pub, values.calibration, values.digital);
-
+  Log.info("BOOTSTRAPPING version %d publish: %d, digital: %s", values.version, values.pub, values.digital);
+  // a default version is 2 or 0 when instantiated.
   if (values.version != 2 && values.pub > 0 && values.pub <= 15)
   {
     buildSendInterval(values.pub);
   }
-
   digital = isDigital(values.digital);
-  Log.info("GOIMNH DIGITAL version %d ", digital);
-  if (values.version != 2 && values.calibration != 0)
-  //if (false)
+
+  const double calibration = values.calibration;
+  // Log.info("LOADING CALIBRATOR version %s", values.calibration);
+  if (values.version != 2 && calibration != 0)
   {
-    currentCalibration = values.calibration;
+    currentCalibration = calibration;
   }
   else
   {
@@ -573,7 +624,9 @@ void bootstrap()
   bootstrapped = true;
   clearArray();
 }
-
+/*
+* restoreDefaults: cloud function that clears all config values
+*/
 int restoreDefaults(String f)
 {
   EEPROM.clear();
@@ -589,29 +642,12 @@ int restoreDefaults(String f)
   }
   return 1;
 }
-// setup() runs once, when the device is first turned on.
-void setup()
-{
-  pinMode(AN_PIN, INPUT_PULLDOWN);
-
-  Particle.subscribe(publishEvent, ai_result);
-  Particle.function("setSendInverval", setSendInverval);
-  Particle.function("setDigital", setDigital);
-  Particle.function("setCalibration", setCalibration);
-  Particle.function("reboot", rebootRequest);
-  Particle.function("restoreDefaults", restoreDefaults);
-  // setting variables
-  Particle.variable("digital", digital);
-  Particle.variable("publicationInterval", publicationIntervalInMinutes);
-  Particle.variable("currentCalibration", currentCalibration);
-  Serial.println("ABOUT TO BOOTSTRAP");
-  bootstrap();
-  waitFor(isStrapped, 1000);
-}
-
+/*
+* timers: just validate our times are constantly active in the main loop
+*/
 void timers()
 {
-
+  // if we have a reboot call from a cloud function
   if (rebootEvent)
   {
     delay(1000);
@@ -628,16 +664,31 @@ void timers()
   }
 }
 
+// setup() runs once, when the device is first turned on.
+void setup()
+{
+  pinMode(AN_PIN, INPUT_PULLDOWN);
+  // more on this later
+  // Particle.subscribe(publishEvent, ai_result);
+  Particle.function("setSendInverval", setSendInverval);
+  Particle.function("setDigital", setDigital);
+  Particle.function("setCalibration", setCalibration);
+  Particle.function("reboot", rebootRequest);
+  Particle.function("restoreDefaults", restoreDefaults);
+  // setting variables
+  Particle.variable("digital", digital);
+  Particle.variable("publicationInterval", publicationIntervalInMinutes);
+  Particle.variable("currentCalibration", currentCalibration);
+  Serial.println("ABOUT TO BOOTSTRAP");
+  bootstrap();
+  waitFor(isStrapped, 10000);
+}
+
 // loop() runs over and over again, as quickly as it can execute.
 void loop()
 {
-  // if (bootstrapped == false)
-  // {
-  //   bootstrapped = true;
-  //   bootstrap();
-  // }
-
-  timers();
+  // if we want to go into manual mode,
+  // we can un comment this code to connect to the cloud
   // if (waitFor(Particle.connected, 10000))
   // {
   //   Particle.process();
@@ -647,6 +698,6 @@ void loop()
   //   Particle.connect();
   // }
   // The core of your code will likely live here.
-  // delay(1000);
+  timers();
   process();
 }
