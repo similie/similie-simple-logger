@@ -115,6 +115,7 @@ void releaseRead()
 {
   readReleased = true;
 }
+
 void releasePublishRead()
 {
   publishReleased = true;
@@ -419,6 +420,25 @@ char digitalChar(bool value)
   return value ? 'y' : 'n';
 }
 
+/*
+* isDigital : Tells us if a config value is digital
+*/
+bool isDigital(char value)
+{
+  if (value == 'y')
+  {
+    return true;
+  }
+  else if (value == 'n')
+  {
+    return false;
+  }
+  else
+  {
+    return DIGITAL_DEFAULT;
+  }
+}
+
 EpromStruct getsavedConfig()
 {
   EpromStruct values;
@@ -484,24 +504,7 @@ int setSendInverval(String read)
 
   return val;
 }
-/*
-* isDigital : Tells us if a config value is digital
-*/
-bool isDigital(char value)
-{
-  if (value == 'y')
-  {
-    return true;
-  }
-  else if (value == 'n')
-  {
-    return false;
-  }
-  else
-  {
-    return DIGITAL_DEFAULT;
-  }
-}
+
 /*
 * setDigital: cloud function that sets a device as digital or analog
 * takes a 1 or 0 input
@@ -625,6 +628,18 @@ void timers()
   }
 }
 
+void manageManualModel()
+{
+  if (waitFor(Particle.connected, 10000))
+  {
+    Particle.process();
+  }
+  else
+  {
+    Particle.connect();
+  }
+}
+
 // setup() runs once, when the device is first turned on.
 void setup()
 {
@@ -650,14 +665,7 @@ void loop()
 {
   // if we want to go into manual mode,
   // we can un comment this code to connect to the cloud
-  // if (waitFor(Particle.connected, 10000))
-  // {
-  //   Particle.process();
-  // }
-  // else
-  // {
-  //   Particle.connect();
-  // }
+  //  manageManualModel()
   // The core of your code will likely live here.
   timers();
   process();
