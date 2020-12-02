@@ -135,7 +135,7 @@ void clearArray()
     }
   }
 }
-// printes the array for debugging
+// prints the array for debugging
 void printArray()
 {
   for (size_t i = 0; i < PARAM_LENGTH; i++)
