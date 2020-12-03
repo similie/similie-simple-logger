@@ -4,13 +4,24 @@
  * Author: Some BadMotherFuckers
  * Date: 2 of December, the year of all hell breaking loose.
  */
-#include "math.h"
-#include <stdio.h>
 
 SYSTEM_THREAD(ENABLED);
+#include <stdio.h>
+#include "certs.h"
+#include "MQTT-TLS.h"
+
+#include "math.h"
+
 //SYSTEM_MODE(MANUAL);
 #define DIG_PIN D8
 #define AN_PIN A3
+
+void mqttCallback(char *topic, byte *payload, unsigned int length);
+
+const char *MQTT_PUBLISH_TOPIC = "devices/publish";
+const char *MQTT_HEARTBEAT_TOPIC = "devices/heartbeat";
+const char *MQTT_CONFIG_TOPIC = "devices/config";
+const char *MQTT_CONFIG_REGISTRATION = "devices/config/register";
 
 SerialLogHandler logHandler;
 struct EpromStruct
@@ -24,11 +35,13 @@ struct EpromStruct
 const size_t MINUTE_IN_SECONDS = 60;
 const unsigned int MILISECOND = 1000;
 const int NO_VALUE = -9999;
+const int TIMEZONE = +9;
 //////// DEFAULTS //////////////////
 // this is the number of times it failes before it reboots
 const u8_t ATTEMPT_THRESHOLD = 3;
+const unsigned int HEARTBEAT_TIMER = 60000;
 // this is the postevent
-const String PUBLISH_EVENT = "AI_Post";
+const String PUBLISH_EVENT = "AI_Post_Beached";
 // do we have a digital wl sensor
 const bool DIGITAL_DEFAULT = false;
 // this is the default publish interval in minutes
@@ -44,6 +57,7 @@ const size_t MAX_SEND_TIME = 15;
 const int MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
 // We save our device ID
 const String DEVICE_ID = System.deviceID();
+char *AWS_HOST = "a2hreerobwhgvz-ats.iot.ap-southeast-1.amazonaws.com";
 ///////////////////////////////////
 // The params that we will be sending
 String readParams[] = {"wl_cm", "hydrometric_level"};
@@ -76,6 +90,8 @@ bool publishBusy = false;
 bool digital = DIGITAL_DEFAULT;
 bool rebootEvent = false;
 bool bootstrapped = false;
+bool mqttSubscribed = false;
+bool pubishHeartbeat = false;
 
 // more on this later
 // void ai_result(const char *event, const char *data)
@@ -120,11 +136,20 @@ void releasePublishRead()
 {
   publishReleased = true;
 }
+
+void releaseHeartbeat()
+{
+  pubishHeartbeat = true;
+}
 /////////////////////////////////////////
 // default times. There is a time that dictates
 // a read event, and a publish event
 Timer readtimer(READ_TIMER, releaseRead);
 Timer publishtimer(PUBLISH_TIMER, releasePublishRead);
+Timer heartBeatTimer(HEARTBEAT_TIMER, releaseHeartbeat);
+//////////////////////////////////////////
+/// MQTT Client
+MQTT client(AWS_HOST, 8883, 60, mqttCallback);
 // sets the array to default values
 void clearArray()
 {
@@ -342,7 +367,10 @@ String packageJSON()
   memset(buf, 0, sizeof(buf));
   JSONBufferWriter writer(buf, sizeof(buf) - 1);
   writer.beginObject();
-
+  writer.name("device").value(DEVICE_ID);
+  // const time_t time = Time.local();
+  writer.name("date").value(Time.format(Time.local(), TIME_FORMAT_ISO8601_FULL));
+  writer.name("payload").beginObject();
   for (size_t i = 0; i < PARAM_LENGTH; i++)
   {
     String param = readParams[i];
@@ -350,7 +378,7 @@ String packageJSON()
     writer.name(stringConvert(param)).value(median);
     Log.info("Param=%s has median %d", stringConvert(param), median);
   }
-
+  writer.endObject();
   writer.endObject();
   clearArray();
   return String(buf);
@@ -361,9 +389,22 @@ String packageJSON()
 void setEvent()
 {
   String result = packageJSON();
-  Particle.publish(PUBLISH_EVENT, stringConvert(result), PRIVATE);
+  // Particle.publish(PUBLISH_EVENT, stringConvert(result), PRIVATE);
   attempt_count = 0;
   read_count = 0;
+
+  if (client.isConnected())
+  {
+    client.publish(MQTT_PUBLISH_TOPIC, result);
+  }
+}
+
+void heartbeat()
+{
+  if (client.isConnected())
+  {
+    client.publish(MQTT_HEARTBEAT_TOPIC, "boomo");
+  }
 }
 /*
 * Called to publish our payload
@@ -409,6 +450,12 @@ void process()
   {
     publish();
     publishReleased = false;
+  }
+
+  if (pubishHeartbeat)
+  {
+    heartbeat();
+    pubishHeartbeat = false;
   }
 }
 /*
@@ -457,7 +504,7 @@ void putSavedConfig(EpromStruct config)
 {
   config.version = 0;
   EEPROM.clear();
-  Log.info("PUTTING version %d publish: %d, digital: %s", config.version, config.pub, config.digital);
+  Log.info("PUTTING version %d publish: %d, digital: %d", config.version, config.pub, config.digital);
   EEPROM.put(EPROM_ADDRESS, config);
 }
 /*
@@ -560,7 +607,7 @@ void bootstrap()
   // uncomment if you need to clear eeprom on load
   // EEPROM.clear();
   EpromStruct values = getsavedConfig();
-  Log.info("BOOTSTRAPPING version %d publish: %d, digital: %s", values.version, values.pub, values.digital);
+  Log.info("BOOTSTRAPPING version %d publish: %d, digital: %d", values.version, values.pub, values.digital);
   // a default version is 2 or 0 when instantiated.
   if (values.version != 2 && values.pub > 0 && values.pub <= 15)
   {
@@ -626,6 +673,11 @@ void timers()
   {
     publishtimer.start();
   }
+
+  if (!heartBeatTimer.isActive())
+  {
+    heartBeatTimer.start();
+  }
 }
 
 void manageManualModel()
@@ -640,10 +692,82 @@ void manageManualModel()
   }
 }
 
+// recieve message
+void mqttCallback(char *topic, byte *payload, unsigned int length)
+{
+  char p[length + 1];
+  memcpy(p, payload, length);
+  p[length] = NULL;
+  String message(p);
+  Log.info("MQTT PAYLOAD %s", message.c_str());
+}
+
+int enableMQTTTls()
+{
+  const char amazonIoTRootCaPem[] = AMAZON_IOT_ROOT_CA_PEM;
+  const char clientKeyCrtPem[] = CELINT_KEY_CRT_PEM;
+  const char clientKeyPem[] = CELINT_KEY_PEM;
+  // Serial.println(amazonIoTRootCaPem);
+  // enable tls. set Root CA pem, private key file.
+  int ret;
+  if ((ret = client.enableTls(amazonIoTRootCaPem, sizeof(amazonIoTRootCaPem),
+                              clientKeyCrtPem, sizeof(clientKeyCrtPem),
+                              clientKeyPem, sizeof(clientKeyPem)) < 0))
+  {
+    Serial.printlnf("client.enableTls failed with code: %d", ret);
+  }
+
+  return ret;
+}
+
+void ApplyMqttSubscription()
+{
+  Log.info("Attempting MQTT Connection");
+  int tls = enableMQTTTls();
+  Serial.printlnf("client.enableTls got code: %d", tls);
+
+  client.connect(DEVICE_ID);
+  // publish/subscribe
+  Log.info("MQTT Connected? %d", client.isConnected());
+  if (client.isConnected())
+  {
+    Log.info("client connected");
+    client.publish(MQTT_CONFIG_REGISTRATION, DEVICE_ID);
+
+    String configTopic = String(MQTT_CONFIG_TOPIC) + "/" + String(DEVICE_ID);
+
+    client.subscribe(configTopic.c_str());
+    client.subscribe("devices/publish");
+    mqttSubscribed = true;
+  }
+}
+
+void mqttLoop()
+{
+
+  if (!mqttSubscribed && Particle.connected())
+  {
+    ApplyMqttSubscription();
+  }
+  bool mConn = client.isConnected();
+  if (mConn)
+  {
+    client.loop();
+  }
+  else if (mqttSubscribed && !mConn && Particle.connected())
+  {
+    enableMQTTTls();
+    ApplyMqttSubscription();
+  }
+}
+
 // setup() runs once, when the device is first turned on.
 void setup()
 {
+  EEPROM.clear();
   pinMode(AN_PIN, INPUT_PULLDOWN);
+  Time.zone(TIMEZONE);
+  Particle.syncTime();
   // more on this later
   // Particle.subscribe(publishEvent, ai_result);
   Particle.function("setSendInverval", setSendInverval);
@@ -658,6 +782,7 @@ void setup()
   Serial.println("ABOUT TO BOOTSTRAP");
   bootstrap();
   waitFor(isStrapped, 10000);
+  // connectMQTT();
 }
 
 // loop() runs over and over again, as quickly as it can execute.
@@ -669,4 +794,5 @@ void loop()
   // The core of your code will likely live here.
   timers();
   process();
+  // mqttLoop();
 }
