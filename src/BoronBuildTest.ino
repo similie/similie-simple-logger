@@ -764,7 +764,7 @@ void mqttLoop()
 // setup() runs once, when the device is first turned on.
 void setup()
 {
-  EEPROM.clear();
+  // EEPROM.clear();
   pinMode(AN_PIN, INPUT_PULLDOWN);
   Time.zone(TIMEZONE);
   Particle.syncTime();
@@ -794,5 +794,5 @@ void loop()
   // The core of your code will likely live here.
   timers();
   process();
-  // mqttLoop();
+  mqttLoop();
 }

@@ -549,7 +549,7 @@ void putSavedConfig(EpromStruct config)
 {
   config.version = 0;
   EEPROM.clear();
-  Log.info("PUTTING version %d publish: %d, digital: %s", config.version, config.pub, config.digital);
+  Log.info("PUTTING version %d publish: %d, digital: %d", config.version, config.pub, config.digital);
   EEPROM.put(EPROM_ADDRESS, config);
 }
 /*
@@ -652,7 +652,7 @@ void bootstrap()
   // uncomment if you need to clear eeprom on load
   // EEPROM.clear();
   EpromStruct values = getsavedConfig();
-  Log.info("BOOTSTRAPPING version %d publish: %d, digital: %s", values.version, values.pub, values.digital);
+  Log.info("BOOTSTRAPPING version %d publish: %d, digital: %d", values.version, values.pub, values.digital);
   // a default version is 2 or 0 when instantiated.
   if (values.version != 2 && values.pub > 0 && values.pub <= 15)
   {
@@ -809,7 +809,7 @@ void mqttLoop()
 // setup() runs once, when the device is first turned on.
 void setup()
 {
-  EEPROM.clear();
+  // EEPROM.clear();
   pinMode(AN_PIN, INPUT_PULLDOWN);
   Time.zone(TIMEZONE);
   Particle.syncTime();
@@ -839,5 +839,5 @@ void loop()
   // The core of your code will likely live here.
   timers();
   process();
-  // mqttLoop();
+  mqttLoop();
 }
