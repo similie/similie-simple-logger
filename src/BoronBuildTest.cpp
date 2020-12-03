@@ -34,15 +34,16 @@ void setEvent();
 void publish();
 void process();
 char digitalChar(bool value);
+bool isDigital(char value);
 void buildSendInterval(int interval);
 int setSendInverval(String read);
-bool isDigital(char value);
 int setDigital(String read);
 int setCalibration(String read);
 int rebootRequest(String f);
 void bootstrap();
 int restoreDefaults(String f);
 void timers();
+void manageManualModel();
 void setup();
 void loop();
 #line 10 "/Users/guernica0131/Sites/BoronTest/BoronBuildTest/src/BoronBuildTest.ino"
@@ -154,6 +155,7 @@ void releaseRead()
 {
   readReleased = true;
 }
+
 void releasePublishRead()
 {
   publishReleased = true;
@@ -174,7 +176,7 @@ void clearArray()
     }
   }
 }
-// printes the array for debugging
+// prints the array for debugging
 void printArray()
 {
   for (size_t i = 0; i < PARAM_LENGTH; i++)
@@ -458,6 +460,25 @@ char digitalChar(bool value)
   return value ? 'y' : 'n';
 }
 
+/*
+* isDigital : Tells us if a config value is digital
+*/
+bool isDigital(char value)
+{
+  if (value == 'y')
+  {
+    return true;
+  }
+  else if (value == 'n')
+  {
+    return false;
+  }
+  else
+  {
+    return DIGITAL_DEFAULT;
+  }
+}
+
 EpromStruct getsavedConfig()
 {
   EpromStruct values;
@@ -523,24 +544,7 @@ int setSendInverval(String read)
 
   return val;
 }
-/*
-* isDigital : Tells us if a config value is digital
-*/
-bool isDigital(char value)
-{
-  if (value == 'y')
-  {
-    return true;
-  }
-  else if (value == 'n')
-  {
-    return false;
-  }
-  else
-  {
-    return DIGITAL_DEFAULT;
-  }
-}
+
 /*
 * setDigital: cloud function that sets a device as digital or analog
 * takes a 1 or 0 input
@@ -664,10 +668,23 @@ void timers()
   }
 }
 
+void manageManualModel()
+{
+  if (waitFor(Particle.connected, 10000))
+  {
+    Particle.process();
+  }
+  else
+  {
+    Particle.connect();
+  }
+}
+
 // setup() runs once, when the device is first turned on.
 void setup()
 {
   pinMode(AN_PIN, INPUT_PULLDOWN);
+  // EEPROM.clear();
   // more on this later
   // Particle.subscribe(publishEvent, ai_result);
   Particle.function("setSendInverval", setSendInverval);
@@ -689,14 +706,7 @@ void loop()
 {
   // if we want to go into manual mode,
   // we can un comment this code to connect to the cloud
-  // if (waitFor(Particle.connected, 10000))
-  // {
-  //   Particle.process();
-  // }
-  // else
-  // {
-  //   Particle.connect();
-  // }
+  //  manageManualModel()
   // The core of your code will likely live here.
   timers();
   process();

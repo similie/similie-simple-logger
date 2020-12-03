@@ -644,6 +644,7 @@ void manageManualModel()
 void setup()
 {
   pinMode(AN_PIN, INPUT_PULLDOWN);
+  // EEPROM.clear();
   // more on this later
   // Particle.subscribe(publishEvent, ai_result);
   Particle.function("setSendInverval", setSendInverval);
