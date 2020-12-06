@@ -11,18 +11,14 @@
  * Date: 2 of December, the year of all hell breaking loose.
  */
 
-char *stringConvert(String value);
-bool isStrapped();
+const char *stringConvert(String value);
 bool isNotPublishing();
 bool isNotReading();
-void releaseRead();
-void releasePublishRead();
-void releaseHeartbeat();
 void clearArray();
 void printArray();
 void reboot();
 long readWL();
-void shift(int value, int index, int param);
+void shift(int value, size_t index, int param);
 void insertValue(int value, int param);
 void checkBootThreshold();
 void setRead();
@@ -33,76 +29,34 @@ void setEvent();
 void heartbeat();
 void publish();
 void process();
-char digitalChar(bool value);
-bool isDigital(char value);
-void buildSendInterval(int interval);
 int setSendInverval(String read);
 int setDigital(String read);
 int setCalibration(String read);
 int rebootRequest(String f);
-void bootstrap();
 int restoreDefaults(String f);
-void timers();
 void manageManualModel();
-int enableMQTTTls();
-void ApplyMqttSubscription();
-void mqttLoop();
 void setup();
 void loop();
 #line 8 "/Users/guernica0131/Sites/BoronTest/BoronBuildTest/src/BoronBuildTest.ino"
 SYSTEM_THREAD(ENABLED);
 #include <stdio.h>
-#include "certs.h"
-#include "MQTT-TLS.h"
+#include "resources/heartbeat/Heartbeat.h"
+#include "resources/mqtt_processor/mqttprocessor.h"
+#include "resources/bootstrap/bootstrap.h"
 
 #include "math.h"
 
 //SYSTEM_MODE(MANUAL);
 #define DIG_PIN D8
 #define AN_PIN A3
-
-void mqttCallback(char *topic, byte *payload, unsigned int length);
-
-const char *MQTT_PUBLISH_TOPIC = "devices/publish";
-const char *MQTT_HEARTBEAT_TOPIC = "devices/heartbeat";
-const char *MQTT_CONFIG_TOPIC = "devices/config";
-const char *MQTT_CONFIG_REGISTRATION = "devices/config/register";
-
 SerialLogHandler logHandler;
-struct EpromStruct
-{
-  uint8_t version;
-  uint8_t pub;
-  double calibration;
-  char digital;
-};
-
-const size_t MINUTE_IN_SECONDS = 60;
-const unsigned int MILISECOND = 1000;
-const int NO_VALUE = -9999;
-const int TIMEZONE = +9;
-//////// DEFAULTS //////////////////
-// this is the number of times it failes before it reboots
-const u8_t ATTEMPT_THRESHOLD = 3;
-const unsigned int HEARTBEAT_TIMER = 60000;
-// this is the postevent
-const String PUBLISH_EVENT = "AI_Post_Beached";
-// do we have a digital wl sensor
-const bool DIGITAL_DEFAULT = false;
-// this is the default publish interval in minutes
-const int DEFAULT_PUB_INTERVAL = 1; // Min 1 - Max 15
-// eprom address for the config struct
-const int EPROM_ADDRESS = 0;
-// default calibration for analgue and digtal sensors
-const double DEF_DISTANCE_READ_DIG_CALIBRATION = 0.01724137931;
-const double DEF_DISTANCE_READ_AN_CALIBRATION = 0.335;
-// this size of the array containing our data. We can have
-// read sends delayed for up to 15 minuites
-const size_t MAX_SEND_TIME = 15;
-const int MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
-// We save our device ID
+const String PUBLISH_EVENT = "AI_Post";
 const String DEVICE_ID = System.deviceID();
-char *AWS_HOST = "a2hreerobwhgvz-ats.iot.ap-southeast-1.amazonaws.com";
+
+HeartBeat blood(DEVICE_ID);
+MqttProcessor processor(DEVICE_ID);
+Bootstrap boots(DEVICE_ID);
+
 ///////////////////////////////////
 // The params that we will be sending
 String readParams[] = {"wl_cm", "hydrometric_level"};
@@ -115,51 +69,33 @@ enum
 
 // The following variables do not need to be directly altered
 const size_t PARAM_LENGTH = sizeof(readParams) / sizeof(String);
-int publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
-unsigned int READ_TIMER = (MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
-unsigned int PUBLISH_TIMER = publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND;
-double currentCalibration = DIGITAL_DEFAULT ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
+const size_t MAX_VALUE_THRESHOLD = boots.getMaxVal();
 
 // adding a slight buffer to avoid index overflow
-int VALUE_HOLD[PARAM_LENGTH][MAX_VALUE_THRESHOLD + 5];
+const size_t OVERFLOW_VAL = boots.getMaxVal() + (size_t)5;
+int VALUE_HOLD[PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
 
+unsigned int connect_id = 0;
 unsigned int read_count = 0;
 u8_t attempt_count = 0;
 
 // do not alter. These are state variables
 // and are alter by the application
-bool readReleased = false;
-bool publishReleased = false;
 bool readBusy = false;
 bool publishBusy = false;
-bool digital = DIGITAL_DEFAULT;
 bool rebootEvent = false;
-bool bootstrapped = false;
 bool mqttSubscribed = false;
-bool pubishHeartbeat = false;
-
-// more on this later
-// void ai_result(const char *event, const char *data)
-// {
-//   Log.info("AI_Result: event=%s data=%s", event, (data ? data : "NULL"));
-// }
 
 /*
 * stringConvert :: converts string to a char *
 * @param: String value - to be converted 
 */
-char *stringConvert(String value)
+const char *stringConvert(String value)
 {
-  char *cstr = new char[value.length() + 1];
-  strcpy(cstr, value.c_str());
-  return cstr;
-}
-/*
-* Functions for mitigating state
-*/
-bool isStrapped()
-{
-  return bootstrapped;
+  // char *cstr = new char[value.length() + 1];
+  // strcpy(cstr, value.c_str());
+  // return cstr;
+  return value.c_str();
 }
 
 bool isNotPublishing()
@@ -172,30 +108,6 @@ bool isNotReading()
   return !readBusy;
 }
 
-void releaseRead()
-{
-  readReleased = true;
-}
-
-void releasePublishRead()
-{
-  publishReleased = true;
-}
-
-void releaseHeartbeat()
-{
-  pubishHeartbeat = true;
-}
-/////////////////////////////////////////
-// default times. There is a time that dictates
-// a read event, and a publish event
-Timer readtimer(READ_TIMER, releaseRead);
-Timer publishtimer(PUBLISH_TIMER, releasePublishRead);
-Timer heartBeatTimer(HEARTBEAT_TIMER, releaseHeartbeat);
-//////////////////////////////////////////
-/// MQTT Client
-MQTT client(AWS_HOST, 8883, 60, mqttCallback);
-// sets the array to default values
 void clearArray()
 {
   for (size_t i = 0; i < PARAM_LENGTH; i++)
@@ -245,7 +157,7 @@ long readWL()
   {
     long currentTime = millis();
     long read = 0;
-    if (digital)
+    if (boots.isDigital())
     {
       read = pulseIn(DIG_PIN, HIGH);
       reads[i] = read;
@@ -276,7 +188,7 @@ long readWL()
   // we can either take the average
   long avg = sum / count;
   // or we can take the middle value
-  return round(pw * currentCalibration);
+  return round(pw * boots.getCalibration());
 }
 /*
 * shift :  Helper fuction that inserts an element in asscending order into
@@ -287,7 +199,7 @@ long readWL()
 * @param int param - the enum value that represents the param
 * @return void;
 */
-void shift(int value, int index, int param)
+void shift(int value, size_t index, int param)
 {
   int last = VALUE_HOLD[param][index];
   VALUE_HOLD[param][index] = value;
@@ -313,7 +225,7 @@ void shift(int value, int index, int param)
 */
 void insertValue(int value, int param)
 {
-  int index = 0;
+  size_t index = 0;
   int aggr = VALUE_HOLD[param][index];
   while (value >= aggr && aggr != NO_VALUE && index < MAX_VALUE_THRESHOLD)
   {
@@ -414,7 +326,7 @@ String packageJSON()
   writer.beginObject();
   writer.name("device").value(DEVICE_ID);
   // const time_t time = Time.local();
-  writer.name("date").value(Time.format(Time.local(), TIME_FORMAT_ISO8601_FULL));
+  writer.name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
   writer.name("payload").beginObject();
   for (size_t i = 0; i < PARAM_LENGTH; i++)
   {
@@ -433,22 +345,22 @@ String packageJSON()
 */
 void setEvent()
 {
+
   String result = packageJSON();
-  // Particle.publish(PUBLISH_EVENT, stringConvert(result), PRIVATE);
+  Log.info("SENDING PAYLOAD:: %s", stringConvert(result));
   attempt_count = 0;
   read_count = 0;
-
-  if (client.isConnected())
-  {
-    client.publish(MQTT_PUBLISH_TOPIC, result);
-  }
+  // Particle.publish(PUBLISH_EVENT, stringConvert(result), PRIVATE);
+  processor.publish(processor.getPublishTopic(), result);
 }
 
 void heartbeat()
 {
-  if (client.isConnected())
+  if (processor.connected())
   {
-    client.publish(MQTT_HEARTBEAT_TOPIC, "boomo");
+    String artery = blood.pump();
+    Log.info("pumping blood %s", stringConvert(artery));
+    processor.publish(processor.getHeartbeatTopic(), artery);
   }
 }
 /*
@@ -459,7 +371,7 @@ void publish()
   Log.info("READY TO PUBLISH: event=%d", isNotReading());
   waitFor(isNotReading, 10000);
   publishBusy = true;
-  if (waitFor(Particle.connected, 10000))
+  if (waitFor(Particle.connected, 10000) && waitFor(processor.connected, 10000))
   {
     setEvent();
   }
@@ -485,101 +397,31 @@ void publish()
 void process()
 {
 
-  if (readReleased)
+  if (rebootEvent)
   {
+    delay(1000);
+    reboot();
+  }
+
+  if (boots.readTimerFun())
+  {
+    boots.setReadTimer(false);
     read();
-    readReleased = false;
   }
 
-  if (publishReleased)
+  if (boots.publishTimerFunc())
   {
+    boots.setPublishTimer(false);
     publish();
-    publishReleased = false;
   }
 
-  if (pubishHeartbeat)
+  if (boots.heatbeatTimerFunc())
   {
+    boots.setHeatbeatTimer(false);
     heartbeat();
-    pubishHeartbeat = false;
-  }
-}
-/*
-* We represent the digital bool as y or n so as to 
-* have a value for the default
-*/
-char digitalChar(bool value)
-{
-  return value ? 'y' : 'n';
-}
-
-/*
-* isDigital : Tells us if a config value is digital
-*/
-bool isDigital(char value)
-{
-  if (value == 'y')
-  {
-    return true;
-  }
-  else if (value == 'n')
-  {
-    return false;
-  }
-  else
-  {
-    return DIGITAL_DEFAULT;
   }
 }
 
-EpromStruct getsavedConfig()
-{
-  EpromStruct values;
-  EEPROM.get(EPROM_ADDRESS, values);
-  if (values.version != 0)
-  {
-    EpromStruct defObject = {2, 0, 0.0, '!'};
-    values = defObject;
-  }
-  return values;
-}
-/*
-* putSavedConfig: Stores our config struct 
-*/
-void putSavedConfig(EpromStruct config)
-{
-  config.version = 0;
-  EEPROM.clear();
-  Log.info("PUTTING version %d publish: %d, digital: %d", config.version, config.pub, config.digital);
-  EEPROM.put(EPROM_ADDRESS, config);
-}
-/*
-* buildSendInterval: using the interval count. we can calculate the timer values and set them
-* to their non-default values 
-*/
-void buildSendInterval(int interval)
-{
-  publicationIntervalInMinutes = interval;
-  READ_TIMER = (MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
-  PUBLISH_TIMER = publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND;
-  Log.info("MY READ TIMER IS SET FOR %d and the publish time is %d", READ_TIMER, PUBLISH_TIMER);
-  read_count = 0;
-  clearArray();
-  if (readtimer.isActive())
-  {
-    readtimer.stop();
-  }
-  if (publishtimer.isActive())
-  {
-    publishtimer.stop();
-  }
-  readtimer.changePeriod(READ_TIMER);
-  publishtimer.changePeriod(PUBLISH_TIMER);
-  readtimer.start();
-  publishtimer.start();
-}
-/*
-* setSendInverval: cloud function that is called to set the send interval
-*/
 int setSendInverval(String read)
 {
   int val = (int)atoi(read);
@@ -589,11 +431,9 @@ int setSendInverval(String read)
     return 0;
   }
   Log.info("setting payload delivery for every %d minutes", val);
-  buildSendInterval(val);
-  EpromStruct config = getsavedConfig();
-  config.pub = publicationIntervalInMinutes;
-  putSavedConfig(config);
-
+  read_count = 0;
+  clearArray();
+  boots.buildSendInterval(val);
   return val;
 }
 
@@ -608,10 +448,8 @@ int setDigital(String read)
   {
     return 0;
   }
-  digital = (bool)val;
-  EpromStruct config = getsavedConfig();
-  config.digital = digitalChar(digital);
-  putSavedConfig(config);
+  // digital = (bool)val;
+  boots.setDigital((bool)val);
   return 1;
 }
 /*
@@ -627,10 +465,11 @@ int setCalibration(String read)
   {
     return 0;
   }
-  currentCalibration = val;
-  EpromStruct config = getsavedConfig();
-  config.calibration = val;
-  putSavedConfig(config);
+  // currentCalibration = val;
+  // EpromStruct config = getsavedConfig();
+  // config.calibration = val;
+  // putSavedConfig(config);
+  boots.setCalibration(val);
 
   return 1;
 }
@@ -643,87 +482,18 @@ int rebootRequest(String f)
   rebootEvent = true;
   return 1;
 }
-/*
-* bootstrap: bootstraps the system with the values sent over post-configured cloud functions
-*/
-void bootstrap()
-{
-  delay(5000);
-  // uncomment if you need to clear eeprom on load
-  // EEPROM.clear();
-  EpromStruct values = getsavedConfig();
-  Log.info("BOOTSTRAPPING version %d publish: %d, digital: %d", values.version, values.pub, values.digital);
-  // a default version is 2 or 0 when instantiated.
-  if (values.version != 2 && values.pub > 0 && values.pub <= 15)
-  {
-    buildSendInterval(values.pub);
-  }
-  digital = isDigital(values.digital);
 
-  const double calibration = values.calibration;
-  // Log.info("LOADING CALIBRATOR version %s", values.calibration);
-  if (values.version != 2 && calibration != 0)
-  {
-    currentCalibration = calibration;
-  }
-  else
-  {
-    if (digital)
-    {
-      currentCalibration = DEF_DISTANCE_READ_DIG_CALIBRATION;
-    }
-    else
-    {
-      currentCalibration = DEF_DISTANCE_READ_AN_CALIBRATION;
-    }
-  }
-  bootstrapped = true;
-  clearArray();
-}
 /*
 * restoreDefaults: cloud function that clears all config values
 */
 int restoreDefaults(String f)
 {
-  EEPROM.clear();
-  buildSendInterval(DEFAULT_PUB_INTERVAL);
-  digital = DIGITAL_DEFAULT;
-  if (digital)
-  {
-    currentCalibration = DEF_DISTANCE_READ_AN_CALIBRATION;
-  }
-  else
-  {
-    currentCalibration = DEF_DISTANCE_READ_AN_CALIBRATION;
-  }
+  boots.restoreDefaults();
   return 1;
 }
 /*
 * timers: just validate our times are constantly active in the main loop
 */
-void timers()
-{
-  // if we have a reboot call from a cloud function
-  if (rebootEvent)
-  {
-    delay(1000);
-    reboot();
-  }
-
-  if (!readtimer.isActive())
-  {
-    readtimer.start();
-  }
-  if (!publishtimer.isActive())
-  {
-    publishtimer.start();
-  }
-
-  if (!heartBeatTimer.isActive())
-  {
-    heartBeatTimer.start();
-  }
-}
 
 void manageManualModel()
 {
@@ -737,82 +507,13 @@ void manageManualModel()
   }
 }
 
-// recieve message
-void mqttCallback(char *topic, byte *payload, unsigned int length)
-{
-  char p[length + 1];
-  memcpy(p, payload, length);
-  p[length] = NULL;
-  String message(p);
-  Log.info("MQTT PAYLOAD %s", message.c_str());
-}
-
-int enableMQTTTls()
-{
-  const char amazonIoTRootCaPem[] = AMAZON_IOT_ROOT_CA_PEM;
-  const char clientKeyCrtPem[] = CELINT_KEY_CRT_PEM;
-  const char clientKeyPem[] = CELINT_KEY_PEM;
-  // Serial.println(amazonIoTRootCaPem);
-  // enable tls. set Root CA pem, private key file.
-  int ret;
-  if ((ret = client.enableTls(amazonIoTRootCaPem, sizeof(amazonIoTRootCaPem),
-                              clientKeyCrtPem, sizeof(clientKeyCrtPem),
-                              clientKeyPem, sizeof(clientKeyPem)) < 0))
-  {
-    Serial.printlnf("client.enableTls failed with code: %d", ret);
-  }
-
-  return ret;
-}
-
-void ApplyMqttSubscription()
-{
-  Log.info("Attempting MQTT Connection");
-  int tls = enableMQTTTls();
-  Serial.printlnf("client.enableTls got code: %d", tls);
-
-  client.connect(DEVICE_ID);
-  // publish/subscribe
-  Log.info("MQTT Connected? %d", client.isConnected());
-  if (client.isConnected())
-  {
-    Log.info("client connected");
-    client.publish(MQTT_CONFIG_REGISTRATION, DEVICE_ID);
-
-    String configTopic = String(MQTT_CONFIG_TOPIC) + "/" + String(DEVICE_ID);
-
-    client.subscribe(configTopic.c_str());
-    client.subscribe("devices/publish");
-    mqttSubscribed = true;
-  }
-}
-
-void mqttLoop()
-{
-
-  if (!mqttSubscribed && Particle.connected())
-  {
-    ApplyMqttSubscription();
-  }
-  bool mConn = client.isConnected();
-  if (mConn)
-  {
-    client.loop();
-  }
-  else if (mqttSubscribed && !mConn && Particle.connected())
-  {
-    enableMQTTTls();
-    ApplyMqttSubscription();
-  }
-}
-
 // setup() runs once, when the device is first turned on.
 void setup()
 {
   // EEPROM.clear();
+  // batteryController();
+
   pinMode(AN_PIN, INPUT_PULLDOWN);
-  Time.zone(TIMEZONE);
-  Particle.syncTime();
   // more on this later
   // Particle.subscribe(publishEvent, ai_result);
   Particle.function("setSendInverval", setSendInverval);
@@ -820,24 +521,26 @@ void setup()
   Particle.function("setCalibration", setCalibration);
   Particle.function("reboot", rebootRequest);
   Particle.function("restoreDefaults", restoreDefaults);
-  // setting variables
-  Particle.variable("digital", digital);
-  Particle.variable("publicationInterval", publicationIntervalInMinutes);
-  Particle.variable("currentCalibration", currentCalibration);
-  Serial.println("ABOUT TO BOOTSTRAP");
-  bootstrap();
-  waitFor(isStrapped, 10000);
+  // setting variable
+  boots.init();
+  waitFor(boots.isStrapped, 10000);
+  // boots.setPublishTimer(releasePublishRead);
+  // boots.setHeatbeatTimer(releaseHeartbeat);
+  // boots.setReadTimer(releaseRead);
   // connectMQTT();
+  clearArray();
 }
 
 // loop() runs over and over again, as quickly as it can execute.
+
 void loop()
 {
   // if we want to go into manual mode,
   // we can un comment this code to connect to the cloud
   //  manageManualModel()
   // The core of your code will likely live here.
-  timers();
+  boots.timers();
   process();
-  mqttLoop();
+  processor.loop();
+  //mqttLoop();
 }

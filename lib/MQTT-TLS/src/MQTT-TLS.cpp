@@ -864,14 +864,29 @@ int MQTT::handShakeTls()
 {
     int ret;
     debug_tls("hand shake start\n");
+    long start = millis();
+    const long threshold = 1000 * 60;
     do
     {
+
+        // Log.info("DO WHILE %d time %ld", ssl.state, time);
         while (ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER)
         {
+            // Log.info("SUB WHITE %d %ld", ret, time);
             ret = mbedtls_ssl_handshake_client_step(&ssl);
             if (ret != 0)
+            {
                 break;
+            }
         }
+
+        long time = millis() - start;
+        if (time > threshold)
+        {
+            Log.info("BROKEN HANDSHAKE LOOP:: value %d time %ld", ret, time);
+            break;
+        }
+
     } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
     // clean ca cert/crt/pkey for memory limitation
