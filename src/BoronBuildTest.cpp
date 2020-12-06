@@ -13,7 +13,7 @@
 #include "math.h"
 #include <stdio.h>
 
-char *stringConvert(String value);
+const char *stringConvert(String value);
 bool isStrapped();
 bool isNotPublishing();
 bool isNotReading();
@@ -127,11 +127,12 @@ bool bootstrapped = false;
 * stringConvert :: converts string to a char *
 * @param: String value - to be converted 
 */
-char *stringConvert(String value)
+const char *stringConvert(String value)
 {
-  char *cstr = new char[value.length() + 1];
-  strcpy(cstr, value.c_str());
-  return cstr;
+  // char *cstr = new char[value.length() + 1];
+  // strcpy(cstr, value.c_str());
+  // return cstr;
+  return value.c_str();
 }
 /*
 * Functions for mitigating state
