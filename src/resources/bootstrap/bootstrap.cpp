@@ -1,8 +1,9 @@
-#include "Bootstrap.h"
+#include "bootstrap.h"
 
 bool publishHeartbeat = false;
 bool readReleased = false;
 bool publishReleased = false;
+bool staticBootstrapped = false;
 
 unsigned int TIMER_STALL = 60000;
 
@@ -27,7 +28,7 @@ void printMemory()
 {
     uint32_t freemem = System.freeMemory();
     int delta = (int)freememLast - (int)freemem;
-    Log.info("MEMORY CHANGE current: %lu, last %lu, detal: %d", freemem, freememLast, delta);
+    Log.info("MEMORY CHANGE current: %lu, last %lu, delta: %d", freemem, freememLast, delta);
     freememLast = freemem;
 }
 
@@ -38,9 +39,6 @@ Timer heartBeatTimer(TIMER_STALL, releaseHeartbeat);
 Timer memoryPrinter(10000, printMemory);
 
 Bootstrap::~Bootstrap()
-{
-}
-Bootstrap::Bootstrap(String deviceId)
 {
     //this->MAX_VALUE_THRESHOLD = (size_t)MAX_SEND_TIME;
     this->digital = DIGITAL_DEFAULT;
@@ -54,7 +52,7 @@ Bootstrap::Bootstrap(String deviceId)
 void Bootstrap::init()
 {
     this->batteryController();
-    memoryPrinter.start();
+    // memoryPrinter.start();
     Time.zone(TIMEZONE);
     Particle.syncTime();
     Particle.variable("digital", digital);
@@ -189,6 +187,7 @@ void Bootstrap::bootstrap()
     const double calibration = values.calibration;
     currentCalibration = calibration;
     bootstrapped = true;
+    staticBootstrapped = true;
 }
 /*
 * restoreDefaults: cloud function that clears all config values

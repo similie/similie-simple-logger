@@ -1,8 +1,8 @@
 #include "Particle.h"
 #include "string.h"
 
-#ifndef Bootstrap_h
-#define Bootstrap_h
+#ifndef bootstrap_h
+#define bootstrap_h
 
 #define DIGITAL_DEFAULT false
 #define EPROM_ADDRESS 0
@@ -71,7 +71,7 @@ private:
 
 public:
     ~Bootstrap();
-    Bootstrap(String deviceId);
+    //Bootstrap(String deviceId);
     void timers();
     bool isStrapped();
     void init();
@@ -88,6 +88,7 @@ public:
     bool heatbeatTimerFunc();
     bool readTimerFun();
     bool isDigital();
+    //static bool isStrapped();
 
     size_t getMaxVal();
     static const size_t OVERFLOW_VAL = MAX_SEND_TIME + 5;

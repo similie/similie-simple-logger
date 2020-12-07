@@ -11,15 +11,16 @@ const String MQTT_HEARTBEAT_TOPIC = "devices/heartbeat";
 
 void mqttCallback(char *topic, byte *payload, unsigned int length);
 
-MQTT _client(strdup(AWS_HOST), MQTT_PORT, MQTT_KEEP_ALIVE, mqttCallback);
+//MQTT _client(strdup(AWS_HOST), MQTT_PORT, MQTT_KEEP_ALIVE, mqttCallback);
+MQTT _client(strdup(AWS_HOST), MQTT_PORT, mqttCallback);
 
 MqttProcessor::~MqttProcessor()
 {
 }
 
-MqttProcessor::MqttProcessor(String deviceID)
+MqttProcessor::MqttProcessor()
 {
-    this->deviceID = deviceID;
+    this->deviceID = System.deviceID();
     this->configTopic = String(MQTT_CONFIG_TOPIC) + "/" + String(this->deviceID);
     this->pingTopic = String(MQTT_PING_TOPIC) + "/" + String(this->deviceID);
     String listeners[] = {this->configTopic, this->pingTopic, "devices/state-change"};
