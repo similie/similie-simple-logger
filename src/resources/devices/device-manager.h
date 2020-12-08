@@ -6,6 +6,7 @@
 #include "resources/utils/utils.h"
 #include "device.h"
 #include "wl-device.h"
+#include "battery.h"
 #include "resources/heartbeat/Heartbeat.h"
 
 #ifndef device_manager_h
@@ -25,7 +26,7 @@ private:
     Bootstrap *boots;
     Processor *processor;
     const size_t deviceCount = 1;
-    size_t deviceAggregateCounts[1] = {1};
+    size_t deviceAggregateCounts[1] = {2};
     Utils utils;
     HeartBeat *blood;
     void read();

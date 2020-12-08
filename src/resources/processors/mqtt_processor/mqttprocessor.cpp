@@ -51,7 +51,12 @@ bool MqttProcessor::connected()
     return _client.isConnected();
 }
 
-static void pingPong()
+bool MqttProcessor::isConnected()
+{
+    return _client.isConnected();
+}
+
+void MqttProcessor::pingPong()
 {
     char buf[200];
     memset(buf, 0, sizeof(buf));
@@ -64,23 +69,113 @@ static void pingPong()
     _client.publish(MQTT_PING_TOPIC, String(buf));
 }
 
+void MqttProcessor::configProcessor(String data)
+{
+    JSONValue outerObj = JSONValue::parseCopy(data.c_str());
+    // JSONArrayIterator iter(outerObj);
+    JSONObjectIterator iter(outerObj);
+    // for (size_t ii = 0; iter.next(); ii++)
+    // {
+    //     Log.info("THIS IS THE ARRAY %u  and value %s", ii, (const char *)iter.value().toString());
+    //     JSONValue objectDetails = JSONValue::parseCopy((const char *)iter.value().toString());
+    //     JSONObjectIterator deetsIter(outerObj);
+    //     while (deetsIter.next())
+    //     {
+    //         Log.info("Boomo %s: Gazzomo %s", (const char *)deetsIter.name(), (const char *)deetsIter.value().toString());
+    //     }
+    // }
+    String id;
+    String entity;
+    String value;
+    while (iter.next())
+    {
+        String key = String((const char *)iter.name());
+        if (key == "_id")
+        {
+            id = String((const char *)iter.value().toString().data());
+        }
+        else if (key == "entity")
+        {
+            entity = String((const char *)iter.value().toString().data());
+        }
+        else if (key == "value")
+        {
+            value = String((const char *)iter.value().toString().data());
+        }
+    }
+
+    Log.info("Boomo %s: Gazzomo %s BABBOMO %s", id.c_str(), entity.c_str(), value.c_str());
+
+    // char buf[200];
+    // memset(buf, 0, sizeof(buf));
+    // JSONBufferWriter writer(buf, sizeof(buf) - 1);
+    // writer.beginObject();
+    // writer.name("device").value(System.deviceID());
+    // writer.name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
+    // writer.name("message").value("pong");
+    // writer.endObject();
+    // _client.publish(MQTT_CONFIG_TOPIC, String(buf));
+}
+
 void MqttProcessor::parseMessage(String data, char *topic)
 {
-    String pingTopic = String(MQTT_PING_TOPIC) + "/" + String(System.deviceID());
+    String dId = String(System.deviceID());
+    String pingTopic = String(MQTT_PING_TOPIC) + "/" + dId;
+    String configTopic = String(MQTT_CONFIG_TOPIC) + "/" + dId;
 
-    if (String(topic) == pingTopic)
+    String _topic = String(topic);
+
+    if (_topic == pingTopic)
     {
-        return pingPong();
+        return MqttProcessor::pingPong();
+    }
+    else if (_topic == configTopic)
+    {
+        return MqttProcessor::configProcessor(data);
     }
 
     JSONValue outerObj = JSONValue::parseCopy(data.c_str());
+
+    // outerObj.toString
+
+    /*
+
+    {
+  "_id": 234,
+  "values": [{
+    "entity": "digital",
+    "value": true
+  }, {
+    "entity": "publish",
+    "value": 2
+  }]
+}
+
+    */
 
     JSONObjectIterator iter(outerObj);
     while (iter.next())
     {
         Log.info("key=%s value=%s",
                  (const char *)iter.name(),
-                 (const char *)iter.value().toString());
+                 (const char *)iter.value().toString().data());
+
+        // if (iter.name() == "values")
+        // {
+        //     Log.info("RUNINNG VALUES ");
+        //     JSONValue arrayObj = JSONValue::parseCopy(iter.value().toString().data());
+        //     JSONArrayIterator arrIter(arrayObj);
+        //     for (size_t ii = 0; arrIter.next(); ii++)
+        //     {
+        //         Log.info("THIS IS THE ARRAY %u  and value %s", ii, (const char *)arrIter.value().toString());
+        //         JSONValue objectDetails = JSONValue::parseCopy((const char *)arrIter.value().toString());
+        //         JSONObjectIterator deetsIter(outerObj);
+        //         while (deetsIter.next())
+        //         {
+        //             Log.info("Boomo %s: Gazzomo %s", (const char *)deetsIter.name(), (const char *)deetsIter.value().toString());
+        //         }
+        //     }
+        // }
     }
 }
 
@@ -226,4 +321,9 @@ void MqttProcessor::mqttLoop()
         Log.info("Attempting to connect via MQTT");
         mqttConnect();
     }
+}
+
+bool MqttProcessor::hasHeartbeat()
+{
+    return this->HAS_HEARTBEAT;
 }

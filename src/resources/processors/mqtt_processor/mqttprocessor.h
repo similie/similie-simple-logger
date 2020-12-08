@@ -18,6 +18,7 @@ private:
     String pingTopic;
     String configTopic;
     String mqttListeners[3];
+    const bool HAS_HEARTBEAT = true;
     bool mqttSubscribed = false;
     bool controlConnect();
     int enableMQTTTls();
@@ -25,6 +26,8 @@ private:
     void enableSubsrictions();
     void ApplyMqttSubscription();
     void mqttLoop();
+    static void pingPong();
+    static void configProcessor(String data);
     size_t sslFailureCount = 0;
 
 public:
@@ -34,8 +37,10 @@ public:
     String getHeartbeatTopic();
     String getPublishTopic();
     // static void mqttCallback(char *topic, byte *payload, unsigned int length);
+    bool hasHeartbeat();
     void mqttConnect();
-    static bool connected();
+    static bool isConnected();
+    bool connected();
     void publish(String topic, String payload);
     void loop();
 };

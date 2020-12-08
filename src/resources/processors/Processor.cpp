@@ -15,7 +15,7 @@ String Processor::getHeartbeatTopic()
 
 String Processor::getPublishTopic()
 {
-    return String("");
+    return String(this->SEND_EVENT_NAME);
 }
 
 void Processor::publish(String topic, String payload)
@@ -24,6 +24,11 @@ void Processor::publish(String topic, String payload)
 }
 
 bool Processor::connected()
+{
+    return Particle.connected();
+}
+
+bool Processor::isConnected()
 {
     return Particle.connected();
 }
@@ -44,4 +49,14 @@ void Processor::parseMessage(String data, char *topic)
 
 void Processor::loop()
 {
+}
+
+bool Processor::hasHeartbeat()
+{
+    return this->HAS_HEARTBEAT;
+}
+
+const char *Processor::primaryPostName()
+{
+    return this->SEND_EVENT_NAME;
 }

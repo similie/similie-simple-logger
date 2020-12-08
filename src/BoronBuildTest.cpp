@@ -25,11 +25,10 @@ SYSTEM_THREAD(ENABLED);
 #include "resources/devices/device-manager.h"
 
 SerialLogHandler logHandler;
-const String PUBLISH_EVENT = "AI_Post";
 const String DEVICE_ID = System.deviceID();
 
-HeartBeat blood(DEVICE_ID);
-MqttProcessor processor;
+//MqttProcessor processor;
+Processor processor;
 Bootstrap boots;
 Utils utils;
 DeviceManager manager(&boots, &processor);

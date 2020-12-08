@@ -28,6 +28,7 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     this->boots = boots;
     this->processor = processor;
     this->devices[0][0] = new WlDevice(boots);
+    this->devices[0][1] = new Battery();
     const String DEVICE_ID = System.deviceID();
     this->blood = new HeartBeat(DEVICE_ID);
 }
@@ -65,7 +66,7 @@ void DeviceManager::init()
 
 void DeviceManager::heartbeat()
 {
-    if (MqttProcessor::connected())
+    if (processor->connected())
     {
         String artery = blood->pump();
         Log.info("pumping blood %s", utils.stringConvert(artery));
@@ -136,7 +137,7 @@ void DeviceManager::publish()
     // checkBootThreshold();
     waitFor(DeviceManager::isNotReading, 10000);
     publishBusy = true;
-    if (waitFor(Particle.connected, 10000) && waitFor(MqttProcessor::connected, 10000))
+    if (waitFor(Particle.connected, 10000) && processor->connected())
     {
         publisher();
     }
@@ -225,7 +226,7 @@ void DeviceManager::loop()
         publish();
     }
 
-    if (boots->heatbeatTimerFunc())
+    if (processor->hasHeartbeat() && boots->heatbeatTimerFunc())
     {
         boots->setHeatbeatTimer(false);
         heartbeat();

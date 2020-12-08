@@ -52,7 +52,7 @@ Bootstrap::~Bootstrap()
 void Bootstrap::init()
 {
     this->batteryController();
-    // memoryPrinter.start();
+    memoryPrinter.start();
     Time.zone(TIMEZONE);
     Particle.syncTime();
     Particle.variable("digital", digital);
@@ -205,6 +205,9 @@ void Bootstrap::restoreDefaults()
     {
         currentCalibration = DEF_DISTANCE_READ_AN_CALIBRATION;
     }
+
+    EpromStruct defObject = {2, (uint8_t)publicationIntervalInMinutes, currentCalibration, '!'};
+    putSavedConfig(defObject);
 }
 
 void Bootstrap::batteryController()

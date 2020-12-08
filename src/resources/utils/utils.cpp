@@ -80,9 +80,6 @@ int Utils::getMedian(int readparam, int arr[])
 */
 const char *Utils::stringConvert(String value)
 {
-    // char *cstr = new char[value.length() + 1];
-    // strcpy(cstr, value.c_str());
-    // return cstr;
     return value.c_str();
 }
 
