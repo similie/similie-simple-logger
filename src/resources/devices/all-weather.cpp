@@ -20,12 +20,9 @@ float AllWeather::extractValue(float values[], size_t key)
     {
     case gust_wind_speed:
         return utils.getMax(values, MAX);
-        break;
     case precipitation:
-        return utils.getSum(values, MAX);
     case strikes:
         return utils.getSum(values, MAX);
-        break;
     default:
         return utils.getMedian(values, MAX);
     }

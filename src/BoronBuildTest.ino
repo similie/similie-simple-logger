@@ -49,7 +49,7 @@ int setDigital(String read)
   int val = (int)atoi(read);
   if (val < 0 || val > 1)
   {
-    return 0;
+    return -1;
   }
   // digital = (bool)val;
   boots.setDigital((bool)val);
@@ -80,6 +80,19 @@ int restoreDefaults(String f)
   boots.restoreDefaults();
   return 1;
 }
+
+int setMaintenanceMode(String read)
+{
+  int val = (int)atoi(read);
+  if (val < 0 || val > 1)
+  {
+    return -1;
+  }
+  // digital = (bool)val;
+  boots.setMaintenance((bool)val);
+  return val;
+}
+
 /*
 * timers: just validate our times are constantly active in the main loop
 */
@@ -91,6 +104,7 @@ void setup()
   Particle.function("setDigital", setDigital);
   Particle.function("setCalibration", setCalibration);
   Particle.function("restoreDefaults", restoreDefaults);
+  Particle.function("setMaintenanceMode", setMaintenanceMode);
   // setting variable
   manager.init();
   waitFor(boots.isStrapped, 10000);

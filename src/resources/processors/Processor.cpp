@@ -13,8 +13,13 @@ String Processor::getHeartbeatTopic()
     return String("");
 }
 
-String Processor::getPublishTopic()
+String Processor::getPublishTopic(bool maintenance)
 {
+    if (maintenance)
+    {
+        return String(this->SEND_EVENT_MAINTENANCE);
+    }
+
     return String(this->SEND_EVENT_NAME);
 }
 

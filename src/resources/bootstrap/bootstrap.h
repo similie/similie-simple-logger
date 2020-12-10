@@ -56,7 +56,7 @@ private:
 
     char digitalChar(bool value);
     bool isDigital(char value);
-
+    bool maintenaceMode = false;
     void batteryController();
     void bootstrap();
     EpromStruct getsavedConfig();
@@ -83,7 +83,8 @@ public:
     void setCalibration(double val);
     void setDigital(bool digital);
     void buildSendInterval(int interval);
-
+    void setMaintenance(bool maintain);
+    bool hasMaintenance();
     bool publishTimerFunc();
     bool heatbeatTimerFunc();
     bool readTimerFun();

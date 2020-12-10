@@ -225,7 +225,7 @@ void DeviceManager::publisher()
     String result = String(buf);
     clearArray();
     Log.info("SENDING EVENT:: %s", result.c_str());
-    processor->publish(processor->getPublishTopic(), result);
+    processor->publish(processor->getPublishTopic(boots->hasMaintenance()), result);
 }
 /* IF IN MANUAL MODE */
 void manageManualModel()

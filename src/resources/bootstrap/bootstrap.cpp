@@ -61,6 +61,16 @@ void Bootstrap::init()
     this->bootstrap();
 }
 
+bool Bootstrap::hasMaintenance()
+{
+    return this->maintenaceMode;
+}
+
+void Bootstrap::setMaintenance(bool maintain)
+{
+    this->maintenaceMode = maintain;
+}
+
 bool Bootstrap::isDigital()
 {
     return this->digital;
