@@ -22,6 +22,7 @@ public:
     void clear();
     void print();
     void init();
+    size_t buffSize();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
 };
 

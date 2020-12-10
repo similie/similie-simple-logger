@@ -1,6 +1,5 @@
 #include "device-manager.h"
 
-//WlDevice wl;
 bool publishBusy = false;
 bool readBusy = false;
 bool rebootEvent = false;
@@ -24,11 +23,11 @@ DeviceManager::DeviceManager()
 }
 DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 {
-    // WlDevice wl;
     this->boots = boots;
     this->processor = processor;
-    this->devices[0][0] = new WlDevice(boots);
-    this->devices[0][1] = new Battery();
+    this->devices[0][0] = new AllWeather(boots);
+    this->devices[0][1] = new WlDevice(boots);
+    this->devices[0][2] = new Battery();
     const String DEVICE_ID = System.deviceID();
     this->blood = new HeartBeat(DEVICE_ID);
 }
@@ -62,6 +61,14 @@ void DeviceManager::init()
     boots->init();
     Particle.function("reboot", DeviceManager::rebootRequest);
     clearArray();
+    for (size_t i = 0; i < this->deviceCount; i++)
+    {
+        size_t size = this->deviceAggregateCounts[i];
+        for (size_t j = 0; j < size; j++)
+        {
+            this->devices[i][j]->init();
+        }
+    }
 }
 
 void DeviceManager::heartbeat()
@@ -159,10 +166,33 @@ void DeviceManager::publish()
     publishBusy = false;
 }
 
+size_t DeviceManager::getBufferSize()
+{
+    size_t buff_size = 0;
+    for (size_t i = 0; i < this->deviceCount; i++)
+    {
+        size_t size = this->deviceAggregateCounts[i];
+        for (size_t j = 0; j < size; j++)
+        {
+            size_t buff = this->devices[i][j]->buffSize();
+            if (buff)
+            {
+                buff_size += buff;
+            }
+        }
+    }
+    if (!buff_size)
+    {
+        return BUFF_SIZE;
+    }
+
+    return buff_size;
+}
+
 void DeviceManager::publisher()
 {
 
-    char buf[BUFF_SIZE];
+    char buf[getBufferSize()];
     memset(buf, 0, sizeof(buf));
     JSONBufferWriter writer(buf, sizeof(buf) - 1);
     writer.beginObject();

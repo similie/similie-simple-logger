@@ -7,6 +7,7 @@
 #include "device.h"
 #include "wl-device.h"
 #include "battery.h"
+#include "all-weather.h"
 #include "resources/heartbeat/heartbeat.h"
 
 #ifndef device_manager_h
@@ -26,7 +27,7 @@ private:
     Bootstrap *boots;
     Processor *processor;
     const size_t deviceCount = 1;
-    size_t deviceAggregateCounts[1] = {2};
+    size_t deviceAggregateCounts[1] = {3};
     Utils utils;
     HeartBeat *blood;
     void read();
@@ -35,6 +36,7 @@ private:
     void publisher();
     void manageManualModel();
     void heartbeat();
+    size_t getBufferSize();
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
 
 public:

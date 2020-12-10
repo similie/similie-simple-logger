@@ -11,13 +11,13 @@
 #define DIG_PIN D8
 #define AN_PIN A3
 
-const size_t WL_PARAM_SIZE = 2;
+const size_t WL_PARAM_SIZE = 1;
 
 class WlDevice : public Device
 {
 private:
     Bootstrap *boots;
-    String readParams[WL_PARAM_SIZE] = {"wl_cm", "hydrometric_level"};
+    String readParams[WL_PARAM_SIZE] = {"hydrometric_level"};
     Utils utils;
     int readWL();
     static const size_t PARAM_LENGTH = sizeof(readParams) / sizeof(String);
@@ -25,8 +25,8 @@ private:
 
     enum
     {
-        wl_cm,
-        hydrometric_level
+        hydrometric_level,
+        wl_cm
     };
 
 public:
@@ -38,6 +38,7 @@ public:
     void clear();
     void print();
     void init();
+    size_t buffSize();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
 };
 

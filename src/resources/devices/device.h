@@ -17,6 +17,7 @@ public:
     virtual void loop();
     virtual void clear();
     virtual void print();
+    virtual size_t buffSize();
     virtual void init();
     virtual void publish(JSONBufferWriter &writer, u8_t attempt_count);
 };

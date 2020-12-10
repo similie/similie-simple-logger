@@ -13,10 +13,17 @@ public:
     ~Utils();
     Utils();
     void reboot();
+    bool invalidNumber(String value);
+    bool containsChar(char c, String readFrom);
     const char *stringConvert(String value);
     void insertValue(int value, int arr[], size_t size);
+    void insertValue(float value, float arr[], size_t size);
     void shift(int value, size_t index, int arr[], size_t size);
+    void shift(float value, size_t index, float arr[], size_t size);
     int getMedian(int readparam, int arr[]);
+    float getMax(float values[], size_t MAX);
+    float getSum(float values[], size_t MAX);
+    float getMedian(float arr[], size_t max);
 };
 
 #endif

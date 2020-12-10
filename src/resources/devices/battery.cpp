@@ -38,3 +38,8 @@ void Battery::print()
 void Battery::init()
 {
 }
+
+size_t Battery::buffSize()
+{
+    return 100;
+}

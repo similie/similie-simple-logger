@@ -158,7 +158,7 @@ EpromStruct Bootstrap::getsavedConfig()
     EEPROM.get(EPROM_ADDRESS, values);
     if (values.version != 0)
     {
-        EpromStruct defObject = {2, (uint8_t)publicationIntervalInMinutes, currentCalibration, '!'};
+        EpromStruct defObject = {2, 1, currentCalibration, '!'};
         values = defObject;
     }
     return values;

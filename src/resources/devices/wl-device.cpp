@@ -14,7 +14,15 @@ WlDevice::WlDevice(Bootstrap *boots)
 }
 void WlDevice::init()
 {
-    pinMode(AN_PIN, INPUT_PULLDOWN);
+    if (boots->isDigital())
+    {
+
+        pinMode(DIG_PIN, INPUT);
+    }
+    else
+    {
+        pinMode(AN_PIN, INPUT_PULLDOWN);
+    }
 }
 
 int WlDevice::readWL()
@@ -103,4 +111,9 @@ void WlDevice::print()
             Log.info("PARAM VALUES FOR %s of iteration %d and value %d", utils.stringConvert(readParams[i]), j, VALUE_HOLD[i][j]);
         }
     }
+}
+
+size_t WlDevice::buffSize()
+{
+    return 150;
 }

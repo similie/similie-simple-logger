@@ -4,7 +4,7 @@
 #ifndef bootstrap_h
 #define bootstrap_h
 
-#define DIGITAL_DEFAULT false
+#define DIGITAL_DEFAULT true
 #define EPROM_ADDRESS 0
 #define MINUTE_IN_SECONDS 60
 #define MILISECOND 1000
@@ -16,7 +16,7 @@
 #define DEF_DISTANCE_READ_DIG_CALIBRATION 0.01724137931
 #define DEF_DISTANCE_READ_AN_CALIBRATION 0.335
 #define MAX_SEND_TIME 15
-
+// const size_t MAX_SEND_TIME = 15;
 // const size_t MINUTE_IN_SECONDS = 60;
 // const unsigned int MILISECOND = 1000;
 // const int NO_VALUE = -9999;
@@ -62,7 +62,7 @@ private:
     EpromStruct getsavedConfig();
     void putSavedConfig(EpromStruct config);
     int publicationIntervalInMinutes;
-    double currentCalibration;
+    double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
 
     const size_t MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
     unsigned int READ_TIMER;

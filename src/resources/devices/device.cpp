@@ -34,3 +34,8 @@ void Device::print()
 void Device::init()
 {
 }
+
+size_t Device::buffSize()
+{
+    return 300;
+}
