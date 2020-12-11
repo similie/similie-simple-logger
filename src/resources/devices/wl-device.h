@@ -19,6 +19,7 @@ private:
     Bootstrap *boots;
     String readParams[WL_PARAM_SIZE] = {"hydrometric_level"};
     Utils utils;
+    u8_t maintenanceTick = 0;
     int readWL();
     static const size_t PARAM_LENGTH = sizeof(readParams) / sizeof(String);
     int VALUE_HOLD[WlDevice::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
@@ -38,6 +39,8 @@ public:
     void clear();
     void print();
     void init();
+    u8_t matenanceCount();
+    u8_t paramCount();
     size_t buffSize();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
 };

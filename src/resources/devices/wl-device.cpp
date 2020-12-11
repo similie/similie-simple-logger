@@ -72,6 +72,11 @@ void WlDevice::publish(JSONBufferWriter &writer, u8_t attempt_count)
     {
         String param = readParams[i];
         int median = utils.getMedian(attempt_count, VALUE_HOLD[i]);
+        if (median == 0)
+        {
+            maintenanceTick++;
+        }
+
         writer.name(utils.stringConvert(param)).value(median);
         Log.info("Param=%s has median %d", utils.stringConvert(param), median);
     }
@@ -116,4 +121,16 @@ void WlDevice::print()
 size_t WlDevice::buffSize()
 {
     return 150;
+}
+
+u8_t WlDevice::paramCount()
+{
+    return PARAM_LENGTH;
+}
+
+u8_t WlDevice::matenanceCount()
+{
+    u8_t maintenance = this->maintenanceTick;
+    maintenanceTick = 0;
+    return maintenance;
 }

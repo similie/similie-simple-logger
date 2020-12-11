@@ -43,6 +43,11 @@ void AllWeather::publish(JSONBufferWriter &writer, u8_t attempt_count)
             param = "_FAILURE_";
         }
         float paramValue = extractValue(VALUE_HOLD[i], i);
+        if (paramValue == NO_VALUE)
+        {
+            maintenanceTick++;
+        }
+
         writer.name(param.c_str()).value(paramValue);
     }
 }
@@ -173,4 +178,16 @@ void AllWeather::init()
 size_t AllWeather::buffSize()
 {
     return 600;
+}
+
+u8_t AllWeather::paramCount()
+{
+    return PARAM_LENGTH;
+}
+
+u8_t AllWeather::matenanceCount()
+{
+    u8_t maintenance = this->maintenanceTick;
+    maintenanceTick = 0;
+    return maintenance;
 }

@@ -30,6 +30,9 @@ private:
     size_t deviceAggregateCounts[1] = {3};
     Utils utils;
     HeartBeat *blood;
+
+    u8_t paramsCount = 0;
+
     void read();
     void checkBootThreshold();
     void publish();
@@ -47,9 +50,11 @@ public:
     static bool isNotPublishing();
     static bool isNotReading();
     void clearArray();
+    void setParamsCount();
     void setReadCount(unsigned int read_count);
     static int rebootRequest(String f);
     void loop();
+    bool recommendedMaintenace(u8_t damangeCount);
     bool isStrapped(bool boots);
 };
 

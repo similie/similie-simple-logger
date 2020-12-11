@@ -15,6 +15,8 @@ public:
     Device(Bootstrap *boots);
     virtual void read();
     virtual void loop();
+    virtual u8_t matenanceCount();
+    virtual u8_t paramCount();
     virtual void clear();
     virtual void print();
     virtual size_t buffSize();

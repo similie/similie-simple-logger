@@ -21,6 +21,7 @@ DeviceManager::~DeviceManager()
 DeviceManager::DeviceManager()
 {
 }
+
 DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 {
     this->boots = boots;
@@ -30,6 +31,20 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     this->devices[0][2] = new Battery();
     const String DEVICE_ID = System.deviceID();
     this->blood = new HeartBeat(DEVICE_ID);
+    setParamsCount();
+}
+
+void DeviceManager::setParamsCount()
+{
+    for (size_t i = 0; i < this->deviceCount; i++)
+    {
+        size_t size = this->deviceAggregateCounts[i];
+        for (size_t j = 0; j < size; j++)
+        {
+            u8_t count = this->devices[i][j]->paramCount();
+            this->paramsCount += count;
+        }
+    }
 }
 
 /*
@@ -40,6 +55,12 @@ int DeviceManager::rebootRequest(String f)
     Log.info("Reboot requested");
     rebootEvent = true;
     return 1;
+}
+
+bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
+{
+    u8_t doubleConnt = damangeCount * 2;
+    return doubleConnt >= this->paramsCount;
 }
 
 bool DeviceManager::isNotPublishing()
@@ -198,6 +219,7 @@ void DeviceManager::publisher()
     writer.beginObject();
     writer.name("device").value(System.deviceID());
     writer.name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
+    u8_t maintenanceCount = 0;
     for (size_t i = 0; i < this->deviceCount; i++)
     {
         if (i != 0)
@@ -215,17 +237,21 @@ void DeviceManager::publisher()
         {
             // this->devices[i][j]->print();
             this->devices[i][j]->publish(writer, attempt_count);
+            maintenanceCount += this->devices[i][j]->matenanceCount();
         }
         writer.endObject();
     }
     writer.endObject();
-
+    // we do this so if things get beached, it automatically hits a maintenance mode
+    bool recommenededMainteanc = recommendedMaintenace(maintenanceCount);
+    bool inMaintenance = boots->hasMaintenance();
+    bool maintenance = recommenededMainteanc || inMaintenance;
     attempt_count = 0;
     read_count = 0;
     String result = String(buf);
     clearArray();
     Log.info("SENDING EVENT:: %s", result.c_str());
-    processor->publish(processor->getPublishTopic(boots->hasMaintenance()), result);
+    processor->publish(processor->getPublishTopic(maintenance), result);
 }
 /* IF IN MANUAL MODE */
 void manageManualModel()

@@ -59,6 +59,7 @@ private:
     bool readyRead = false;
     bool readCompile = false;
     // long counter = 0;
+    u8_t maintenanceTick = 0;
     String ourReading = "";
     static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);
     float VALUE_HOLD[AllWeather::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
@@ -72,6 +73,8 @@ public:
     void clear();
     void print();
     void init();
+    u8_t matenanceCount();
+    u8_t paramCount();
     size_t buffSize();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
     float extractValue(float values[], size_t key);

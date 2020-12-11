@@ -15,6 +15,16 @@ void Device::publish(JSONBufferWriter &writer, u8_t attempt_count)
 {
 }
 
+u8_t Device::paramCount()
+{
+    return 0;
+}
+
+u8_t Device::matenanceCount()
+{
+    return 0;
+}
+
 void Device::read()
 {
 }
