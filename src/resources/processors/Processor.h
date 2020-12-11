@@ -9,7 +9,7 @@ class Processor
 private:
     const bool HAS_HEARTBEAT = false;
     const char *SEND_EVENT_NAME = "Al/Post/Raw";
-    const char *SEND_EVENT_MAINTENANCE = "Al/Post/Maintan";
+    const char *SEND_EVENT_MAINTENANCE = "Al/Post/Maintain";
 
 public:
     ~Processor();

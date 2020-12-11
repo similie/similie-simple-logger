@@ -6,6 +6,7 @@
 #include "resources/utils/utils.h"
 #include "device.h"
 #include "wl-device.h"
+#include "serial-gps.h"
 #include "battery.h"
 #include "all-weather.h"
 #include "resources/heartbeat/heartbeat.h"
