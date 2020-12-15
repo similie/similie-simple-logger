@@ -28,7 +28,7 @@ private:
     Bootstrap *boots;
     Processor *processor;
     const size_t deviceCount = 1;
-    size_t deviceAggregateCounts[1] = {3};
+    size_t deviceAggregateCounts[1] = {1};
     Utils utils;
     HeartBeat *blood;
 

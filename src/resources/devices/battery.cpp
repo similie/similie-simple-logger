@@ -43,3 +43,13 @@ size_t Battery::buffSize()
 {
     return 100;
 }
+
+u8_t Battery::paramCount()
+{
+    return PARAM_LENGTH;
+}
+
+u8_t Battery::matenanceCount()
+{
+    return 0;
+}

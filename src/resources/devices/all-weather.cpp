@@ -19,6 +19,7 @@ float AllWeather::extractValue(float values[], size_t key)
     switch (key)
     {
     case gust_wind_speed:
+    case strike_distance:
         return utils.getMax(values, MAX);
     case precipitation:
     case strikes:

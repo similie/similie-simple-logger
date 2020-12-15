@@ -188,7 +188,7 @@ void Bootstrap::bootstrap()
 {
     delay(5000);
     // uncomment if you need to clear eeprom on load
-    // EEPROM.clear();
+    //EEPROM.clear();
     EpromStruct values = getsavedConfig();
     Log.info("BOOTSTRAPPING version %d publish: %d, digital: %d", values.version, values.pub, values.digital);
     // a default version is 2 or 0 when instantiated.

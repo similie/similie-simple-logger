@@ -12,6 +12,7 @@ private:
     Bootstrap *boots;
     const char *percentname = "bat_percent";
     const char *voltsname = "battery_voltage";
+    const u8_t PARAM_LENGTH = 2;
 
 public:
     ~Battery();
@@ -22,6 +23,8 @@ public:
     void clear();
     void print();
     void init();
+    u8_t matenanceCount();
+    u8_t paramCount();
     size_t buffSize();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
 };
