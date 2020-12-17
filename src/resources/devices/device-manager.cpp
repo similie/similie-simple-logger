@@ -28,7 +28,7 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     this->processor = processor;
     //this->devices[0][0] = new SerialGps(boots);
     //this->devices[0][0] = new AllWeather(boots);
-    this->devices[0][1] = new WlDevice(boots);
+    this->devices[0][0] = new WlDevice(boots);
     //this->devices[0][2] = new Battery();
     const String DEVICE_ID = System.deviceID();
     this->blood = new HeartBeat(DEVICE_ID);
@@ -253,18 +253,6 @@ void DeviceManager::publisher()
     clearArray();
     Log.info("SENDING EVENT:: %s", result.c_str());
     processor->publish(processor->getPublishTopic(maintenance), result);
-}
-/* IF IN MANUAL MODE */
-void manageManualModel()
-{
-    if (waitFor(Particle.connected, 10000))
-    {
-        Particle.process();
-    }
-    else
-    {
-        Particle.connect();
-    }
 }
 
 void DeviceManager::loop()

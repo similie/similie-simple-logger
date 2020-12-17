@@ -41,12 +41,13 @@ Timer memoryPrinter(10000, printMemory);
 Bootstrap::~Bootstrap()
 {
     //this->MAX_VALUE_THRESHOLD = (size_t)MAX_SEND_TIME;
-    this->digital = DIGITAL_DEFAULT;
-    this->publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
-    this->READ_TIMER = (MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
-    this->PUBLISH_TIMER = publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND;
+    // this->digital = DIGITAL_DEFAULT;
+    //this->publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
+    int interval = (int)publicationIntervalInMinutes;
+    this->READ_TIMER = (MINUTE_IN_SECONDS * interval) / MAX_SEND_TIME * MILISECOND;
+    this->PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILISECOND;
     this->BEAT_TIMER = HEARTBEAT_TIMER;
-    this->currentCalibration = DIGITAL_DEFAULT ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
+    this->currentCalibration = digital ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
 }
 
 void Bootstrap::init()
@@ -116,10 +117,9 @@ size_t Bootstrap::getMaxVal()
 
 void Bootstrap::buildSendInterval(int interval)
 {
-    publicationIntervalInMinutes = interval;
-    READ_TIMER = (MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
-    PUBLISH_TIMER = publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND;
-    Log.info("MY READ TIMER IS SET FOR %d and the publish time is %d with interval %d", READ_TIMER, PUBLISH_TIMER, interval);
+    publicationIntervalInMinutes = (uint8_t)interval;
+    READ_TIMER = (MINUTE_IN_SECONDS * interval) / MAX_SEND_TIME * MILISECOND;
+    PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILISECOND;
 
     if (readtimer.isActive())
     {
@@ -134,9 +134,11 @@ void Bootstrap::buildSendInterval(int interval)
     readtimer.start();
     publishtimer.start();
 
-    EpromStruct config = getsavedConfig();
-    config.pub = publicationIntervalInMinutes;
-    putSavedConfig(config);
+    // EpromStruct config = getsavedConfig();
+    // config.pub = publicationIntervalInMinutes;
+    // putSavedConfig(config);
+
+    Log.info("MY READ TIMER IS SET FOR %d and the publish time is %d with interval %d", READ_TIMER, PUBLISH_TIMER, interval);
 }
 
 void Bootstrap::setDigital(bool digital)
@@ -180,7 +182,7 @@ void Bootstrap::putSavedConfig(EpromStruct config)
 {
     config.version = 0;
     EEPROM.clear();
-    Log.info("PUTTING version %d publish: %d, digital: %d", config.version, config.pub, config.digital);
+    Log.info("PUTTING version %d publish: %d, digital: %c", config.version, config.pub, config.digital);
     EEPROM.put(EPROM_ADDRESS, config);
 }
 
@@ -188,11 +190,11 @@ void Bootstrap::bootstrap()
 {
     delay(5000);
     // uncomment if you need to clear eeprom on load
-    //EEPROM.clear();
+    // EEPROM.clear();
     EpromStruct values = getsavedConfig();
-    Log.info("BOOTSTRAPPING version %d publish: %d, digital: %d", values.version, values.pub, values.digital);
+    Log.info("BOOTSTRAPPING version %d publish: %u, digital: %c", values.version, values.pub, values.digital);
     // a default version is 2 or 0 when instantiated.
-    buildSendInterval(values.pub);
+    buildSendInterval((int)values.pub);
     digital = isDigital(values.digital);
     const double calibration = values.calibration;
     currentCalibration = calibration;
@@ -216,7 +218,7 @@ void Bootstrap::restoreDefaults()
         currentCalibration = DEF_DISTANCE_READ_AN_CALIBRATION;
     }
 
-    EpromStruct defObject = {2, (uint8_t)publicationIntervalInMinutes, currentCalibration, '!'};
+    EpromStruct defObject = {2, publicationIntervalInMinutes, currentCalibration, '!'};
     putSavedConfig(defObject);
 }
 
@@ -227,12 +229,29 @@ void Bootstrap::batteryController()
     pmic.disableCharging();
 }
 
+/* IF IN MANUAL MODE */
+void Bootstrap::manageManualModel()
+{
+    if (waitFor(Particle.connected, 1000))
+    {
+        Particle.process();
+    }
+    else
+    {
+        Particle.connect();
+    }
+}
+
 void Bootstrap::timers()
 {
+
+    manageManualModel();
+
     if (!readtimer.isActive())
     {
         readtimer.start();
     }
+
     if (!publishtimer.isActive())
     {
         publishtimer.start();

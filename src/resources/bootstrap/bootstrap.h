@@ -52,7 +52,7 @@ class Bootstrap
 {
 private:
     bool bootstrapped = false;
-    bool digital = false;
+    bool digital = DIGITAL_DEFAULT;
 
     char digitalChar(bool value);
     bool isDigital(char value);
@@ -61,9 +61,9 @@ private:
     void bootstrap();
     EpromStruct getsavedConfig();
     void putSavedConfig(EpromStruct config);
-    int publicationIntervalInMinutes;
+    uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
     double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
-
+    void manageManualModel();
     const size_t MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
     unsigned int READ_TIMER;
     unsigned int PUBLISH_TIMER;

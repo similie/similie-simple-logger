@@ -7,6 +7,8 @@
 
 SYSTEM_THREAD(ENABLED);
 
+SYSTEM_MODE(MANUAL);
+
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/utils/utils.h"
 #include "resources/devices/device-manager.h"
@@ -14,8 +16,8 @@ SYSTEM_THREAD(ENABLED);
 SerialLogHandler logHandler;
 const String DEVICE_ID = System.deviceID();
 
-//MqttProcessor processor;
-Processor processor;
+MqttProcessor processor;
+// Processor processor;
 Bootstrap boots;
 Utils utils;
 DeviceManager manager(&boots, &processor);
@@ -100,19 +102,30 @@ int setMaintenanceMode(String read)
 // setup() runs once, when the device is first turned on.
 void setup()
 {
-  Particle.function("setSendInverval", setSendInverval);
-  Particle.function("setDigital", setDigital);
-  Particle.function("setCalibration", setCalibration);
-  Particle.function("restoreDefaults", restoreDefaults);
-  Particle.function("setMaintenanceMode", setMaintenanceMode);
-  // setting variable
-  manager.init();
-  waitFor(boots.isStrapped, 10000);
+  // Particle.function("setPublicationInterval", setSendInverval);
+  // Particle.function("setDigital", setDigital);
+  // Particle.function("setCalibration", setCalibration);
+  // Particle.function("restoreDefaults", restoreDefaults);
+  // Particle.function("setMaintenanceMode", setMaintenanceMode);
+  // // setting variable
+  // manager.init();
+  // waitFor(boots.isStrapped, 10000);
+  Cellular.on();
+  Cellular.clearCredentials();
+
+  // You should only use one of the following three commands.
+  // Only one set of credentials can be stored.
+
+  // Connects to a cellular network by APN only
+  Cellular.setCredentials("internet");
+
+  Cellular.connect();
 }
 
 // loop() runs over and over again, as quickly as it can execute
 void loop()
 {
-  manager.loop();
-  processor.loop();
+  // manager.loop();
+  // processor.loop();
+  Log.info("IS CELULAR READY %d", Cellular.ready());
 }

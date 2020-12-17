@@ -17,7 +17,7 @@ class WlDevice : public Device
 {
 private:
     Bootstrap *boots;
-    String readParams[WL_PARAM_SIZE] = {"hydrometric_level"};
+    String readParams[WL_PARAM_SIZE] = {"wl_pw"};
     Utils utils;
     u8_t maintenanceTick = 0;
     int readWL();
@@ -26,8 +26,9 @@ private:
 
     enum
     {
-        hydrometric_level,
-        wl_cm
+        wl_pw
+        //hydrometric_level,
+        //wl_cm
     };
 
 public:

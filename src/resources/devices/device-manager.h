@@ -2,7 +2,7 @@
 #include "string.h"
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/processors/processor.h"
-//#include "resources/processors/mqtt_processor/mqttprocessor.h"
+#include "resources/processors/mqtt_processor/mqttprocessor.h"
 #include "resources/utils/utils.h"
 #include "device.h"
 #include "wl-device.h"
