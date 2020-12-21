@@ -1,4 +1,6 @@
 #include "heartbeat.h"
+#include "CellularHelper.h"
+
 FuelGauge fuel;
 
 HeartBeat::~HeartBeat()
@@ -69,6 +71,12 @@ void HeartBeat::setCellDeets(JSONBufferWriter &writer)
     writer.name("quality_val").value(qualityVal);
     String ip = Cellular.localIP().toString();
     writer.name("local_ip").value(ip);
+    String sim = CellularHelper.getICCID();
+    writer.name("ICCID").value(sim);
+    String carrier = CellularHelper.getOperatorName();
+    writer.name("carrier").value(carrier);
+    String imei = CellularHelper.getIMEI();
+    writer.name("IMEI").value(imei);
     writer.endObject();
 }
 

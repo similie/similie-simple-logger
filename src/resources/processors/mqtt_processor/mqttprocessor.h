@@ -2,6 +2,8 @@
 #include "string.h"
 #include "MQTT-TLS.h"
 #include "resources/processors/processor.h"
+#include "resources/utils/rgb_controller.h"
+#include "resources/bootstrap/bootstrap.h"
 
 #define MQTT_PORT 8883
 #define MQTT_KEEP_ALIVE 30
@@ -14,6 +16,10 @@ class MqttProcessor : public Processor
 {
 private:
     const char *mqttHost;
+    const char *APN = "internet";
+    bool serviceConnected = false;
+    const unsigned long MODEM_ON_WAIT_TIME_MS = 4000;
+    Bootstrap *boots;
     String deviceID;
     String pingTopic;
     String configTopic;
@@ -29,13 +35,24 @@ private:
     static void pingPong();
     static void configProcessor(String data);
     size_t sslFailureCount = 0;
+    RgbController lights;
+    void maintainContact();
+    static int responseCallback(int type, const char *buf, int len, void *param);
+    void connectEvent();
+    void disconnectProtocol();
+    size_t connectEventFail = 0;
+    const size_t CONNECT_EVENT_THRESHOLD = 12;
+    const u8_t CONNECT_EVENT_HOLD_DELAY = 5;
+    void reboot();
 
 public:
     ~MqttProcessor();
     MqttProcessor();
+    MqttProcessor(Bootstrap *boots);
+
     static void parseMessage(String data, char *topic);
     String getHeartbeatTopic();
-    String getPublishTopic();
+    String getPublishTopic(bool maintenance);
     // static void mqttCallback(char *topic, byte *payload, unsigned int length);
     bool hasHeartbeat();
     void mqttConnect();
@@ -43,6 +60,8 @@ public:
     bool connected();
     void publish(String topic, String payload);
     void loop();
+    void connect();
+    void ModemHardReset();
 };
 
 #endif

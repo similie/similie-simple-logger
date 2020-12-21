@@ -126,6 +126,7 @@ void DeviceManager::checkBootThreshold()
     {
         if (attempt_count >= ATTEMPT_THRESHOLD)
         {
+            boots->resetBeachCount();
             utils.reboot();
         }
         else
@@ -166,7 +167,7 @@ void DeviceManager::publish()
     // checkBootThreshold();
     waitFor(DeviceManager::isNotReading, 10000);
     publishBusy = true;
-    if (waitFor(Particle.connected, 10000) && processor->connected())
+    if (waitFor(Cellular.ready, 10000) && processor->connected())
     {
         publisher();
     }
@@ -175,7 +176,8 @@ void DeviceManager::publish()
         if (attempt_count < ATTEMPT_THRESHOLD)
         {
             // force this puppy to try and connect. May not be needed in automatic mode
-            Particle.connect();
+            // Particle.connect();
+            // Cellular.connect();
             attempt_count++;
         }
         else

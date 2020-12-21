@@ -16,6 +16,7 @@
 #define DEF_DISTANCE_READ_DIG_CALIBRATION 0.01724137931
 #define DEF_DISTANCE_READ_AN_CALIBRATION 0.335
 #define MAX_SEND_TIME 15
+
 // const size_t MAX_SEND_TIME = 15;
 // const size_t MINUTE_IN_SECONDS = 60;
 // const unsigned int MILISECOND = 1000;
@@ -63,11 +64,14 @@ private:
     void putSavedConfig(EpromStruct config);
     uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
     double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
-    void manageManualModel();
+    unsigned long BEACH_TIMEOUT_RESTORE = MINUTE_IN_SECONDS * MILISECOND * 360;
     const size_t MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
     unsigned int READ_TIMER;
     unsigned int PUBLISH_TIMER;
     unsigned int BEAT_TIMER;
+    u8_t beachCount();
+    const u8_t BEACHED_THRSHOLD = 5;
+    const static u16_t BEACH_ADDRESS = sizeof(EpromStruct) + 10;
 
 public:
     ~Bootstrap();
@@ -89,8 +93,11 @@ public:
     bool heatbeatTimerFunc();
     bool readTimerFun();
     bool isDigital();
+    bool isBeached();
+    void beach();
+    void resetBeachCount();
     //static bool isStrapped();
-
+    static void beachReset();
     size_t getMaxVal();
     static const size_t OVERFLOW_VAL = MAX_SEND_TIME + 5;
 };

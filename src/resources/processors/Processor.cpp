@@ -54,6 +54,11 @@ void Processor::parseMessage(String data, char *topic)
 
 void Processor::loop()
 {
+
+    if (MANUAL_MODE)
+    {
+        manageManualModel();
+    }
 }
 
 bool Processor::hasHeartbeat()
@@ -64,4 +69,25 @@ bool Processor::hasHeartbeat()
 const char *Processor::primaryPostName()
 {
     return this->SEND_EVENT_NAME;
+}
+
+/* IF IN MANUAL MODE */
+void Processor::manageManualModel()
+{
+    if (waitFor(Particle.connected, 10000))
+    {
+        Particle.process();
+    }
+    else
+    {
+        Particle.connect();
+    }
+}
+
+void Processor::connect()
+{
+    if (MANUAL_MODE)
+    {
+        Particle.connect();
+    }
 }

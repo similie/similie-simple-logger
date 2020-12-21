@@ -1,5 +1,6 @@
 #include "mqttprocessor.h"
 #include "certs.h"
+#include "CellularHelper.h"
 
 const char *MQTT_PING_TOPIC = "devices/ping";
 const char *MQTT_CONFIG_TOPIC = "devices/config";
@@ -7,6 +8,7 @@ const char *MQTT_CONFIG_REGISTRATION = "devices/config/register";
 const char *AWS_HOST = "a2hreerobwhgvz-ats.iot.ap-southeast-1.amazonaws.com";
 
 const String MQTT_PUBLISH_TOPIC = "devices/publish";
+const String MQTT_MAINTENANCE_TOPIC = "devices/maintenance";
 const String MQTT_HEARTBEAT_TOPIC = "devices/heartbeat";
 
 void mqttCallback(char *topic, byte *payload, unsigned int length);
@@ -16,6 +18,12 @@ MQTT _client(strdup(AWS_HOST), MQTT_PORT, mqttCallback);
 
 MqttProcessor::~MqttProcessor()
 {
+}
+
+MqttProcessor::MqttProcessor(Bootstrap *boots)
+{
+    this->boots = boots;
+    MqttProcessor();
 }
 
 MqttProcessor::MqttProcessor()
@@ -36,8 +44,12 @@ String MqttProcessor::getHeartbeatTopic()
     return MQTT_HEARTBEAT_TOPIC;
 }
 
-String MqttProcessor::getPublishTopic()
+String MqttProcessor::getPublishTopic(bool maintenance)
 {
+    if (maintenance)
+    {
+        return MQTT_MAINTENANCE_TOPIC;
+    }
     return MQTT_PUBLISH_TOPIC;
 }
 
@@ -179,8 +191,62 @@ void MqttProcessor::parseMessage(String data, char *topic)
     }
 }
 
+void MqttProcessor::disconnectProtocol()
+{
+    Cellular.disconnect();
+    lights.delayBlink(CONNECT_EVENT_HOLD_DELAY * 4, RgbController::PANIC);
+    lights.control(false);
+    connectEventFail = 0;
+    connect();
+}
+
+void MqttProcessor::connectEvent()
+{
+
+    if (connectEventFail >= CONNECT_EVENT_THRESHOLD)
+    {
+        disconnectProtocol();
+    }
+    else
+    {
+        connectEventFail++;
+        lights.delayBlink(CONNECT_EVENT_HOLD_DELAY, RgbController::THRASH);
+        lights.control(false);
+    }
+}
+
+void MqttProcessor::maintainContact()
+{
+
+    if (Cellular.connecting())
+    {
+        connectEvent();
+    }
+    else if (!serviceConnected && !Cellular.ready())
+    {
+        Log.info("Serice disconnected");
+        disconnectProtocol();
+    }
+    else if (serviceConnected && !Cellular.ready())
+    {
+        serviceConnected = false;
+    }
+    else
+    {
+        if (Cellular.ready() && !serviceConnected)
+        {
+            serviceConnected = true;
+        }
+        if (_client.isConnected())
+        {
+            lights.breath();
+        }
+    }
+}
+
 void MqttProcessor::loop()
 {
+    //this->maintainContact();
     this->mqttLoop();
 }
 
@@ -189,23 +255,28 @@ bool MqttProcessor::controlConnect()
 
     u8_t connAttempt = 0;
     // const u8_t MAX_ATTEMPTS = 10;
-    bool connected = !Particle.connected();
+    bool connected = !Cellular.ready();
 
-    while (!_client.isConnected() && Particle.connected())
+    while (!_client.isConnected() && Cellular.ready())
     {
+
         Log.info("Attempting MQTT connection...");
         // Attempt to connect
         String connectionID = this->deviceID + "-" + String(this->connect_id);
-
+        //lights.control(false);
         if (_client.connect(connectionID))
         {
+            // lights.breath();
+            // lights.rapidFlash();
             connected = true;
             this->enableSubsrictions();
             _client.publish(MQTT_CONFIG_REGISTRATION, this->deviceID);
-            Log.info("connected");
+            Log.info("Connected");
         }
         else
         {
+            // lights.panic();
+            // lights.rapidFlash();
             connAttempt++;
             this->connect_id++;
             Log.info("Disconnect %d ", this->connect_id);
@@ -220,19 +291,24 @@ bool MqttProcessor::controlConnect()
             }
             Log.info("Attempt %d failed, try again in 5 seconds ", connAttempt);
             // Wait 5 seconds before retrying
+            //lights.delayBlink(CONNECT_EVENT_HOLD_DELAY, RgbController::THRASH);
             delay(5000);
         }
     }
-
     return connected;
+}
+
+void MqttProcessor::reboot()
+{
+    boots->resetBeachCount();
+    System.reset();
 }
 
 void MqttProcessor::mqttConnect()
 {
-    if (!this->controlConnect() && Particle.connected())
+    if (!this->controlConnect() && Cellular.ready())
     {
-        // rebootRequest(String("$"));
-        System.reset();
+        reboot();
     }
 }
 
@@ -267,7 +343,7 @@ int MqttProcessor::enableMQTTTls()
         }
         else
         {
-            System.reset();
+            reboot();
         }
     }
     else
@@ -307,16 +383,18 @@ void MqttProcessor::ApplyMqttSubscription()
 void MqttProcessor::mqttLoop()
 {
 
-    if (!this->mqttSubscribed && Particle.connected())
+    if (!this->mqttSubscribed && Cellular.ready())
     {
+
         this->ApplyMqttSubscription();
     }
     bool mConn = _client.isConnected();
     if (mConn)
     {
+
         _client.loop();
     }
-    else if (this->mqttSubscribed && !mConn && Particle.connected())
+    else if (this->mqttSubscribed && !mConn && Cellular.ready())
     {
         Log.info("Attempting to connect via MQTT");
         mqttConnect();
@@ -326,4 +404,132 @@ void MqttProcessor::mqttLoop()
 bool MqttProcessor::hasHeartbeat()
 {
     return this->HAS_HEARTBEAT;
+}
+
+int MqttProcessor::responseCallback(int type, const char *buf, int len, void *param)
+{
+    CellularHelperCommonResponse *presp = (CellularHelperCommonResponse *)param;
+
+    return presp->parse(type, buf, len);
+}
+
+//firmware\hal\src\electron\modem\mdm_hal.cpp
+// void MqttProcessor::ModemHardReset()
+// {
+//     Log.info("[ Modem  Hard reset ]");
+//     const unsigned delay = 100;
+//     HAL_GPIO_Write(RESET_UC, 0);
+//     HAL_Delay_Milliseconds(delay);
+//     HAL_GPIO_Write(RESET_UC, 1);
+// }
+
+void MqttProcessor::connect()
+{
+    delay(5000);
+    if (boots->isBeached())
+    {
+        boots->beach();
+    }
+    //cellular_off(NULL);
+
+    //cellular_on(NULL);
+    // delay(5000);
+    Log.info("ACTIVATING");
+    // Cellular.off();
+
+    //CellularHelperLocationResponse resp;
+
+    // Cellular.command("AT+URAT=1,0\r\n");
+    //delay(5000);
+    // Cellular.connect();
+    // Cellular.on();
+    // // delay(15000);
+    // // Cellular.off();
+    // // delay(30000);
+    // // Cellular.clearCredentials();
+    // // Cellular.setCredentials(APN);
+    // //  ModemHardReset();
+    // // Log.info("TURNING ON CELULAR ");ModemHardReset();
+    // // Cellular.on();
+    // // // resp.resp = Cellular.command(responseCallback, (void *)&resp, 10000, "AT\r\n", 10000 / 1000);
+    // // // Log.info("TURNING ON AT SHIT %d ", resp.resp);
+    // // // delay(5000);]
+    // // // Cellular.disconnect();
+    // delay(5000);
+    // Cellular.clearCredentials();
+    // Cellular.setCredentials(APN);
+    // // // Cellular.off();
+    // // // delay(5000);
+    // // // Cellular.clearCredentials();
+    // // // // // // // // Connects to a cellular network by APN only
+    // // // Cellular.setCredentials(APN);
+    // // // Cellular.on();
+    // delay(5000);
+    // // // for (size_t i = 0; i < 50; i++)
+    // // // {
+
+    // // //     if (RESP_OK == Cellular.command(30000, "AT\r\n"))
+    // // //     {
+    // // //         Log.log("JUIST BOOMO ME SOME AT");
+    // // //         break;
+    // // //     }
+    // // //     else
+    // // //     {
+    // // //         Log.log("SHIT AINT AT ALL BOOMO %u", i);
+    // // //     }
+
+    // // //     delay(2000);
+    // // // }
+    // // // delay(10000);
+    // // // resp.resp = Cellular.command(responseCallback, (void *)&resp, 10000, "AT+CFUN=0\r\n", 10000 / 1000);
+    // // // Log.info("TURNING ON CELULAR %d %llX ", resp.resp, RESP_OK);
+    // // // delay(5000);
+    // Cellular.connect();
+
+    // // // delay(MODEM_ON_WAIT_TIME_MS);
+    // // // // Cellular.setActiveSim(EXTERNAL_SIM);
+    // Cellular.setActiveSim(EXTERNAL_SIM);
+    // Cellular.connect();
+
+    // // // waitFor(Cellular.ready);
+    // waitFor(Cellular.ready, 20000);
+
+    if (Cellular.ready())
+    {
+        ApplyMqttSubscription();
+        waitFor(_client.isConnected, 20000);
+    }
+
+    // CellularHelperRSSIQualResponse rssiQual = CellularHelper.getRSSIQual();
+    // int bars = CellularHelperClass::rssiToBars(rssiQual.rssi);
+
+    // Log.info("rssi=%d, qual=%d, bars=%d", rssiQual.rssi, rssiQual.qual, bars);
+
+    // CellularHelperEnvironmentResponseStatic<8> envResp;
+
+    // CellularHelper.getEnvironment(CellularHelper.ENVIRONMENT_SERVING_CELL_AND_NEIGHBORS, envResp);
+    // if (envResp.resp != RESP_OK)
+    // {
+    //     // We couldn't get neighboring cells, so try just the receiving cell
+    //     CellularHelper.getEnvironment(CellularHelper.ENVIRONMENT_SERVING_CELL, envResp);
+    // }
+    // envResp.logResponse();
+
+    // CellularHelperLocationResponse loc = CellularHelper.getLocation();
+
+    // Log.info("WE ARE HERE BIITCHES, %s", loc.toString().c_str());
+    // // waitFor(Cellular.ready, 10000);
+    // CellularGlobalIdentity cgi = {0};
+    // cgi.size = sizeof(CellularGlobalIdentity);
+    // cgi.version = CGI_VERSION_LATEST;
+
+    // cellular_result_t res = cellular_global_identity(&cgi, NULL);
+    // if (res == SYSTEM_ERROR_NONE)
+    // {
+    //     Log.info("cid=%d lac=%u mcc=%d mnc=%d", cgi.cell_id, cgi.location_area_code, cgi.mobile_country_code, cgi.mobile_network_code);
+    // }
+    // else
+    // {
+    //     Log.info("cellular_global_identity failed %d", res);
+    // }
 }

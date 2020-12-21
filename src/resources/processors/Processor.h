@@ -10,6 +10,8 @@ private:
     const bool HAS_HEARTBEAT = false;
     const char *SEND_EVENT_NAME = "Al/Post/Raw";
     const char *SEND_EVENT_MAINTENANCE = "Al/Post/Maintain";
+    void manageManualModel();
+    const bool MANUAL_MODE = false;
 
 public:
     ~Processor();
@@ -24,6 +26,7 @@ public:
     virtual bool connected();
     virtual void publish(String topic, String payload);
     virtual void loop();
+    virtual void connect();
 };
 
 #endif

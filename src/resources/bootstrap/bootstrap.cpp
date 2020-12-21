@@ -35,6 +35,7 @@ void printMemory()
 Timer readtimer(TIMER_STALL, releaseRead);
 Timer publishtimer(TIMER_STALL, releasePublishRead);
 Timer heartBeatTimer(TIMER_STALL, releaseHeartbeat);
+Timer beachedTimer(TIMER_STALL, Bootstrap::beachReset);
 
 Timer memoryPrinter(10000, printMemory);
 
@@ -175,6 +176,46 @@ EpromStruct Bootstrap::getsavedConfig()
     }
     return values;
 }
+
+void Bootstrap::resetBeachCount()
+{
+    EEPROM.put(Bootstrap::BEACH_ADDRESS, 0);
+}
+
+void Bootstrap::beachReset()
+{
+    EEPROM.put(Bootstrap::BEACH_ADDRESS, 0);
+}
+
+u8_t Bootstrap::beachCount()
+{
+    uint8_t beachAttempts;
+    EEPROM.get(Bootstrap::BEACH_ADDRESS, beachAttempts);
+    return beachAttempts;
+}
+
+bool Bootstrap::isBeached()
+{
+    u8_t bCount = beachCount();
+    u8_t beachedIncrement = bCount + 1;
+    EEPROM.put(Bootstrap::BEACH_ADDRESS, beachedIncrement);
+    Log.info("GOT THIS BEACH COUNT %u %d", bCount, bCount >= BEACHED_THRSHOLD);
+    return bCount >= BEACHED_THRSHOLD;
+}
+void Bootstrap::beach()
+{
+    Log.info("GETTING BEACHED FOR 15 minutes");
+    resetBeachCount();
+    SystemSleepConfiguration config;
+    config.mode(SystemSleepMode::HIBERNATE)
+        .gpio(WKP, RISING)
+        .duration(15min);
+    System.sleep(config);
+    System.sleep(SLEEP_MODE_DEEP, 60);
+    Log.info("WHAT THE FUCK!!!!!!!");
+    // System.sleep(SLEEP_MODE_DEEP, 60 * 15);
+}
+
 /*
 * putSavedConfig: Stores our config struct 
 */
@@ -191,6 +232,8 @@ void Bootstrap::bootstrap()
     delay(5000);
     // uncomment if you need to clear eeprom on load
     // EEPROM.clear();
+    beachedTimer.changePeriod(BEACH_TIMEOUT_RESTORE);
+    beachedTimer.start();
     EpromStruct values = getsavedConfig();
     Log.info("BOOTSTRAPPING version %d publish: %u, digital: %c", values.version, values.pub, values.digital);
     // a default version is 2 or 0 when instantiated.
@@ -229,23 +272,15 @@ void Bootstrap::batteryController()
     pmic.disableCharging();
 }
 
-/* IF IN MANUAL MODE */
-void Bootstrap::manageManualModel()
-{
-    if (waitFor(Particle.connected, 1000))
-    {
-        Particle.process();
-    }
-    else
-    {
-        Particle.connect();
-    }
-}
-
 void Bootstrap::timers()
 {
 
-    manageManualModel();
+    // manageManualModel();
+
+    if (!beachedTimer.isActive())
+    {
+        beachedTimer.start();
+    }
 
     if (!readtimer.isActive())
     {
