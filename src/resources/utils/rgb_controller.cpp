@@ -45,6 +45,24 @@ void RgbController::rapidFlash()
     RGB.brightness(OFF);
 }
 
+void RgbController::setColor(u8_t color)
+{
+    control(true);
+    bool on = true;
+    switch (color)
+    {
+    case RgbController::CONNECTED:
+        this->color(CONNECTED_COLOR[RED], CONNECTED_COLOR[GREEN], CONNECTED_COLOR[BLUE]);
+        break;
+    case RgbController::THRASH:
+        this->color(THRASH_COLOR[RED], THRASH_COLOR[GREEN], THRASH_COLOR[BLUE]);
+        break;
+    case RgbController::PANIC:
+        this->color(PANIC_COLOR[RED], PANIC_COLOR[GREEN], PANIC_COLOR[BLUE]);
+        break;
+    }
+}
+
 void RgbController::delayBlink(size_t durration, u8_t color)
 {
     control(true);

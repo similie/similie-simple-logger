@@ -3,6 +3,7 @@
 #include "MQTT-TLS.h"
 #include "resources/processors/processor.h"
 #include "resources/utils/rgb_controller.h"
+#include "resources/utils/utils.h"
 #include "resources/bootstrap/bootstrap.h"
 
 #define MQTT_PORT 8883
@@ -44,6 +45,7 @@ private:
     const size_t CONNECT_EVENT_THRESHOLD = 12;
     const u8_t CONNECT_EVENT_HOLD_DELAY = 5;
     void reboot();
+    Utils utils;
 
 public:
     ~MqttProcessor();

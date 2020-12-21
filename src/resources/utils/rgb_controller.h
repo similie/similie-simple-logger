@@ -51,6 +51,7 @@ public:
     const static u8_t CONNECTED = 0;
     const static u8_t THRASH = 1;
     const static u8_t PANIC = 2;
+    void setColor(u8_t color);
 };
 
 #endif

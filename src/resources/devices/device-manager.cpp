@@ -167,7 +167,7 @@ void DeviceManager::publish()
     // checkBootThreshold();
     waitFor(DeviceManager::isNotReading, 10000);
     publishBusy = true;
-    if (waitFor(Cellular.ready, 10000) && processor->connected())
+    if (waitFor(Utils::connected, 10000) && processor->connected())
     {
         publisher();
     }

@@ -222,18 +222,18 @@ void MqttProcessor::maintainContact()
     {
         connectEvent();
     }
-    else if (!serviceConnected && !Cellular.ready())
+    else if (!serviceConnected && !Utils::connected())
     {
         Log.info("Serice disconnected");
         disconnectProtocol();
     }
-    else if (serviceConnected && !Cellular.ready())
+    else if (serviceConnected && !Utils::connected())
     {
         serviceConnected = false;
     }
     else
     {
-        if (Cellular.ready() && !serviceConnected)
+        if (Utils::connected() && !serviceConnected)
         {
             serviceConnected = true;
         }
@@ -255,11 +255,10 @@ bool MqttProcessor::controlConnect()
 
     u8_t connAttempt = 0;
     // const u8_t MAX_ATTEMPTS = 10;
-    bool connected = !Cellular.ready();
+    bool connected = !Utils::connected();
 
-    while (!_client.isConnected() && Cellular.ready())
+    while (!_client.isConnected() && Utils::connected())
     {
-
         Log.info("Attempting MQTT connection...");
         // Attempt to connect
         String connectionID = this->deviceID + "-" + String(this->connect_id);
@@ -306,7 +305,7 @@ void MqttProcessor::reboot()
 
 void MqttProcessor::mqttConnect()
 {
-    if (!this->controlConnect() && Cellular.ready())
+    if (!this->controlConnect() && Utils::connected())
     {
         reboot();
     }
@@ -383,20 +382,22 @@ void MqttProcessor::ApplyMqttSubscription()
 void MqttProcessor::mqttLoop()
 {
 
-    if (!this->mqttSubscribed && Cellular.ready())
+    if (!this->mqttSubscribed && Utils::connected())
     {
-
         this->ApplyMqttSubscription();
     }
     bool mConn = _client.isConnected();
     if (mConn)
     {
-
         _client.loop();
     }
-    else if (this->mqttSubscribed && !mConn && Cellular.ready())
+    else if (this->mqttSubscribed && !mConn && Utils::connected())
     {
         Log.info("Attempting to connect via MQTT");
+        // lights.setColor(RgbController::PANIC);
+        // lights.rapidFlash();
+        // lights.control(false);
+        // RGB.control(false);
         mqttConnect();
     }
 }
@@ -494,11 +495,11 @@ void MqttProcessor::connect()
     // // // waitFor(Cellular.ready);
     // waitFor(Cellular.ready, 20000);
 
-    if (Cellular.ready())
-    {
-        ApplyMqttSubscription();
-        waitFor(_client.isConnected, 20000);
-    }
+    // if (Utils::connected())
+    // {
+    //     ApplyMqttSubscription();
+    //     waitFor(_client.isConnected, 20000);
+    // }
 
     // CellularHelperRSSIQualResponse rssiQual = CellularHelper.getRSSIQual();
     // int bars = CellularHelperClass::rssiToBars(rssiQual.rssi);

@@ -24,6 +24,7 @@ public:
     float getMax(float values[], size_t MAX);
     float getSum(float values[], size_t MAX);
     float getMedian(float arr[], size_t max);
+    static bool connected();
 };
 
 #endif

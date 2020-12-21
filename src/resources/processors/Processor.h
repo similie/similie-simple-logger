@@ -1,6 +1,6 @@
 #include "Particle.h"
 #include "string.h"
-
+#include "resources/utils/utils.h"
 #ifndef processor_h
 #define processor_h
 
@@ -16,7 +16,7 @@ private:
 public:
     ~Processor();
     Processor();
-
+    Utils utils;
     virtual bool hasHeartbeat();
     virtual const char *primaryPostName();
     static void parseMessage(String data, char *topic);

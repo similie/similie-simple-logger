@@ -8,6 +8,11 @@ Utils::Utils()
 {
 }
 
+bool Utils::connected()
+{
+    return Particle.connected() || Cellular.ready();
+}
+
 float Utils::getSum(float values[], size_t MAX)
 {
     int sum = 0;
