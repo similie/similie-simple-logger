@@ -16,7 +16,7 @@
 #define DEF_DISTANCE_READ_DIG_CALIBRATION 0.01724137931
 #define DEF_DISTANCE_READ_AN_CALIBRATION 0.335
 #define MAX_SEND_TIME 15
-
+#define TIMER_STALL 60000
 // const size_t MAX_SEND_TIME = 15;
 // const size_t MINUTE_IN_SECONDS = 60;
 // const unsigned int MILISECOND = 1000;
@@ -63,15 +63,21 @@ private:
     EpromStruct getsavedConfig();
     void putSavedConfig(EpromStruct config);
     uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
+    int publishedInterval = DEFAULT_PUB_INTERVAL;
     double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
-    unsigned long BEACH_TIMEOUT_RESTORE = MINUTE_IN_SECONDS * MILISECOND * 360;
+    // reset beachcount after 5 Minutes
+    unsigned long BEACH_TIMEOUT_RESTORE = MINUTE_IN_SECONDS * MILISECOND * 10;
     const size_t MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
     unsigned int READ_TIMER;
     unsigned int PUBLISH_TIMER;
     unsigned int BEAT_TIMER;
+    const unsigned int BEACH_LISTEN_TIME = 120 * MILISECOND;
     u8_t beachCount();
     const u8_t BEACHED_THRSHOLD = 5;
     const static u16_t BEACH_ADDRESS = sizeof(EpromStruct) + 10;
+    bool strappingTimers = false;
+    // Timer *publishtimer;
+    // Timer *readtimer;
 
 public:
     ~Bootstrap();
@@ -87,6 +93,7 @@ public:
     void setCalibration(double val);
     void setDigital(bool digital);
     void buildSendInterval(int interval);
+    // void buildSendInterval(int interval, bool test);
     void setMaintenance(bool maintain);
     bool hasMaintenance();
     bool publishTimerFunc();

@@ -25,6 +25,7 @@ public:
     float getSum(float values[], size_t MAX);
     float getMedian(float arr[], size_t max);
     static bool connected();
+    static int simCallback(int type, const char *buf, int len, char *value);
 };
 
 #endif

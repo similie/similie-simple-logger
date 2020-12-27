@@ -17,8 +17,8 @@ SerialLogHandler logHandler(LOG_LEVEL_ALL);
 const String DEVICE_ID = System.deviceID();
 
 Bootstrap boots;
-// Processor processor;
-MqttProcessor processor(&boots);
+Processor processor;
+//MqttProcessor processor(&boots);
 Utils utils;
 DeviceManager manager(&boots, &processor);
 

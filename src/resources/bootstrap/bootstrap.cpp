@@ -1,11 +1,10 @@
 #include "bootstrap.h"
+#include "resources/utils/utils.h"
 
 bool publishHeartbeat = false;
 bool readReleased = false;
 bool publishReleased = false;
 bool staticBootstrapped = false;
-
-unsigned int TIMER_STALL = 60000;
 
 uint32_t freememLast = 0;
 
@@ -32,10 +31,10 @@ void printMemory()
     freememLast = freemem;
 }
 
-Timer readtimer(TIMER_STALL, releaseRead);
 Timer publishtimer(TIMER_STALL, releasePublishRead);
+Timer readtimer(TIMER_STALL, releaseRead);
 Timer heartBeatTimer(TIMER_STALL, releaseHeartbeat);
-Timer beachedTimer(TIMER_STALL, Bootstrap::beachReset);
+Timer beachedTimer(TIMER_STALL, Bootstrap::beachReset, true);
 
 Timer memoryPrinter(10000, printMemory);
 
@@ -58,7 +57,7 @@ void Bootstrap::init()
     Time.zone(TIMEZONE);
     Particle.syncTime();
     Particle.variable("digital", digital);
-    Particle.variable("publicationInterval", publicationIntervalInMinutes);
+    Particle.variable("publicationInterval", publishedInterval);
     Particle.variable("currentCalibration", currentCalibration);
     this->bootstrap();
 }
@@ -118,9 +117,11 @@ size_t Bootstrap::getMaxVal()
 
 void Bootstrap::buildSendInterval(int interval)
 {
+    strappingTimers = true;
     publicationIntervalInMinutes = (uint8_t)interval;
-    READ_TIMER = (MINUTE_IN_SECONDS * interval) / MAX_SEND_TIME * MILISECOND;
-    PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILISECOND;
+    publishedInterval = interval;
+    READ_TIMER = (unsigned int)(MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
+    PUBLISH_TIMER = (unsigned int)(publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND);
 
     if (readtimer.isActive())
     {
@@ -130,16 +131,20 @@ void Bootstrap::buildSendInterval(int interval)
     {
         publishtimer.stop();
     }
-    readtimer.changePeriod(READ_TIMER);
+    // Timer p(PUBLISH_TIMER, releasePublishRead);
+    // publishtimer = new Timer(PUBLISH_TIMER, releasePublishRead);
+    // readtimer = new Timer(READ_TIMER, releaseRead);
+
     publishtimer.changePeriod(PUBLISH_TIMER);
+    readtimer.changePeriod(READ_TIMER);
     readtimer.start();
     publishtimer.start();
 
-    // EpromStruct config = getsavedConfig();
-    // config.pub = publicationIntervalInMinutes;
-    // putSavedConfig(config);
-
-    Log.info("MY READ TIMER IS SET FOR %d and the publish time is %d with interval %d", READ_TIMER, PUBLISH_TIMER, interval);
+    EpromStruct config = getsavedConfig();
+    config.pub = publicationIntervalInMinutes;
+    putSavedConfig(config);
+    strappingTimers = false;
+    Log.info("MY READ TIMER IS SET FOR %u and the publish time is %u with interval %d", READ_TIMER, PUBLISH_TIMER, interval);
 }
 
 void Bootstrap::setDigital(bool digital)
@@ -184,6 +189,7 @@ void Bootstrap::resetBeachCount()
 
 void Bootstrap::beachReset()
 {
+    Log.info("BEACH RESET >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     EEPROM.put(Bootstrap::BEACH_ADDRESS, 0);
 }
 
@@ -204,16 +210,34 @@ bool Bootstrap::isBeached()
 }
 void Bootstrap::beach()
 {
-    Log.info("GETTING BEACHED FOR 15 minutes");
+
+    u8_t fail = 0;
+    u8_t FAIL_POINT = 4;
+
+    int value = 0;
+    while (value != RESP_OK && fail < FAIL_POINT)
+    {
+        fail++;
+        char response[64] = "";
+        value = Cellular.command(Utils::simCallback, response, BEACH_LISTEN_TIME, "AT+COPS=6\r\n");
+        Log.info("Beach resonse at %d at cycle %u of %u", value, fail, FAIL_POINT);
+        if (value == RESP_OK)
+        {
+            //Log.info("POPPING DELAY FOR %u", BEACH_LISTEN_TIME);
+            //delay(BEACH_LISTEN_TIME);
+            break;
+        }
+        else
+        {
+            delay(1000);
+        }
+    }
+
+    Log.info("BEACHED AS");
+    Cellular.command("AT+COPS=0,2\r\n");
     resetBeachCount();
-    SystemSleepConfiguration config;
-    config.mode(SystemSleepMode::HIBERNATE)
-        .gpio(WKP, RISING)
-        .duration(15min);
-    System.sleep(config);
-    System.sleep(SLEEP_MODE_DEEP, 60);
-    Log.info("WHAT THE FUCK!!!!!!!");
-    // System.sleep(SLEEP_MODE_DEEP, 60 * 15);
+    delay(2000);
+    // System.reset();
 }
 
 /*
@@ -230,6 +254,12 @@ void Bootstrap::putSavedConfig(EpromStruct config)
 void Bootstrap::bootstrap()
 {
     delay(5000);
+
+    if (isBeached())
+    {
+        beach();
+    }
+
     // uncomment if you need to clear eeprom on load
     // EEPROM.clear();
     beachedTimer.changePeriod(BEACH_TIMEOUT_RESTORE);
@@ -238,6 +268,7 @@ void Bootstrap::bootstrap()
     Log.info("BOOTSTRAPPING version %d publish: %u, digital: %c", values.version, values.pub, values.digital);
     // a default version is 2 or 0 when instantiated.
     buildSendInterval((int)values.pub);
+    //buildSendInterval(2);
     digital = isDigital(values.digital);
     const double calibration = values.calibration;
     currentCalibration = calibration;
@@ -276,6 +307,11 @@ void Bootstrap::timers()
 {
 
     // manageManualModel();
+
+    if (strappingTimers)
+    {
+        return;
+    }
 
     if (!beachedTimer.isActive())
     {

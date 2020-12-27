@@ -153,6 +153,11 @@ void DeviceManager::read()
         }
     }
     read_count++;
+    if (read_count >= MAX_SEND_TIME)
+    {
+        setReadCount(0);
+    }
+
     readBusy = false;
     Log.info("READCOUNT=%d", read_count);
 }
