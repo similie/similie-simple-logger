@@ -48,7 +48,6 @@ void RgbController::rapidFlash()
 void RgbController::setColor(u8_t color)
 {
     control(true);
-    bool on = true;
     switch (color)
     {
     case RgbController::CONNECTED:
