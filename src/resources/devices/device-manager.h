@@ -2,11 +2,11 @@
 #include "string.h"
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/processors/processor.h"
-#include "resources/processors/mqtt_processor/mqttprocessor.h"
+
 #include "resources/utils/utils.h"
 #include "device.h"
 #include "wl-device.h"
-#include "serial-gps.h"
+
 #include "battery.h"
 #include "all-weather.h"
 #include "resources/heartbeat/heartbeat.h"
@@ -28,7 +28,7 @@ private:
     Bootstrap *boots;
     Processor *processor;
     const size_t deviceCount = 1;
-    size_t deviceAggregateCounts[1] = {1};
+    size_t deviceAggregateCounts[1] = {3};
     Utils utils;
     HeartBeat *blood;
 

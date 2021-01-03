@@ -31,34 +31,34 @@ void printMemory()
     freememLast = freemem;
 }
 
-Timer publishtimer(TIMER_STALL, releasePublishRead);
-Timer readtimer(TIMER_STALL, releaseRead);
-Timer heartBeatTimer(TIMER_STALL, releaseHeartbeat);
-Timer beachedTimer(TIMER_STALL, Bootstrap::beachReset, true);
+Timer publishtimer(Bootstrap::ONE_MINUTE, releasePublishRead);
+Timer readtimer(Bootstrap::ONE_MINUTE, releaseRead);
+Timer heartBeatTimer(Bootstrap::HEARTBEAT_TIMER, releaseHeartbeat);
+Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true);
 
-Timer memoryPrinter(10000, printMemory);
+// Timer memoryPrinter(10000, printMemory);
 
 Bootstrap::~Bootstrap()
 {
-    //this->MAX_VALUE_THRESHOLD = (size_t)MAX_SEND_TIME;
-    // this->digital = DIGITAL_DEFAULT;
-    //this->publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
     int interval = (int)publicationIntervalInMinutes;
     this->READ_TIMER = (MINUTE_IN_SECONDS * interval) / MAX_SEND_TIME * MILISECOND;
     this->PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILISECOND;
-    this->BEAT_TIMER = HEARTBEAT_TIMER;
     this->currentCalibration = digital ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
 }
 
 void Bootstrap::init()
 {
     this->batteryController();
-    memoryPrinter.start();
+    // memoryPrinter.start();
     Time.zone(TIMEZONE);
     Particle.syncTime();
+    Particle.keepAlive(30);
     Particle.variable("digital", digital);
     Particle.variable("publicationInterval", publishedInterval);
     Particle.variable("currentCalibration", currentCalibration);
+
+    beachedTimer.start();
+    heartBeatTimer.start();
     this->bootstrap();
 }
 
@@ -126,15 +126,13 @@ void Bootstrap::buildSendInterval(int interval)
     if (readtimer.isActive())
     {
         readtimer.stop();
+        readtimer.reset();
     }
     if (publishtimer.isActive())
     {
         publishtimer.stop();
+        publishtimer.reset();
     }
-    // Timer p(PUBLISH_TIMER, releasePublishRead);
-    // publishtimer = new Timer(PUBLISH_TIMER, releasePublishRead);
-    // readtimer = new Timer(READ_TIMER, releaseRead);
-
     publishtimer.changePeriod(PUBLISH_TIMER);
     readtimer.changePeriod(READ_TIMER);
     readtimer.start();
@@ -184,28 +182,36 @@ EpromStruct Bootstrap::getsavedConfig()
 
 void Bootstrap::resetBeachCount()
 {
-    EEPROM.put(Bootstrap::BEACH_ADDRESS, 0);
+    beachReset();
 }
 
 void Bootstrap::beachReset()
 {
-    Log.info("BEACH RESET >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    EEPROM.put(Bootstrap::BEACH_ADDRESS, 0);
+    Log.info("BEACH RESET >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %u", Bootstrap::BEACH_ADDRESS);
+    BeachStruct rebeach = {0, 0};
+    EEPROM.put(Bootstrap::BEACH_ADDRESS, rebeach);
 }
 
-u8_t Bootstrap::beachCount()
+uint8_t Bootstrap::beachCount()
 {
-    uint8_t beachAttempts;
+    BeachStruct beachAttempts;
     EEPROM.get(Bootstrap::BEACH_ADDRESS, beachAttempts);
-    return beachAttempts;
+    if (beachAttempts.version != 0)
+    {
+        beachReset();
+        return 0;
+    }
+    return beachAttempts.count;
 }
 
 bool Bootstrap::isBeached()
 {
-    u8_t bCount = beachCount();
-    u8_t beachedIncrement = bCount + 1;
-    EEPROM.put(Bootstrap::BEACH_ADDRESS, beachedIncrement);
-    Log.info("GOT THIS BEACH COUNT %u %d", bCount, bCount >= BEACHED_THRSHOLD);
+    uint8_t bCount = beachCount();
+    uint8_t beachedIncrement = bCount + 1;
+    BeachStruct beachBase = {0, beachedIncrement};
+
+    EEPROM.put(Bootstrap::BEACH_ADDRESS, beachBase);
+    Log.info("GOT THIS BEACH COUNT %u of %u and increment %u", bCount, BEACHED_THRSHOLD, beachBase.count);
     return bCount >= BEACHED_THRSHOLD;
 }
 void Bootstrap::beach()
@@ -223,8 +229,6 @@ void Bootstrap::beach()
         Log.info("Beach resonse at %d at cycle %u of %u", value, fail, FAIL_POINT);
         if (value == RESP_OK)
         {
-            //Log.info("POPPING DELAY FOR %u", BEACH_LISTEN_TIME);
-            //delay(BEACH_LISTEN_TIME);
             break;
         }
         else
@@ -246,14 +250,14 @@ void Bootstrap::beach()
 void Bootstrap::putSavedConfig(EpromStruct config)
 {
     config.version = 0;
-    EEPROM.clear();
+    // EEPROM.clear();
     Log.info("PUTTING version %d publish: %d, digital: %c", config.version, config.pub, config.digital);
     EEPROM.put(EPROM_ADDRESS, config);
 }
 
 void Bootstrap::bootstrap()
 {
-    delay(5000);
+    // delay(5000);
 
     if (isBeached())
     {
@@ -262,8 +266,7 @@ void Bootstrap::bootstrap()
 
     // uncomment if you need to clear eeprom on load
     // EEPROM.clear();
-    beachedTimer.changePeriod(BEACH_TIMEOUT_RESTORE);
-    beachedTimer.start();
+
     EpromStruct values = getsavedConfig();
     Log.info("BOOTSTRAPPING version %d publish: %u, digital: %c", values.version, values.pub, values.digital);
     // a default version is 2 or 0 when instantiated.
@@ -273,6 +276,7 @@ void Bootstrap::bootstrap()
     const double calibration = values.calibration;
     currentCalibration = calibration;
     bootstrapped = true;
+
     staticBootstrapped = true;
 }
 /*

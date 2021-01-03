@@ -10,7 +10,7 @@ Processor::Processor()
 
 String Processor::getHeartbeatTopic()
 {
-    return String("");
+    return String(SEND_EVENT_HEARTBEAT);
 }
 
 String Processor::getPublishTopic(bool maintenance)
@@ -23,9 +23,10 @@ String Processor::getPublishTopic(bool maintenance)
     return String(this->SEND_EVENT_NAME);
 }
 
-void Processor::publish(String topic, String payload)
+bool Processor::publish(String topic, String payload)
 {
-    Particle.publish(topic, payload);
+    bool success = Particle.publish(topic, payload);
+    return success;
 }
 
 bool Processor::connected()
@@ -74,7 +75,7 @@ const char *Processor::primaryPostName()
 /* IF IN MANUAL MODE */
 void Processor::manageManualModel()
 {
-    if (waitFor(Particle.connected, 10000))
+    if (waitFor(Particle.connected, 500))
     {
         Particle.process();
     }

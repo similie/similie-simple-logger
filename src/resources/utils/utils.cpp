@@ -14,12 +14,12 @@ int Utils::simCallback(int type, const char *buf, int len, char *value)
     {
         // if (sscanf(buf, "\r\n+CCID: %[^\r]\r\n", value) == 1)
         /*nothing*/;
-        Log.info("HEH>>>>>");
+        //   Log.info("HEH>>>>>");
     }
-    Log.info("GOT ME THIS TYPE %d", type);
-    Log.info("GOT ME THIS BUF %s", buf);
-    Log.info("GOT ME THIS LENGTH %d", len);
-    Log.info("GOT ME THIS VALUE %s", value);
+    // Log.info("GOT ME THIS TYPE %d", type);
+    // Log.info("GOT ME THIS BUF %s", buf);
+    // Log.info("GOT ME THIS LENGTH %d", len);
+    // Log.info("GOT ME THIS VALUE %s", value);
     return WAIT;
 }
 

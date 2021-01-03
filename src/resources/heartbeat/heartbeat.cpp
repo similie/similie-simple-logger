@@ -1,8 +1,6 @@
 #include "heartbeat.h"
 #include "CellularHelper.h"
 
-FuelGauge fuel;
-
 HeartBeat::~HeartBeat()
 {
 }
@@ -17,16 +15,16 @@ String HeartBeat::cellAccessTech(int rat)
     switch (rat)
     {
     case NET_ACCESS_TECHNOLOGY_GSM:
-        return "2G RAT";
+        return String("2G RAT");
     case NET_ACCESS_TECHNOLOGY_EDGE:
-        return "2G RAT with EDGE";
+        return String("2G RAT with EDGE");
     case NET_ACCESS_TECHNOLOGY_UMTS:
-        return "UMTS RAT";
+        return String("UMTS RAT");
     case NET_ACCESS_TECHNOLOGY_LTE:
-        return "LTE RAT";
+        return String("LTE RAT");
     }
 
-    return "ACCESS UNDEFINED";
+    return String("ACCESS UNDEFINED");
 }
 
 void HeartBeat::setSystemDeets(JSONBufferWriter &writer)
@@ -82,7 +80,6 @@ void HeartBeat::setCellDeets(JSONBufferWriter &writer)
 
 String HeartBeat::pump()
 {
-
     char buf[800];
     memset(buf, 0, sizeof(buf));
     JSONBufferWriter writer(buf, sizeof(buf) - 1);
@@ -94,6 +91,5 @@ String HeartBeat::pump()
     setSystemDeets(writer);
     writer.endObject();
     String pump = String(buf);
-    //free(buf);
     return pump;
 }

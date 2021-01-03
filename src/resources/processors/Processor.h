@@ -7,9 +7,10 @@
 class Processor
 {
 private:
-    const bool HAS_HEARTBEAT = false;
+    const bool HAS_HEARTBEAT = true;
     const char *SEND_EVENT_NAME = "Al/Post/Raw";
     const char *SEND_EVENT_MAINTENANCE = "Al/Post/Maintain";
+    const char *SEND_EVENT_HEARTBEAT = "Al/Post/Heartbeat";
     void manageManualModel();
     const bool MANUAL_MODE = false;
 
@@ -24,7 +25,7 @@ public:
     virtual String getPublishTopic(bool maintenance);
     static bool isConnected();
     virtual bool connected();
-    virtual void publish(String topic, String payload);
+    virtual bool publish(String topic, String payload);
     virtual void loop();
     virtual void connect();
 };

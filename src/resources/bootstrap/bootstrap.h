@@ -11,12 +11,12 @@
 #define NO_VALUE -9999
 #define TIMEZONE 9
 #define ATTEMPT_THRESHOLD 3
-#define HEARTBEAT_TIMER 60000
+
 #define DEFAULT_PUB_INTERVAL 1
 #define DEF_DISTANCE_READ_DIG_CALIBRATION 0.01724137931
 #define DEF_DISTANCE_READ_AN_CALIBRATION 0.335
 #define MAX_SEND_TIME 15
-#define TIMER_STALL 60000
+//#define TIMER_STALL 60000
 // const size_t MAX_SEND_TIME = 15;
 // const size_t MINUTE_IN_SECONDS = 60;
 // const unsigned int MILISECOND = 1000;
@@ -49,6 +49,12 @@ struct EpromStruct
     char digital;
 };
 
+struct BeachStruct
+{
+    uint8_t version;
+    uint8_t count;
+};
+
 class Bootstrap
 {
 private:
@@ -66,15 +72,15 @@ private:
     int publishedInterval = DEFAULT_PUB_INTERVAL;
     double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
     // reset beachcount after 5 Minutes
-    unsigned long BEACH_TIMEOUT_RESTORE = MINUTE_IN_SECONDS * MILISECOND * 10;
+
     const size_t MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
     unsigned int READ_TIMER;
     unsigned int PUBLISH_TIMER;
     unsigned int BEAT_TIMER;
-    const unsigned int BEACH_LISTEN_TIME = 120 * MILISECOND;
-    u8_t beachCount();
-    const u8_t BEACHED_THRSHOLD = 5;
-    const static u16_t BEACH_ADDRESS = sizeof(EpromStruct) + 10;
+    const unsigned int BEACH_LISTEN_TIME = 240 * MILISECOND;
+    uint8_t beachCount();
+    const uint8_t BEACHED_THRSHOLD = 5;
+    const static int BEACH_ADDRESS = sizeof(EpromStruct) + 8;
     bool strappingTimers = false;
     // Timer *publishtimer;
     // Timer *readtimer;
@@ -106,7 +112,10 @@ public:
     //static bool isStrapped();
     static void beachReset();
     size_t getMaxVal();
+    const static unsigned int ONE_MINUTE = 1 * MILISECOND * MINUTE_IN_SECONDS;
     static const size_t OVERFLOW_VAL = MAX_SEND_TIME + 5;
+    static const unsigned int HEARTBEAT_TIMER = MILISECOND * MINUTE_IN_SECONDS * 15;
+    static const unsigned long BEACH_TIMEOUT_RESTORE = MINUTE_IN_SECONDS * MILISECOND * 10;
 };
 
 #endif

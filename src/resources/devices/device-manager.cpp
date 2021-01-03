@@ -27,9 +27,9 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     this->boots = boots;
     this->processor = processor;
     //this->devices[0][0] = new SerialGps(boots);
-    //this->devices[0][0] = new AllWeather(boots);
-    this->devices[0][0] = new WlDevice(boots);
-    //this->devices[0][2] = new Battery();
+    this->devices[0][0] = new AllWeather(boots);
+    this->devices[0][1] = new WlDevice(boots);
+    this->devices[0][2] = new Battery();
     const String DEVICE_ID = System.deviceID();
     this->blood = new HeartBeat(DEVICE_ID);
     setParamsCount();
@@ -258,8 +258,9 @@ void DeviceManager::publisher()
     read_count = 0;
     String result = String(buf);
     clearArray();
-    Log.info("SENDING EVENT:: %s", result.c_str());
-    processor->publish(processor->getPublishTopic(maintenance), result);
+    String topic = processor->getPublishTopic(maintenance);
+    bool success = processor->publish(topic, result);
+    Log.info("SENDING EVENT %d, %s :: %s", success, topic.c_str(), result.c_str());
 }
 
 void DeviceManager::loop()
