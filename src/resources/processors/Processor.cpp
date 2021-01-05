@@ -1,4 +1,4 @@
-#include "processor.h"
+#include "Processor.h"
 
 Processor::~Processor()
 {

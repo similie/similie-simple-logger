@@ -1,7 +1,7 @@
 #include "Particle.h"
 #include "string.h"
 #include "resources/bootstrap/bootstrap.h"
-#include "resources/processors/processor.h"
+#include "resources/processors/Processor.h"
 
 #include "resources/utils/utils.h"
 #include "device.h"
