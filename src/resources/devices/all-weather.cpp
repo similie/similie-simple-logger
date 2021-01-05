@@ -55,7 +55,6 @@ void AllWeather::publish(JSONBufferWriter &writer, u8_t attempt_count)
 
 void AllWeather::read()
 {
-    // Log.info("HEH!? %s", serialMsgStr.c_str());
     Serial1.println(serialMsgStr);
 }
 
