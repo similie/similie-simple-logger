@@ -115,13 +115,23 @@ size_t Bootstrap::getMaxVal()
     return this->MAX_VALUE_THRESHOLD;
 }
 
+unsigned int Bootstrap::getPublishTime()
+{
+    return this->PUBLISH_TIMER;
+}
+
+unsigned int Bootstrap::getReadTime()
+{
+    return this->READ_TIMER;
+}
+
 void Bootstrap::buildSendInterval(int interval)
 {
     strappingTimers = true;
     publicationIntervalInMinutes = (uint8_t)interval;
     publishedInterval = interval;
-    READ_TIMER = (unsigned int)(MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
-    PUBLISH_TIMER = (unsigned int)(publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND);
+    this->READ_TIMER = (unsigned int)(MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
+    this->PUBLISH_TIMER = (unsigned int)(publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND);
 
     if (readtimer.isActive())
     {

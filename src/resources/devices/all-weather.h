@@ -58,11 +58,16 @@ private:
     void parseSerial();
     bool readyRead = false;
     bool readCompile = false;
+    bool readReady();
+    size_t readSize();
     // long counter = 0;
     u8_t maintenanceTick = 0;
     String ourReading = "";
+    unsigned int READ_THRESHOLD = 12;
     static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);
     float VALUE_HOLD[AllWeather::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
+    size_t skipMultiple(unsigned int size);
+    size_t readAttempt = 0;
 
 public:
     ~AllWeather();
@@ -78,6 +83,7 @@ public:
     size_t buffSize();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
     float extractValue(float values[], size_t key);
+    float extractValue(float values[], size_t key, size_t max);
 };
 
 #endif

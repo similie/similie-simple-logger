@@ -110,6 +110,8 @@ public:
     bool isBeached();
     void beach();
     void resetBeachCount();
+    unsigned int getReadTime();
+    unsigned int getPublishTime();
     //static bool isStrapped();
     static void beachReset();
     size_t getMaxVal();

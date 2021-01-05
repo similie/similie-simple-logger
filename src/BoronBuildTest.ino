@@ -7,7 +7,7 @@
 
 SYSTEM_THREAD(ENABLED);
 
-// SYSTEM_MODE(MANUAL);
+//SYSTEM_MODE(MANUAL);
 
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/utils/utils.h"
