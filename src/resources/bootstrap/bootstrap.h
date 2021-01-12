@@ -4,7 +4,8 @@
 #ifndef bootstrap_h
 #define bootstrap_h
 
-#define DIGITAL_DEFAULT true
+#define DIGITAL_DEFAULT false
+
 #define EPROM_ADDRESS 0
 #define MINUTE_IN_SECONDS 60
 #define MILISECOND 1000

@@ -231,6 +231,9 @@ void Bootstrap::beach()
     u8_t FAIL_POINT = 4;
 
     int value = 0;
+    char response[64] = "";
+    Cellular.command(Utils::simCallback, response, BEACH_LISTEN_TIME, "AT+COPS=0,2\r\n");
+
     while (value != RESP_OK && fail < FAIL_POINT)
     {
         fail++;
