@@ -1,6 +1,7 @@
 #include "Particle.h"
 #include "string.h"
 #include "device.h"
+#include <stdint.h>
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/utils/utils.h"
 #include "math.h"
@@ -9,7 +10,7 @@
 #define wl_device_h
 
 #define DIG_PIN D8
-#define AN_PIN A3
+#define AN_PIN A1
 
 const size_t WL_PARAM_SIZE = 1;
 

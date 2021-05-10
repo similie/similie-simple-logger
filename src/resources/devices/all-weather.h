@@ -3,7 +3,9 @@
 #include "device.h"
 #include "math.h"
 #include "resources/bootstrap/bootstrap.h"
+#include "resources/processors/Processor.h"
 #include "resources/utils/utils.h"
+#include <stdint.h>
 
 #ifndef all_weather_h
 #define all_weather_h
@@ -55,11 +57,18 @@ private:
 
     Utils utils;
     int readSerial();
+    void payloadRestorator(String payload);
     void parseSerial();
     bool readyRead = false;
     bool readCompile = false;
     bool readReady();
     size_t readSize();
+    void processPop(String value);
+    String getPopStartIndex(String read);
+    bool sendPopRead();
+    size_t firstSpaceIndex(String value, u8_t index);
+    Processor *holdProcessor;
+    String popString = "";
     // long counter = 0;
     u8_t maintenanceTick = 0;
     String ourReading = "";
@@ -78,12 +87,15 @@ public:
     void clear();
     void print();
     void init();
+    void nullifyPayload(const char *key);
+    void storePayload(String payload, String topic);
     u8_t matenanceCount();
     u8_t paramCount();
     size_t buffSize();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
     float extractValue(float values[], size_t key);
     float extractValue(float values[], size_t key, size_t max);
+    void popOfflineCollection(Processor *processor, String topic, u8_t count);
 };
 
 #endif

@@ -12,6 +12,140 @@ AllWeather::AllWeather()
 {
 }
 
+void AllWeather::popOfflineCollection(Processor *processor, String topic, u8_t count)
+{
+    Log.info("I NEED TO POP THIS EFFICIENTLY !");
+    this->holdProcessor = processor;
+    Serial1.println("pop 5");
+    //bool success = processor->publish(topic, result);
+}
+
+size_t AllWeather::firstSpaceIndex(String value, u8_t index)
+{
+    size_t size = value.length();
+    u8_t count = 0;
+    size_t sendIndex = -1;
+    for (size_t i = 0; i < size; i++)
+    {
+        char holdValue = value.charAt(i);
+        if (holdValue == ' ')
+        {
+            count++;
+        }
+
+        if (count == index)
+        {
+            sendIndex = i + 1;
+            break;
+        }
+    }
+
+    return sendIndex;
+}
+
+String AllWeather::getPopStartIndex(String read)
+{
+    if (read.startsWith("pop"))
+    {
+        size_t startIndex = firstSpaceIndex(read, 2);
+        return read.substring(startIndex);
+    }
+
+    return read;
+}
+
+bool AllWeather::sendPopRead()
+{
+
+    size_t index = firstSpaceIndex(popString, 1);
+    String SEND_TO = popString.substring(0, index - 1);
+    bool published = this->holdProcessor->publish(SEND_TO, popString.substring(index));
+    // Serial.print("PUMP MY BOOMOE ");
+    // Serial.print(SEND_TO);
+    // Serial.print(" HEH ");
+    // Serial.println(popString.substring(index));
+    return published;
+}
+
+void AllWeather::processPop(String read)
+{
+
+    popString += getPopStartIndex(read);
+
+    if (popString.endsWith("}"))
+    {
+        if (!sendPopRead())
+        {
+
+            this->payloadRestorator(popString);
+        }
+
+        popString = "";
+    }
+
+    ourReading = "";
+}
+
+void AllWeather::payloadRestorator(String payload)
+{
+    u8_t newLine = payload.length();
+    for (u8_t i = 0; i < payload.length(); i++)
+    {
+        if (payload.charAt(i) == '\n')
+        {
+            newLine = i;
+        }
+    }
+    size_t topicIndex = firstSpaceIndex(payload, 1);
+
+    String topic = payload.substring(0, topicIndex - 2);
+    String send = payload.substring(topicIndex, newLine);
+    storePayload(send, topic);
+}
+
+void AllWeather::storePayload(String payload, String topic)
+{
+
+    String send = topic + " " + payload + "\n";
+
+    size_t length = send.length();
+    size_t offset = 1;
+    u8_t MAX_CHUNCK = 100;
+    char buffer[MAX_CHUNCK + offset];
+    String push = "push ";
+    size_t i = 0;
+    while (i < length)
+    {
+        size_t local = 0;
+        for (size_t j = 0; j < push.length(); j++)
+        {
+            buffer[j] = push.charAt(j);
+            // Serial.write(push.charAt(j));
+            Serial1.write(push.charAt(j));
+            local++;
+        }
+
+        for (size_t j = 0; j < MAX_CHUNCK - local && i < length; j++)
+        {
+            buffer[j] = send.charAt(i);
+            Serial.write(send.charAt(i));
+            Serial1.write(send.charAt(i));
+            local++;
+            i++;
+        }
+        Serial.write('\0');
+        Serial1.write('\0');
+        buffer[local + offset] = 0;
+    }
+
+    Serial1.flush();
+}
+
+void AllWeather::nullifyPayload(const char *key)
+{
+    Log.info("I AM GOING TO NULLIFY THIS SHTI %s", key);
+}
+
 float AllWeather::extractValue(float values[], size_t key, size_t max)
 {
     switch (key)
@@ -99,6 +233,7 @@ void AllWeather::read()
     }
     readAttempt = 0;
     Serial1.println(serialMsgStr);
+    Serial1.flush();
 }
 
 void AllWeather::loop()
@@ -126,9 +261,14 @@ void AllWeather::parseSerial()
 {
     if (readyRead)
     {
-        Serial.println(ourReading);
         readyRead = false;
+        if (ourReading.startsWith("pop"))
+        {
+            return this->processPop(ourReading);
+        }
+
         readCompile = true;
+
         //float values[17];
         size_t j = 1;
         // we had paramsize +1
@@ -187,8 +327,10 @@ int AllWeather::readSerial()
     for (int i = 0; i < avail; i++)
     {
         char inChar = Serial1.read();
+        //Serial.print(inChar);
         if (inChar == '\n' || inChar == '\0')
         {
+            // Serial.println("READY READ TRUE");
             readyRead = true;
             return 1;
         }
@@ -207,7 +349,7 @@ void AllWeather::print()
     {
         for (size_t j = 0; j < readSize(); j++)
         {
-            Log.info("PARAM VALUES FOR %s of iteration %d and value %0.2f", utils.stringConvert(valueMap[i]), j, VALUE_HOLD[i][j]);
+            //  Log.info("PARAM VALUES FOR %s of iteration %d and value %0.2f", utils.stringConvert(valueMap[i]), j, VALUE_HOLD[i][j]);
         }
     }
 }

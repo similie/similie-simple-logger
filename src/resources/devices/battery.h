@@ -3,6 +3,7 @@
 #include "device.h"
 #include "math.h"
 #include "resources/bootstrap/bootstrap.h"
+#include <stdint.h>
 #ifndef battery_h
 #define battery_h
 

@@ -8,7 +8,7 @@ class Processor
 {
 private:
     const bool HAS_HEARTBEAT = true;
-    const char *SEND_EVENT_NAME = "Al/Post/Raw";
+    const char *SEND_EVENT_NAME = "Al/Post/Red";
     const char *SEND_EVENT_MAINTENANCE = "Al/Post/Maintain";
     const char *SEND_EVENT_HEARTBEAT = "Al/Post/Heartbeat";
     void manageManualModel();

@@ -1,11 +1,13 @@
 #include "Particle.h"
 #include "string.h"
+#include <stdint.h>
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/processors/Processor.h"
 
 #include "resources/utils/utils.h"
 #include "device.h"
 #include "wl-device.h"
+#include "resources/utils/controlled_payload.h"
 
 #include "battery.h"
 #include "all-weather.h"
@@ -23,6 +25,9 @@ class DeviceManager
 private:
     // bool readBusy = false;
     // bool publishBusy = false;
+    String SUSCRIPTION_CONFIRMATION = "Ai/Post/Confirm/";
+    String SUSCRIPTION_TERMINATION = "Ai/Post/Terminate/";
+    ControlledPayload *payloadController[(ControlledPayload::EXPIRATION_TIME / 60) / 1000]; //{ControlledPayload(), ControlledPayload(), ControlledPayload()}
     unsigned int read_count = 0;
     u8_t attempt_count = 0;
     Bootstrap *boots;
@@ -31,9 +36,16 @@ private:
     size_t deviceAggregateCounts[1] = {3};
     Utils utils;
     HeartBeat *blood;
-
+    unsigned int ROTATION = 0;
     u8_t paramsCount = 0;
-
+    u8_t POP_COUNT_VALUE = 10;
+    void storePayload(String payload, String topic);
+    void nullifyPayload(const char *key);
+    void shuffleLoad(String payloadString);
+    void placePayload(String payload);
+    void popOfflineCollection();
+    void confirmationExpiredCheck();
+    void initPayloadController();
     void read();
     void checkBootThreshold();
     void publish();
@@ -42,6 +54,7 @@ private:
     void heartbeat();
     size_t getBufferSize();
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
+    void setSubscriber();
 
 public:
     ~DeviceManager();
@@ -57,6 +70,8 @@ public:
     void loop();
     bool recommendedMaintenace(u8_t damangeCount);
     bool isStrapped(bool boots);
+    void subscriptionConfirmation(const char *eventName, const char *data);
+    void subscriptionTermination(const char *eventName, const char *data);
 };
 
 #endif
