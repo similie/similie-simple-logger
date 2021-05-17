@@ -57,7 +57,7 @@ int WlDevice::readWL()
             break;
         }
         // we pop a quick delay to let the sensor, breath a bit
-        delay(20);
+        delay(50);
         lastTime = millis();
     }
 
@@ -85,7 +85,7 @@ void WlDevice::publish(JSONBufferWriter &writer, u8_t attempt_count)
 void WlDevice::read()
 {
     int read = readWL();
-    //Log.info("WL %d", read);
+    Log.info("WL %d", read);
     for (size_t i = 0; i < PARAM_LENGTH; i++)
     {
         utils.insertValue(read, VALUE_HOLD[i], boots->getMaxVal());

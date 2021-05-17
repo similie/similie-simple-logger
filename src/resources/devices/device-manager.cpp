@@ -114,6 +114,14 @@ int DeviceManager::rebootRequest(String f)
 
 bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
 {
+
+    long time = Time.now() - millis();
+    //Sunday, September 13, 2020 12:26:40 PM
+    const long THRESHOLD = 1600000000;
+    if (time < THRESHOLD)
+    {
+        return true;
+    }
     u8_t doubleConnt = damangeCount * 2;
     return doubleConnt >= this->paramsCount;
 }

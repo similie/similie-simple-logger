@@ -60,6 +60,7 @@ private:
     void payloadRestorator(String payload);
     void parseSerial();
     bool readyRead = false;
+    bool sendingOfflinePayload = false;
     bool readCompile = false;
     bool readReady();
     size_t readSize();
@@ -72,6 +73,7 @@ private:
     // long counter = 0;
     u8_t maintenanceTick = 0;
     String ourReading = "";
+    String getReadContent();
     unsigned int READ_THRESHOLD = 12;
     static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);
     float VALUE_HOLD[AllWeather::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
@@ -87,6 +89,7 @@ public:
     void clear();
     void print();
     void init();
+
     void nullifyPayload(const char *key);
     void storePayload(String payload, String topic);
     u8_t matenanceCount();

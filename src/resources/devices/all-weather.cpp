@@ -14,10 +14,8 @@ AllWeather::AllWeather()
 
 void AllWeather::popOfflineCollection(Processor *processor, String topic, u8_t count)
 {
-    Log.info("I NEED TO POP THIS EFFICIENTLY !");
     this->holdProcessor = processor;
     Serial1.println("pop 5");
-    //bool success = processor->publish(topic, result);
 }
 
 size_t AllWeather::firstSpaceIndex(String value, u8_t index)
@@ -60,10 +58,6 @@ bool AllWeather::sendPopRead()
     size_t index = firstSpaceIndex(popString, 1);
     String SEND_TO = popString.substring(0, index - 1);
     bool published = this->holdProcessor->publish(SEND_TO, popString.substring(index));
-    // Serial.print("PUMP MY BOOMOE ");
-    // Serial.print(SEND_TO);
-    // Serial.print(" HEH ");
-    // Serial.println(popString.substring(index));
     return published;
 }
 
@@ -105,7 +99,7 @@ void AllWeather::payloadRestorator(String payload)
 
 void AllWeather::storePayload(String payload, String topic)
 {
-
+    this->sendingOfflinePayload = true;
     String send = topic + " " + payload + "\n";
 
     size_t length = send.length();
@@ -128,22 +122,23 @@ void AllWeather::storePayload(String payload, String topic)
         for (size_t j = 0; j < MAX_CHUNCK - local && i < length; j++)
         {
             buffer[j] = send.charAt(i);
-            Serial.write(send.charAt(i));
+            // Serial.write(send.charAt(i));
             Serial1.write(send.charAt(i));
             local++;
             i++;
         }
-        Serial.write('\0');
+        // Serial.write('\0');
         Serial1.write('\0');
         buffer[local + offset] = 0;
     }
 
     Serial1.flush();
+    delay(300);
+    this->sendingOfflinePayload = false;
 }
 
 void AllWeather::nullifyPayload(const char *key)
 {
-    Log.info("I AM GOING TO NULLIFY THIS SHTI %s", key);
 }
 
 float AllWeather::extractValue(float values[], size_t key, size_t max)
@@ -211,6 +206,11 @@ size_t AllWeather::skipMultiple(unsigned int size)
 
 bool AllWeather::readReady()
 {
+    if (this->sendingOfflinePayload)
+    {
+        return !this->sendingOfflinePayload;
+    }
+
     unsigned int size = boots->getReadTime() / 1000;
     size_t skip = skipMultiple(size);
     return readAttempt >= skip;
@@ -223,6 +223,11 @@ size_t AllWeather::readSize()
     return expand;
 }
 
+String AllWeather::getReadContent()
+{
+    return serialMsgStr;
+}
+
 void AllWeather::read()
 {
     readAttempt++;
@@ -232,7 +237,9 @@ void AllWeather::read()
         return;
     }
     readAttempt = 0;
-    Serial1.println(serialMsgStr);
+    String content = getReadContent();
+    //Serial.println(content);
+    Serial1.println(content);
     Serial1.flush();
 }
 
