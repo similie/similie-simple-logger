@@ -30,8 +30,8 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     //this->devices[0][0] = new WlDevice(boots);
 
     this->devices[0][0] = new AllWeather(boots);
-    this->devices[0][1] = new WlDevice(boots);
-    this->devices[0][2] = new Battery();
+    // this->devices[0][1] = new WlDevice(boots);
+    this->devices[0][1] = new Battery();
     const String DEVICE_ID = System.deviceID();
     this->blood = new HeartBeat(DEVICE_ID);
     setParamsCount();
@@ -115,7 +115,7 @@ int DeviceManager::rebootRequest(String f)
 bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
 {
 
-    long time = Time.now() - millis();
+    long time = Time.now(); // - (millis() / 1000);
     //Sunday, September 13, 2020 12:26:40 PM
     const long THRESHOLD = 1600000000;
     if (time < THRESHOLD)
