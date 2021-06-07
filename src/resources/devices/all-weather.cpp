@@ -94,6 +94,7 @@ void AllWeather::payloadRestorator(String payload)
 
     String topic = payload.substring(0, topicIndex - 2);
     String send = payload.substring(topicIndex, newLine);
+    Serial.println(send);
     storePayload(send, topic);
 }
 
