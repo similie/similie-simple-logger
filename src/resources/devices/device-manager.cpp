@@ -29,7 +29,7 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     //this->devices[0][0] = new SerialGps(boots);
     //this->devices[0][0] = new WlDevice(boots);
 
-    this->devices[0][0] = new AllWeather(boots);
+    this->devices[0][0] = new AllWeather(boots, 0);
     // this->devices[0][1] = new WlDevice(boots);
     this->devices[0][1] = new Battery();
     const String DEVICE_ID = System.deviceID();

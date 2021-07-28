@@ -74,16 +74,23 @@ private:
     u8_t maintenanceTick = 0;
     String ourReading = "";
     String getReadContent();
+    bool hasSerialIdentity();
+    String constrictSerialIdentity();
+    String serialResponseIdentity();
+    void replaceSerialResponceItem(String message);
+    bool validMessageString(String message);
     unsigned int READ_THRESHOLD = 12;
     static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);
     float VALUE_HOLD[AllWeather::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
     size_t skipMultiple(unsigned int size);
     size_t readAttempt = 0;
+    int sendIdentity = -1;
 
 public:
     ~AllWeather();
     AllWeather();
     AllWeather(Bootstrap *boots);
+    AllWeather(Bootstrap *boots, int identity);
     void read();
     void loop();
     void clear();

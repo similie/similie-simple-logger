@@ -8,6 +8,12 @@ AllWeather::AllWeather(Bootstrap *boots)
     this->boots = boots;
 }
 
+AllWeather::AllWeather(Bootstrap *boots, int identity)
+{
+    this->boots = boots;
+    this->sendIdentity = identity;
+}
+
 AllWeather::AllWeather()
 {
 }
@@ -159,7 +165,6 @@ float AllWeather::extractValue(float values[], size_t key, size_t max)
 
 float AllWeather::extractValue(float values[], size_t key)
 {
-
     size_t MAX = readSize();
     return extractValue(values, key, MAX);
 }
@@ -224,8 +229,23 @@ size_t AllWeather::readSize()
     return expand;
 }
 
+String AllWeather::serialResponseIdentity()
+{
+    return "response_" + String(this->sendIdentity);
+}
+
+String AllWeather::constrictSerialIdentity()
+{
+    return "request_" + String(this->sendIdentity) + " " + serialMsgStr;
+}
+
 String AllWeather::getReadContent()
 {
+    if (hasSerialIdentity())
+    {
+        return constrictSerialIdentity();
+    }
+
     return serialMsgStr;
 }
 
@@ -265,11 +285,39 @@ void AllWeather::clear()
     }
 }
 
+bool AllWeather::hasSerialIdentity()
+{
+    return this->sendIdentity > -1;
+}
+
+bool AllWeather::inValidMessageString(String message)
+{
+    return hasSerialIdentity() && message.startsWith(serialResponseIdentity())
+}
+
+void replaceSerialResponceItem(String message)
+{
+
+    if (!hasSerialIdentity())
+    {
+        return;
+    }
+    message.replace(serialResponseIdentity() + " ", "");
+}
+
 void AllWeather::parseSerial()
 {
     if (readyRead)
     {
         readyRead = false;
+
+        if (inValidMessageString(ourReading))
+        {
+            return Serial.prinln("Invalid Message String");
+        }
+
+        replaceSerialResponceItem(ourReading);
+
         if (ourReading.startsWith("pop"))
         {
             return this->processPop(ourReading);

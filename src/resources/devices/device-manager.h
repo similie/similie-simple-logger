@@ -33,7 +33,7 @@ private:
     Bootstrap *boots;
     Processor *processor;
     const size_t deviceCount = 1;
-    size_t deviceAggregateCounts[1] = {2};
+    size_t deviceAggregateCounts[1] = {3};
     Utils utils;
     HeartBeat *blood;
     unsigned int ROTATION = 0;
