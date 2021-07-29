@@ -46,10 +46,13 @@ Bootstrap::~Bootstrap()
     this->currentCalibration = digital ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
 }
 
+
 void Bootstrap::init()
 {
     this->batteryController();
     // memoryPrinter.start();
+    // Cellular.setCredentials("internet");
+
     Time.zone(TIMEZONE);
     Particle.syncTime();
     Particle.keepAlive(30);

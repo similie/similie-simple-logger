@@ -57,7 +57,9 @@ bool AllWeather::sendPopRead()
 
     size_t index = firstSpaceIndex(popString, 1);
     String SEND_TO = popString.substring(0, index - 1);
-    bool published = this->holdProcessor->publish(SEND_TO, popString.substring(index));
+    String SEND = popString.substring(index);
+    // Serial.println(SEND);
+    bool published = this->holdProcessor->publish(SEND_TO, SEND);
     return published;
 }
 
@@ -271,6 +273,7 @@ void AllWeather::parseSerial()
         readyRead = false;
         if (ourReading.startsWith("pop"))
         {
+            // Serial.println(ourReading);
             return this->processPop(ourReading);
         }
 
