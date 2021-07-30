@@ -77,7 +77,8 @@ private:
     bool hasSerialIdentity();
     String constrictSerialIdentity();
     String serialResponseIdentity();
-    void replaceSerialResponceItem(String message);
+    bool inValidMessageString(String message);
+    String replaceSerialResponceItem(String message);
     bool validMessageString(String message);
     unsigned int READ_THRESHOLD = 12;
     static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);

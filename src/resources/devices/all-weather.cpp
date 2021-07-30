@@ -63,7 +63,9 @@ bool AllWeather::sendPopRead()
 
     size_t index = firstSpaceIndex(popString, 1);
     String SEND_TO = popString.substring(0, index - 1);
-    bool published = this->holdProcessor->publish(SEND_TO, popString.substring(index));
+    String SEND = popString.substring(index);
+    // Serial.println(SEND);
+    bool published = this->holdProcessor->publish(SEND_TO, SEND);
     return published;
 }
 
@@ -231,7 +233,7 @@ size_t AllWeather::readSize()
 
 String AllWeather::serialResponseIdentity()
 {
-    return "response_" + String(this->sendIdentity);
+    return "result_" + String(this->sendIdentity);
 }
 
 String AllWeather::constrictSerialIdentity()
@@ -241,7 +243,7 @@ String AllWeather::constrictSerialIdentity()
 
 String AllWeather::getReadContent()
 {
-    if (hasSerialIdentity())
+    if (this->hasSerialIdentity())
     {
         return constrictSerialIdentity();
     }
@@ -259,7 +261,7 @@ void AllWeather::read()
     }
     readAttempt = 0;
     String content = getReadContent();
-    //Serial.println(content);
+    // Serial.println(content);
     Serial1.println(content);
     Serial1.flush();
 }
@@ -292,17 +294,17 @@ bool AllWeather::hasSerialIdentity()
 
 bool AllWeather::inValidMessageString(String message)
 {
-    return hasSerialIdentity() && message.startsWith(serialResponseIdentity())
+    return this->hasSerialIdentity() && !message.startsWith(this->serialResponseIdentity());
 }
 
-void replaceSerialResponceItem(String message)
-{
-
-    if (!hasSerialIdentity())
+String AllWeather::replaceSerialResponceItem(String message)
+{   
+    if (!this->hasSerialIdentity())
     {
-        return;
+        return message;
     }
-    message.replace(serialResponseIdentity() + " ", "");
+    String replaced = message.replace(this->serialResponseIdentity() + " ", "");
+    return replaced;
 }
 
 void AllWeather::parseSerial()
@@ -313,13 +315,17 @@ void AllWeather::parseSerial()
 
         if (inValidMessageString(ourReading))
         {
-            return Serial.prinln("Invalid Message String");
+            Serial.println("Invalid Message String");
+            return;
         }
 
-        replaceSerialResponceItem(ourReading);
+        ourReading = replaceSerialResponceItem(ourReading);
+        Serial.print("FUCKING BOOMO ");
+        Serial.println(ourReading);
 
         if (ourReading.startsWith("pop"))
         {
+            // Serial.println(ourReading);
             return this->processPop(ourReading);
         }
 
