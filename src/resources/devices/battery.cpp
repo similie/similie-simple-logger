@@ -11,6 +11,11 @@ Battery::Battery()
 {
 }
 
+String Battery::name()  
+{
+    return deviceName;
+}
+
 void Battery::publish(JSONBufferWriter &writer, u8_t attempt_count)
 {
     FuelGauge fuel;

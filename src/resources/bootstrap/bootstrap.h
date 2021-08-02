@@ -6,6 +6,7 @@
 
 #define DIGITAL_DEFAULT false
 
+#define MAX_DEVICES 7
 #define EPROM_ADDRESS 0
 #define MINUTE_IN_SECONDS 60
 #define MILISECOND 1000
@@ -18,6 +19,8 @@
 #define DEF_DISTANCE_READ_DIG_CALIBRATION 0.01724137931
 #define DEF_DISTANCE_READ_AN_CALIBRATION 0.335
 #define MAX_SEND_TIME 15
+#define SERIAL_BUFFER_LENGTH 8
+#define SERIAL_COMMS_BAUD 9600
 //#define TIMER_STALL 60000
 // const size_t MAX_SEND_TIME = 15;
 // const size_t MINUTE_IN_SECONDS = 60;
@@ -43,6 +46,28 @@
 // // read sends delayed for up to 15 minuites
 // const size_t MAX_SEND_TIME = 15;///
 
+struct DeviceMetaStruct {
+    uint8_t count;
+    uint16_t startIndex;
+    uint16_t endIndex;
+    uint16_t address_0;
+    uint16_t address_1;
+    uint16_t address_2;
+    uint16_t address_3;
+    uint16_t address_4;
+    uint16_t address_5;
+    uint16_t address_6;
+};
+
+struct DeviceStruct {
+    uint8_t count;
+    uint16_t size;
+    char name[25];
+    uint16_t address_0;
+    uint16_t address_1;
+    uint16_t address_2;
+};
+
 struct EpromStruct
 {
     uint8_t version;
@@ -60,9 +85,16 @@ struct BeachStruct
 class Bootstrap
 {
 private:
+    void pullRegistration();
+    void addNewDeviceToStructure(DeviceStruct device);
     bool bootstrapped = false;
     bool digital = DIGITAL_DEFAULT;
-
+    uint16_t deviceStartAddress = 1000; 
+    DeviceMetaStruct deviceMeta;
+    DeviceStruct devices[MAX_DEVICES];
+    DeviceStruct getDeviceByName(String name);
+    uint16_t getNextDeviceAddress();
+    uint16_t deviceInitAddress();
     char digitalChar(bool value);
     bool isDigital(char value);
     bool maintenaceMode = false;
@@ -83,9 +115,23 @@ private:
     uint8_t beachCount();
     const uint8_t BEACHED_THRSHOLD = 5;
     const static int BEACH_ADDRESS = sizeof(EpromStruct) + 8;
+    int nextAddress = BEACH_ADDRESS + 8;
     bool strappingTimers = false;
     // Timer *publishtimer;
     // Timer *readtimer;
+    size_t serial_buffer_length = SERIAL_BUFFER_LENGTH;
+    String serial_buffer[SERIAL_BUFFER_LENGTH];
+    size_t serialStoreIndex = 0;
+    String serialReadContent = "";
+    bool checkHasId();
+    void serialInit();
+    size_t indexCounter(size_t startIndex);
+    bool isCorrectIdentity(String identity, size_t index) ;
+    void storeSerialContent();
+    int serialBuilder();
+    void processSerial();
+    void pushSerial(String serial);
+    String popSerial(size_t index);
 
 public:
     ~Bootstrap();
@@ -93,6 +139,7 @@ public:
     void timers();
     bool isStrapped();
     void init();
+    int getStorageAddress(size_t size);
     double getCalibration();
     void restoreDefaults();
     void setPublishTimer(bool time);
@@ -113,7 +160,12 @@ public:
     void resetBeachCount();
     unsigned int getReadTime();
     unsigned int getPublishTime();
+
+    String fetchSerial(String identity);
+    uint16_t registerAddress(String name);
+
     //static bool isStrapped();
+    static size_t epromSize();
     static void beachReset();
     size_t getMaxVal();
     const static unsigned int ONE_MINUTE = 1 * MILISECOND * MINUTE_IN_SECONDS;

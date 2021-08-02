@@ -12,16 +12,20 @@ Device::Device()
 }
 
 void Device::nullifyPayload(const char *key) {}
-void Device::storePayload(String payload, String topic)
-{
-}
+// void Device::storePayload(String payload, String topic)
+// {
+// }
 
 void Device::publish(JSONBufferWriter &writer, u8_t attempt_count)
 {
 }
 
-void Device::popOfflineCollection(Processor *processor, String topic, u8_t count)
-{
+// void Device::popOfflineCollection(Processor *processor, String topic, u8_t count)
+// {
+// }
+
+String Device::name() {
+    return "";
 }
 
 u8_t Device::paramCount()

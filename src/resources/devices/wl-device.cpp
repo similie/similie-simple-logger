@@ -7,11 +7,21 @@ WlDevice::~WlDevice()
 WlDevice::WlDevice()
 {
 }
-
 WlDevice::WlDevice(Bootstrap *boots)
 {
     this->boots = boots;
 }
+
+WlDevice::WlDevice(Bootstrap *boots, int sendIdentity)
+{
+    this->boots = boots;
+    this->sendIdentity = sendIdentity;
+}
+
+String WlDevice::name() {
+    return this->deviceName;
+}
+
 void WlDevice::init()
 {
     if (boots->isDigital())

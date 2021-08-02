@@ -49,6 +49,7 @@ Bootstrap::~Bootstrap()
 
 void Bootstrap::init()
 {
+    this->pullRegistration();
     this->batteryController();
     // memoryPrinter.start();
     // Cellular.setCredentials("internet");
@@ -63,6 +64,55 @@ void Bootstrap::init()
     beachedTimer.start();
     heartBeatTimer.start();
     this->bootstrap();
+    this->serialInit();
+}
+
+
+size_t Bootstrap::epromSize() 
+{
+    return EEPROM.length()-1;
+}
+
+uint16_t Bootstrap::deviceInitAddress() 
+{
+    return this->deviceStartAddress + sizeof(EpromStruct) + 1;
+}
+
+uint16_t Bootstrap::getNextDeviceAddress() {
+    uint16_t start  = deviceInitAddress();
+    return 0;
+}
+
+void Bootstrap::pullRegistration() 
+{
+  uint16_t start = this->deviceInitAddress();
+}
+
+void addNewDeviceToStructure(DeviceStruct device) 
+{
+
+}
+
+DeviceStruct Bootstrap::getDeviceByName(String name)
+{
+    for (size_t i = 0; i < MAX_DEVICES; i++) {
+      DeviceStruct device = this->devices[i];
+      String dName = String(device.name);
+      if (dName.equals(name)) {
+          return device;
+      }
+    }
+    // now build it
+    uint16_t next = getNextDeviceAddress();
+    DeviceStruct device = {};
+    this->addNewDeviceToStructure(device);
+    //this->devices.push(device);
+    return device;
+}
+
+uint16_t Bootstrap::registerAddress(String name) 
+{
+    return 0;
 }
 
 bool Bootstrap::hasMaintenance()
@@ -111,6 +161,13 @@ void Bootstrap::setReadTimer(bool time)
 bool Bootstrap::isStrapped()
 {
     return this->bootstrapped;
+}
+
+int Bootstrap::getStorageAddress(size_t size) 
+{
+    int send = this->nextAddress;
+    this->nextAddress += size + 8;
+    return send;
 }
 
 size_t Bootstrap::getMaxVal()
@@ -260,6 +317,7 @@ void Bootstrap::beach()
     // System.reset();
 }
 
+
 /*
 * putSavedConfig: Stores our config struct 
 */
@@ -325,8 +383,8 @@ void Bootstrap::batteryController()
 
 void Bootstrap::timers()
 {
-
     // manageManualModel();
+    processSerial();
 
     if (strappingTimers)
     {
@@ -379,4 +437,183 @@ bool Bootstrap::isDigital(char value)
     {
         return DIGITAL_DEFAULT;
     }
+}
+
+
+/**
+ * Serial Controller Elements
+ */
+
+/** 
+ * @private serialInit
+ * 
+ * Starts the Serial1 litener
+ * 
+*/
+void Bootstrap::serialInit() {
+   // SERIAL_COMMS_BAUD
+   if (!SERIAL_COMMS_BAUD) {
+       return;
+   }
+
+   Serial1.begin(SERIAL_COMMS_BAUD);
+}
+
+/** 
+ * @private serialBuilder
+ * 
+ * Reads content off the serial bus 
+ * 
+*/
+int Bootstrap::serialBuilder() {
+  int avail = Serial1.available();
+    for (int i = 0; i < avail; i++)
+    {
+        char inChar = Serial1.read();
+        //Serial.print(inChar);
+        if (inChar == '\n' || inChar == '\0')
+        {
+            return 1;
+        }
+        if (inChar != '\r')
+        {
+            serialReadContent += String(inChar);
+        }
+    }
+    return 0;
+}
+
+/** 
+ * @private checkHasId
+ * 
+ * Checks to see if the payload is preppended with an ID tag
+ * @return boolean true if it has an id tags
+ * 
+ * 
+*/
+
+bool Bootstrap::checkHasId() {
+    //Log.info(serialReadContent);
+    return serialReadContent.indexOf(" ") != -1;
+}
+
+/** 
+ * @private processSerial
+ * 
+ * Runs the serial Loop
+ * 
+*/
+void Bootstrap::processSerial() 
+{
+    if (!SERIAL_COMMS_BAUD) {
+       return;
+    }
+    
+    if (serialBuilder() && checkHasId()) {
+        // now store
+        Serial.println(serialReadContent);
+        storeSerialContent();
+        serialReadContent = "";
+    }
+}
+
+
+/** 
+ * @private storeSerialContent
+ * 
+ *  Stores and verifies fully processed serial element
+ * 
+*/
+void Bootstrap::storeSerialContent() 
+{  
+    
+    if (serialStoreIndex >= serial_buffer_length) {
+        serialStoreIndex = 0;
+    } else {
+        serialStoreIndex++;
+    }
+    pushSerial(serialReadContent);
+    serialReadContent = "";
+}
+
+/** 
+ * @private pushSerial
+ * 
+ *  Pushes a fully processed serial element
+ * @param String serial string to store
+ * 
+*/
+void Bootstrap::pushSerial(String serial) 
+{
+    serial_buffer[serialStoreIndex] = serial;
+}
+
+/** 
+ * @private pushSerial
+ * 
+ *  Finds a serial based on a specfic ID
+ * @param String serial ID
+ * 
+*/
+String Bootstrap::popSerial(size_t index) 
+{
+
+    String send = serial_buffer[serialStoreIndex] ;
+    serial_buffer[serialStoreIndex] = "";
+    return send;
+}
+
+/** 
+ * @private isCorrectIdentity
+ * 
+ *  Finds a serial based on a specfic ID
+ * @param String identity serial ID
+ * @param size_t index to check
+ * 
+ * @return true if the idenity matches the string index
+ * 
+*/
+bool Bootstrap::isCorrectIdentity(String identity, size_t index) {
+    String check = serial_buffer[serialStoreIndex];
+    return !check.equals("") && check.startsWith(identity);
+}
+
+/** 
+ * @private indexCounter
+ * 
+ *  Finds a serial based on a specfic ID
+ * @param size_t start index to check
+ * 
+ * @return size_t of the index is 
+ * 
+*/
+size_t Bootstrap::indexCounter(size_t startIndex) {
+    if (startIndex >= serial_buffer_length) {
+       return startIndex % serial_buffer_length;
+    } else {
+       return startIndex;
+    }
+}
+
+
+
+/**
+ * @public fetchSerial 
+ * 
+ * Fetches the last requested item from a device
+ * @param String idenity of the device requesting at payload 
+ * 
+ * */
+String Bootstrap::fetchSerial(String identity) 
+{
+    size_t i = 0;
+    size_t j = indexCounter(serialStoreIndex);
+    while (i < serial_buffer_length) {
+        if (isCorrectIdentity(identity, j)) {
+            return popSerial(j);
+        }
+        i++;
+        j = indexCounter(serialStoreIndex + i);
+    }
+    return "";
 }

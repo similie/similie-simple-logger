@@ -1,70 +1,48 @@
+#define SOIL_MOISTURE_DEFAULT 0.03
+
 #include "Particle.h"
 #include "string.h"
 #include "device.h"
 #include "math.h"
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/processors/Processor.h"
-#include "resources/utils/serial_storage.h"
 #include "resources/utils/utils.h"
+#include "resources/utils/serial_storage.h"
 #include <stdint.h>
 
-#ifndef all_weather_h
-#define all_weather_h
+#ifndef soil_moisture_h
+#define soil_moisture_h
 
-class AllWeather : public Device
+
+
+struct VWCStruct
+{
+    uint8_t version;
+    double multiple;
+};
+
+class SoilMoisture : public Device
 {
 private:
-    String valueMap[17] =
+    String valueMap[2] =
         {
-            "s",
-            "pre",
-            "s",
-            "s_d",
-            "ws",
-            "wd",
-            "gws",
-            "t",
-            "a_p",
-            "p",
-            "h",
-            "hst",
-            "x",
-            "y",
-            "null",
-            "wsn",
-            "wse"};
+            "vwc",
+            "s_t"};
     enum
     {
-        solar,
-        precipitation,
-        strikes,
-        strike_distance,
-        wind_speed,
-        wind_direction,
-        gust_wind_speed,
-        air_temperature,
-        vapor_pressure,
-        atmospheric_pressure,
-        relative_humidity,
-        humidity_sensor_temperature,
-        x_orientation,
-        y_orientation,
-        null_val,
-        wind_speed_north,
-        wind_speed_east
+        vwc,
+        soil_temp,
     };
     Bootstrap *boots;
     String serialMsgStr = "0R0!";
-
+    String deviceName = "Soil Moisture";
     Utils utils;
-    //void payloadRestorator(String payload);
+    String getMoistureName();
     void parseSerial(String ourReading);
     bool readyRead = false;
-    // bool sendingOfflinePayload = false;
     bool readCompile = false;
     bool readReady();
     size_t readSize();
-    String deviceName  = "AllWeather";
     u8_t maintenanceTick = 0;
     String ourReading = "";
     String getReadContent();
@@ -76,15 +54,16 @@ private:
     bool validMessageString(String message);
     unsigned int READ_THRESHOLD = 12;
     static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);
-    float VALUE_HOLD[AllWeather::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
+    float VALUE_HOLD[SoilMoisture::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
     size_t readAttempt = 0;
     int sendIdentity = -1;
+    String paramName(size_t index);
     String fetchReading();
 public:
-    ~AllWeather();
-    AllWeather();
-    AllWeather(Bootstrap *boots);
-    AllWeather(Bootstrap *boots, int identity);
+    ~SoilMoisture();
+    SoilMoisture();
+    SoilMoisture(Bootstrap *boots);
+    SoilMoisture(Bootstrap *boots, int identity);
     void read();
     void loop();
     void clear();
@@ -92,14 +71,12 @@ public:
     void init();
     String name();
     void nullifyPayload(const char *key);
-    //void storePayload(String payload, String topic);
     u8_t matenanceCount();
     u8_t paramCount();
     size_t buffSize();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
     float extractValue(float values[], size_t key);
     float extractValue(float values[], size_t key, size_t max);
-    //void popOfflineCollection(Processor *processor, String topic, u8_t count);
 };
 
 #endif

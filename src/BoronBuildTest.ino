@@ -13,7 +13,7 @@ SYSTEM_THREAD(ENABLED);
 #include "resources/utils/utils.h"
 #include "resources/devices/device-manager.h"
 
-SerialLogHandler logHandler(LOG_LEVEL_ALL); //LOG_LEVEL_ALL LOG_LEVEL_INFO
+SerialLogHandler logHandler(LOG_LEVEL_INFO); //LOG_LEVEL_ALL LOG_LEVEL_INFO
 const String DEVICE_ID = System.deviceID();
 
 Bootstrap boots;
@@ -114,6 +114,7 @@ void setup()
   processor.connect();
   manager.init();
   waitFor(boots.isStrapped, 10000);
+ 
 }
 
 // loop() runs over and over again, as quickly as it can execute

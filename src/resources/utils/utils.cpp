@@ -8,6 +8,78 @@ Utils::Utils()
 {
 }
 
+String Utils::requestDeviceId(int identity, String cmd) 
+{
+    return "request_" + String(identity) + " " + cmd;
+}
+
+
+String Utils::receiveDeviceId(int identity)
+{
+    return "result_" + String(identity);
+}
+
+void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float  value_hold[][Bootstrap::OVERFLOW_VAL])
+{
+
+    size_t j = 1;
+    for (size_t i = 0; i < paramLength; i++)
+    {
+        char c = ourReading.charAt(j);
+        j++;
+        if (c == '+' || c == '-')
+        {
+            String buff = "";
+            char d = ' ';
+            while (d != '+' && d != '-' && d != '\n' && d != '\0')
+            {
+                d = ourReading.charAt(j);
+                buff += String(d);
+                j++;
+                d = ourReading.charAt(j);
+            }
+            if (this->invalidNumber(buff))
+            {
+                continue;
+            }
+
+            if (this->containsChar('.', buff))
+            {
+                float value = buff.toFloat();
+                if (c == '-')
+                {
+                    value = value * -1;
+                }
+                this->insertValue(value, value_hold[i], max);
+            }
+            else
+            {
+                float value = buff.toInt();
+                if (c == '-')
+                {
+                    value = value * -1;
+                }
+                this->insertValue(value, value_hold[i], max);
+            }
+        }
+    }
+}
+
+size_t Utils::skipMultiple(unsigned int size, size_t maxVal , unsigned int threshold) {
+    size_t start = 1;
+    for (size_t i = 1; i < maxVal; i++)
+    {
+        unsigned int test = size * i;
+        float multiple = (float)test / threshold;
+        if (multiple >= 1)
+        {
+            start = i;
+            break;
+        }
+    }
+    return start; 
+}
+
 int Utils::simCallback(int type, const char *buf, int len, char *value)
 {
     if ((type == TYPE_PLUS) && value)

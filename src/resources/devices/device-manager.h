@@ -8,9 +8,11 @@
 #include "device.h"
 #include "wl-device.h"
 #include "resources/utils/controlled_payload.h"
+#include "resources/utils/serial_storage.h"
 
 #include "battery.h"
 #include "all-weather.h"
+#include "soil-moisture.h"
 #include "resources/heartbeat/heartbeat.h"
 
 #ifndef device_manager_h
@@ -25,6 +27,7 @@ class DeviceManager
 private:
     // bool readBusy = false;
     // bool publishBusy = false;
+    SerialStorage *storage;
     String SUSCRIPTION_CONFIRMATION = "Ai/Post/Confirm/";
     String SUSCRIPTION_TERMINATION = "Ai/Post/Terminate/";
     ControlledPayload *payloadController[(ControlledPayload::EXPIRATION_TIME / 60) / 1000]; //{ControlledPayload(), ControlledPayload(), ControlledPayload()}
@@ -33,12 +36,12 @@ private:
     Bootstrap *boots;
     Processor *processor;
     const size_t deviceCount = 1;
-    size_t deviceAggregateCounts[1] = {2};
+    size_t deviceAggregateCounts[1] = {3};
     Utils utils;
     HeartBeat *blood;
     unsigned int ROTATION = 0;
     u8_t paramsCount = 0;
-    u8_t POP_COUNT_VALUE = 10;
+    const u8_t POP_COUNT_VALUE = 5;
     void storePayload(String payload, String topic);
     void nullifyPayload(const char *key);
     void shuffleLoad(String payloadString);

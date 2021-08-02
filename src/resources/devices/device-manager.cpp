@@ -26,15 +26,14 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 {
     this->boots = boots;
     this->processor = processor;
-    //this->devices[0][0] = new SerialGps(boots);
-    //this->devices[0][0] = new WlDevice(boots);
-
     this->devices[0][0] = new AllWeather(boots, 0);
     //this->devices[0][0] = new WlDevice(boots);
     this->devices[0][1] = new Battery();
+    this->devices[0][2] = new SoilMoisture(boots, 1);
     const String DEVICE_ID = System.deviceID();
     this->blood = new HeartBeat(DEVICE_ID);
     setParamsCount();
+    storage = new SerialStorage(processor, boots);
     //  this->initPayloadController();
 }
 
@@ -156,14 +155,7 @@ void DeviceManager::confirmationExpiredCheck()
 
 void DeviceManager::storePayload(String payload, String topic)
 {
-    for (size_t i = 0; i < this->deviceCount; i++)
-    {
-        size_t size = this->deviceAggregateCounts[i];
-        for (size_t j = 0; j < size; j++)
-        {
-            this->devices[i][j]->storePayload(payload, topic);
-        }
-    }
+    this->storage->storePayload(payload, topic);
 }
 
 void DeviceManager::nullifyPayload(const char *key)
@@ -175,7 +167,7 @@ void DeviceManager::nullifyPayload(const char *key)
         return;
     }
 
-    Log.info(" W AGOING TO NULLIFY THIS BITCH %d", target);
+    Log.info("Nullifying %d", target);
 
     unsigned long size = (ControlledPayload::EXPIRATION_TIME / 60) / 1000;
     for (u8_t i = 0; i < size; i++)
@@ -184,18 +176,9 @@ void DeviceManager::nullifyPayload(const char *key)
         Log.info("IS IT ON TARGET %d %u", payload->onTarget(target), payload->getTarget());
         if (payload->onTarget(target))
         {
-            Log.info(" GETTING BEACHED AS %s", payload->getHoldings());
+            Log.info(" GETTING BEACHED AS " + payload->getHoldings());
         }
     }
-
-    // for (size_t i = 0; i < this->deviceCount; i++)
-    // {
-    //     size_t size = this->deviceAggregateCounts[i];
-    //     for (size_t j = 0; j < size; j++)
-    //     {
-    //         this->devices[i][j]->nullifyPayload(key);
-    //     }
-    // }
 }
 
 void DeviceManager::subscriptionConfirmation(const char *eventName, const char *data)
@@ -365,15 +348,7 @@ size_t DeviceManager::getBufferSize()
 
 void DeviceManager::popOfflineCollection()
 {
-    String topic = processor->getPublishTopic(false);
-    for (size_t i = 0; i < this->deviceCount; i++)
-    {
-        size_t size = this->deviceAggregateCounts[i];
-        for (size_t j = 0; j < size; j++)
-        {
-            this->devices[i][j]->popOfflineCollection(processor, topic, this->POP_COUNT_VALUE);
-        }
-    }
+    this->storage->popOfflineCollection(this->POP_COUNT_VALUE);
 }
 
 void DeviceManager::publisher()
@@ -420,17 +395,18 @@ void DeviceManager::publisher()
     String topic = processor->getPublishTopic(maintenance);
     bool success = false;
 
-    if (waitFor(Utils::connected, 10000) && processor->connected())
+    if (waitFor(Utils::connected, 2000) && processor->connected())
     {
         success = processor->publish(topic, result);
     }
 
-    Log.info("Send %d", success);
+    Log.info("Send %d %d", success, maintenance);
     // this->confirmationExpiredCheck();
 
     if (!maintenance && !success)
     {
         //this->placePayload(result);
+        Log.info("SENDING PAYLOAD FAILED. Storing");
         this->storePayload(result, topic);
     }
     else if (success)
@@ -444,8 +420,11 @@ void DeviceManager::publisher()
 
 void DeviceManager::loop()
 {
+
     process();
     boots->timers();
+    storage->loop();
+    
     if (boots->readTimerFun())
     {
         boots->setReadTimer(false);

@@ -1,91 +1,111 @@
-#include "all-weather.h"
+#include "soil-moisture.h"
 
-AllWeather::~AllWeather()
+double multiple = SOIL_MOISTURE_DEFAULT;
+int saveAddressForMoisture = -1;
+
+int setMoistureCalibration(String read)
+{
+  const char *stringCal = read.c_str();
+  double val = ::atof(stringCal);
+  Log.info("setting calibration of %s", stringCal);
+
+  if (val == 0)
+  {
+    return 0;
+  }
+
+  if (saveAddressForMoisture != -1) {
+    VWCStruct store = {1, val};
+    EEPROM.put(saveAddressForMoisture, store);
+  }
+  
+  multiple  = val;
+  return 1;
+}
+
+
+SoilMoisture::~SoilMoisture()
 {
 }
-AllWeather::AllWeather(Bootstrap *boots)
+SoilMoisture::SoilMoisture(Bootstrap *boots)
 {
     this->boots = boots;
 }
 
-AllWeather::AllWeather(Bootstrap *boots, int identity)
+SoilMoisture::SoilMoisture(Bootstrap *boots, int identity)
 {
     this->boots = boots;
     this->sendIdentity = identity;
 }
 
-AllWeather::AllWeather()
+SoilMoisture::SoilMoisture()
 {
 }
 
-String AllWeather::name() {
+String SoilMoisture::name() {
     return this->deviceName;
 }
 
-
-void AllWeather::nullifyPayload(const char *key)
+void SoilMoisture::nullifyPayload(const char *key)
 {
 }
 
-float AllWeather::extractValue(float values[], size_t key, size_t max)
+float SoilMoisture::extractValue(float values[], size_t key, size_t max)
 {
     switch (key)
     {
-    case gust_wind_speed:
-    case strike_distance:
-        return utils.getMax(values, max);
-    case precipitation:
-    case strikes:
-        return utils.getSum(values, max);
+    case vwc:
+        return utils.getMedian(values, max) * multiple;
     default:
         return utils.getMedian(values, max);
     }
 }
 
-float AllWeather::extractValue(float values[], size_t key)
+float SoilMoisture::extractValue(float values[], size_t key)
 {
     size_t MAX = readSize();
     return extractValue(values, key, MAX);
 }
 
-void AllWeather::publish(JSONBufferWriter &writer, u8_t attempt_count)
+
+String SoilMoisture::paramName(size_t index) {
+    String param = valueMap[index];
+    if (param.equals(NULL) || param.equals(" ") || param.equals(""))
+    {
+      param = "_FAILURE_";
+    } else if (this->hasSerialIdentity()) {
+      param += "_" + String(sendIdentity);
+    } 
+    return param;   
+}
+
+void SoilMoisture::publish(JSONBufferWriter &writer, u8_t attempt_count)
 {
     print();
     size_t MAX = readSize();
-    for (size_t i = 0; i < AllWeather::PARAM_LENGTH; i++)
+    for (size_t i = 0; i < SoilMoisture::PARAM_LENGTH; i++)
     {
-        if (i == null_val)
-        {
-            continue;
-        }
-        String param = valueMap[i];
-        if (param.equals(NULL) || param.equals(" ") || param.equals(""))
-        {
-            param = "_FAILURE_";
-        }
+        String param = paramName(i);
         float paramValue = extractValue(VALUE_HOLD[i], i, MAX);
         if (paramValue == NO_VALUE)
         {
             maintenanceTick++;
         }
-
         writer.name(param.c_str()).value(paramValue);
     }
 }
 
-
-bool AllWeather::readReady()
+bool SoilMoisture::readReady()
 {
     if (!waitFor(SerialStorage::notSendingOfflineData, 1000))
     {
         return SerialStorage::notSendingOfflineData();
     }
-
     unsigned int size = boots->getReadTime() / 1000;
     size_t skip = utils.skipMultiple(size, boots->getMaxVal() , READ_THRESHOLD);
     return readAttempt >= skip;
 }
-size_t AllWeather::readSize()
+size_t SoilMoisture::readSize()
 {
     unsigned int size = boots->getReadTime() / 1000;
     size_t skip = utils.skipMultiple(size, boots->getMaxVal() , READ_THRESHOLD);
@@ -93,17 +113,17 @@ size_t AllWeather::readSize()
     return expand;
 }
 
-String AllWeather::serialResponseIdentity()
+String SoilMoisture::serialResponseIdentity()
 {
     return utils.receiveDeviceId(this->sendIdentity);
 }
 
-String AllWeather::constrictSerialIdentity()
+String SoilMoisture::constrictSerialIdentity()
 {
-   return utils.requestDeviceId(this->sendIdentity, serialMsgStr);
+    return utils.requestDeviceId(this->sendIdentity, serialMsgStr);
 }
 
-String AllWeather::getReadContent()
+String SoilMoisture::getReadContent()
 {
     if (this->hasSerialIdentity())
     {
@@ -113,7 +133,7 @@ String AllWeather::getReadContent()
     return serialMsgStr;
 }
 
-String AllWeather::fetchReading()
+String SoilMoisture::fetchReading()
 {
     if (!readCompile)
     {
@@ -122,7 +142,7 @@ String AllWeather::fetchReading()
     return "";
 }
 
-void AllWeather::read()
+void SoilMoisture::read()
 {
     readAttempt++;
     if (!readReady())
@@ -135,7 +155,7 @@ void AllWeather::read()
     Serial1.flush();
 }
 
-void AllWeather::loop()
+void SoilMoisture::loop()
 {
     String completedSerialItem = boots->fetchSerial(this->serialResponseIdentity());
     if (!completedSerialItem.equals(""))
@@ -144,9 +164,9 @@ void AllWeather::loop()
     }
 }
 
-void AllWeather::clear()
+void SoilMoisture::clear()
 {
-    for (size_t i = 0; i < AllWeather::PARAM_LENGTH; i++)
+    for (size_t i = 0; i < SoilMoisture::PARAM_LENGTH; i++)
     {
         for (size_t j = 0; j < boots->getMaxVal(); j++)
         {
@@ -155,17 +175,17 @@ void AllWeather::clear()
     }
 }
 
-bool AllWeather::hasSerialIdentity()
+bool SoilMoisture::hasSerialIdentity()
 {
     return this->sendIdentity > -1;
 }
 
-bool AllWeather::inValidMessageString(String message)
+bool SoilMoisture::inValidMessageString(String message)
 {
     return this->hasSerialIdentity() && !message.startsWith(this->serialResponseIdentity());
 }
 
-String AllWeather::replaceSerialResponceItem(String message)
+String SoilMoisture::replaceSerialResponceItem(String message)
 {
     if (!this->hasSerialIdentity())
     {
@@ -175,8 +195,9 @@ String AllWeather::replaceSerialResponceItem(String message)
     return replaced;
 }
 
-void AllWeather::parseSerial(String ourReading)
+void SoilMoisture::parseSerial(String ourReading)
 {
+
     if (inValidMessageString(ourReading))
     {
         Serial.println("Invalid Message String");
@@ -184,12 +205,13 @@ void AllWeather::parseSerial(String ourReading)
     }
 
     ourReading = replaceSerialResponceItem(ourReading);
+    
     readCompile = true;
     utils.parseSerial(ourReading, PARAM_LENGTH, boots->getMaxVal(), VALUE_HOLD);
     readCompile = false;
 }
 
-void AllWeather::print()
+void SoilMoisture::print()
 {
     for (size_t i = 0; i < PARAM_LENGTH; i++)
     {
@@ -200,21 +222,40 @@ void AllWeather::print()
     }
 }
 
-void AllWeather::init()
+String SoilMoisture::getMoistureName() 
 {
+    String name = "SoilMoisture";
+    if (this->hasSerialIdentity())
+    {
+        return name + String(this->sendIdentity);
+    }
+
+    return name;
 }
 
-size_t AllWeather::buffSize()
+void SoilMoisture::init()
 {
-    return 600;
+    saveAddressForMoisture = boots->getStorageAddress(sizeof(VWCStruct));
+    VWCStruct pulled;
+    EEPROM.get(saveAddressForMoisture, pulled);
+    if (pulled.version > 0 && !isnan(pulled.multiple)) {
+       multiple = pulled.multiple;
+    }
+    Particle.function("set" + this->getMoistureName(), setMoistureCalibration);
+    Particle.variable(this->getMoistureName(), multiple);
 }
 
-u8_t AllWeather::paramCount()
+size_t SoilMoisture::buffSize()
+{
+    return 75;
+}
+
+u8_t SoilMoisture::paramCount()
 {
     return PARAM_LENGTH;
 }
 
-u8_t AllWeather::matenanceCount()
+u8_t SoilMoisture::matenanceCount()
 {
     u8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;

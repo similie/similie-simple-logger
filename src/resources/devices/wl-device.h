@@ -9,8 +9,8 @@
 #ifndef wl_device_h
 #define wl_device_h
 
-#define DIG_PIN D8
-#define AN_PIN A1
+#define DIG_PIN D8  // stripe blue off port1
+#define AN_PIN A1 // stripe blue line off port0
 
 const size_t WL_PARAM_SIZE = 1;
 
@@ -18,6 +18,8 @@ class WlDevice : public Device
 {
 private:
     Bootstrap *boots;
+    String deviceName = "wl";
+    int sendIdentity = -1;
     //String readParams[WL_PARAM_SIZE] = {"wl_pw", "hydrometric_level"};
     // String readParams[WL_PARAM_SIZE] = {"wl_pw"}; // water tank  or wl
     String readParams[WL_PARAM_SIZE] = {"hydrometric_level"}; // river level or hydrometric level
@@ -39,7 +41,9 @@ public:
     ~WlDevice();
     WlDevice();
     WlDevice(Bootstrap *boots);
+    WlDevice(Bootstrap *boots, int sendIdentity);
     void read();
+    String name();
     void loop();
     void clear();
     void print();

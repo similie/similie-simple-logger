@@ -11,10 +11,10 @@ class Battery : public Device
 {
 private:
     Bootstrap *boots;
-    const char *percentname = "bat_percent";
-    const char *voltsname = "battery_voltage";
+    const char *percentname = "bat";
+    const char *voltsname = "b_v";
     const u8_t PARAM_LENGTH = 2;
-
+    String deviceName = "Battery";
 public:
     ~Battery();
     Battery();
@@ -24,6 +24,7 @@ public:
     void clear();
     void print();
     void init();
+    String name();
     u8_t matenanceCount();
     u8_t paramCount();
     size_t buffSize();
