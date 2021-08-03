@@ -179,7 +179,7 @@ void AllWeather::parseSerial(String ourReading)
 {
     if (inValidMessageString(ourReading))
     {
-        Serial.println("Invalid Message String");
+        Utils::log("ALL_WEATHER_MESSAGE", "Invalid Message String");
         return;
     }
 
@@ -201,6 +201,11 @@ void AllWeather::print()
 }
 
 void AllWeather::init()
+{
+    boots->startSerial();
+}
+
+void AllWeather::restoreDefaults()
 {
 }
 

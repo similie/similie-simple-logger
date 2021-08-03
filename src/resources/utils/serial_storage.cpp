@@ -57,11 +57,6 @@ String SerialStorage::getPopStartIndex(String read)
 
 void SerialStorage::popOfflineCollection(u8_t count)
 {
-    // String send = "pop " + String(count) + String('\n');
-    // for (size_t i = 0; i < send.length(); i++) {
-    //     Serial.write(send.charAt(i));
-    //     Serial1.write(send.charAt(i));
-    // }
     sendingOffline = true;
     delay(100);
     String send = "pop " + String(count);
@@ -77,6 +72,8 @@ bool SerialStorage::sendPopRead()
     size_t index = firstSpaceIndex(popString, 1);
     String SEND_TO = popString.substring(0, index - 1);
     String SEND = popString.substring(index);
+    Utils::log("SERIAL_POP_SEND" , SEND_TO + " " + SEND);
+    
     bool published = this->holdProcessor->publish(SEND_TO, SEND);
     return published;
 }
@@ -124,12 +121,16 @@ size_t SerialStorage::firstSpaceIndex(String value, u8_t index)
 
 void SerialStorage::storePayload(String payload, String topic)
 {
+
+    
+
     sendingOffline = true;
     String send = topic + " " + payload + "\n";
     size_t length = send.length();
     u8_t MAX_CHUNCK = 100;
     String push = "push ";
     size_t i = 0;
+    
     while (i < length)
     {
         size_t local = 0;
@@ -147,11 +148,17 @@ void SerialStorage::storePayload(String payload, String topic)
             local++;
             i++;
         }
-        Serial1.write('\0');
+
+        if (i < length) {
+            Serial1.write('\0');
+            delay(100);
+        }
+        
+      
     }
 
     Serial1.flush();
-    delay(300);
+    delay(100);
     sendingOffline = false;
 }
 

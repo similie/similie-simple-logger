@@ -3,6 +3,10 @@
 #ifndef controlled_payload_h
 #define controlled_payload_h
 
+
+/** 
+ * This class manages the payload as it is sent to the cloud.
+*/
 class ControlledPayload
 {
 private:

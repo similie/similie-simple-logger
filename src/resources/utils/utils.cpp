@@ -13,6 +13,27 @@ String Utils::requestDeviceId(int identity, String cmd)
     return "request_" + String(identity) + " " + cmd;
 }
 
+String getTimePadding() {
+    String time = String(millis());
+    uint8_t pad = 10 - time.length();
+    String padding = "";
+    for (uint8_t i = 0; i < pad; i++) {
+        padding += "0";
+    }
+
+    return padding + time;
+}
+
+bool Utils::validConfigIdentity(uint8_t identity) 
+{
+    return identity == 1;
+}
+
+void Utils::log(String event, String message)
+{
+    Serial.print(getTimePadding());Serial.print(" [SIMILIE] " + event + ": ");Serial.println(message);
+}
+
 
 String Utils::receiveDeviceId(int identity)
 {

@@ -7,13 +7,29 @@
 #include "resources/utils/utils.h"
 #include "device.h"
 #include "wl-device.h"
-#include "resources/utils/controlled_payload.h"
+// #include "resources/utils/controlled_payload.h"
 #include "resources/utils/serial_storage.h"
 
 #include "battery.h"
 #include "all-weather.h"
 #include "soil-moisture.h"
 #include "resources/heartbeat/heartbeat.h"
+
+#define ONE 1
+#define TWO 2
+#define THREE 3
+#define FOUR 4
+#define FIVE 5
+#define SIX 6
+#define SEVEN 7
+
+#define ONE_I 0
+#define TWO_I 1
+#define THREE_I 2
+#define FOUR_I 3
+#define FIVE_I 4
+#define SIX_I 5
+#define SEVEN_I 6
 
 #ifndef device_manager_h
 #define device_manager_h
@@ -24,19 +40,19 @@ const size_t DEVICE_AGGR_COUNT = 5;
 
 class DeviceManager
 {
-private:
+private: 
     // bool readBusy = false;
     // bool publishBusy = false;
     SerialStorage *storage;
-    String SUSCRIPTION_CONFIRMATION = "Ai/Post/Confirm/";
-    String SUSCRIPTION_TERMINATION = "Ai/Post/Terminate/";
-    ControlledPayload *payloadController[(ControlledPayload::EXPIRATION_TIME / 60) / 1000]; //{ControlledPayload(), ControlledPayload(), ControlledPayload()}
+    // String SUSCRIPTION_CONFIRMATION = "Ai/Post/Confirm/";
+    // String SUSCRIPTION_TERMINATION = "Ai/Post/Terminate/";
+    // ControlledPayload *payloadController[(ControlledPayload::EXPIRATION_TIME / 60) / 1000]; //{ControlledPayload(), ControlledPayload(), ControlledPayload()}
     unsigned int read_count = 0;
     u8_t attempt_count = 0;
     Bootstrap *boots;
     Processor *processor;
-    const size_t deviceCount = 1;
-    size_t deviceAggregateCounts[1] = {3};
+    const size_t deviceCount = ONE;
+    size_t deviceAggregateCounts[ONE] = {THREE};
     Utils utils;
     HeartBeat *blood;
     unsigned int ROTATION = 0;
@@ -48,16 +64,15 @@ private:
     void placePayload(String payload);
     void popOfflineCollection();
     void confirmationExpiredCheck();
-    void initPayloadController();
     void read();
-    void checkBootThreshold();
+    // void checkBootThreshold();
     void publish();
     void publisher();
     void manageManualModel();
     void heartbeat();
     size_t getBufferSize();
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
-    void setSubscriber();
+    // void setSubscriber();
 
 public:
     ~DeviceManager();
@@ -72,9 +87,9 @@ public:
     static int rebootRequest(String f);
     void loop();
     bool recommendedMaintenace(u8_t damangeCount);
-    bool isStrapped(bool boots);
-    void subscriptionConfirmation(const char *eventName, const char *data);
-    void subscriptionTermination(const char *eventName, const char *data);
+    // void subscriptionConfirmation(const char *eventName, const char *data);
+    // void subscriptionTermination(const char *eventName, const char *data);
+    void restoreDefaults();
 };
 
 #endif

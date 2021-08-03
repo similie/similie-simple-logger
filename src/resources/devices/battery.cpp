@@ -16,6 +16,10 @@ String Battery::name()
     return deviceName;
 }
 
+void Battery::restoreDefaults()
+{
+}
+
 void Battery::publish(JSONBufferWriter &writer, u8_t attempt_count)
 {
     FuelGauge fuel;

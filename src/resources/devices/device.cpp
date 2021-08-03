@@ -24,6 +24,11 @@ void Device::publish(JSONBufferWriter &writer, u8_t attempt_count)
 // {
 // }
 
+void Device::restoreDefaults()
+{
+    
+}
+
 String Device::name() {
     return "";
 }

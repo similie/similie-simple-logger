@@ -1,7 +1,7 @@
 #include "soil-moisture.h"
 
 double multiple = SOIL_MOISTURE_DEFAULT;
-int saveAddressForMoisture = -1;
+uint16_t saveAddressForMoisture = -1;
 
 int setMoistureCalibration(String read)
 {
@@ -23,6 +23,12 @@ int setMoistureCalibration(String read)
   return 1;
 }
 
+void SoilMoisture::restoreDefaults() 
+{
+    multiple = SOIL_MOISTURE_DEFAULT;
+    VWCStruct store = {1, multiple};
+    EEPROM.put(saveAddressForMoisture, store);
+}
 
 SoilMoisture::~SoilMoisture()
 {
@@ -200,7 +206,7 @@ void SoilMoisture::parseSerial(String ourReading)
 
     if (inValidMessageString(ourReading))
     {
-        Serial.println("Invalid Message String");
+        Utils::log("SOIL_MOSTURE", "Invalid Message String");
         return;
     }
 
@@ -222,27 +228,47 @@ void SoilMoisture::print()
     }
 }
 
-String SoilMoisture::getMoistureName() 
-{
-    String name = "SoilMoisture";
-    if (this->hasSerialIdentity())
-    {
-        return name + String(this->sendIdentity);
-    }
 
-    return name;
+
+String SoilMoisture::uniqueName() 
+{
+ if (this->hasSerialIdentity())
+  {
+    return this->name() + String(this->sendIdentity);
+  }
+  return this->name();
+}
+
+void SoilMoisture::pullEpromData() 
+{
+  VWCStruct pulled;
+  EEPROM.get(saveAddressForMoisture, pulled);
+  if (pulled.version == 1 && !isnan(pulled.multiple)) {
+      multiple = pulled.multiple;
+  }
+  delay(5000);
+  Utils::log("SOIL_MOISTURE_BOOTSTRAP_MULTIPLIER", String(multiple));
+}
+
+void SoilMoisture::setDeviceAddress() {
+    delay(6000);
+    saveAddressForMoisture = boots->registerAddress(this->uniqueName(), sizeof(VWCStruct));
+    Utils::log("SOIL_MOISTURE_BOOTSTRAP_ADDRESS", String(saveAddressForMoisture));
+}
+
+void SoilMoisture::setFunctions()
+{
+    Particle.function("set" + this->uniqueName(), setMoistureCalibration);
+    Particle.variable(this->uniqueName(), multiple); 
 }
 
 void SoilMoisture::init()
 {
-    saveAddressForMoisture = boots->getStorageAddress(sizeof(VWCStruct));
-    VWCStruct pulled;
-    EEPROM.get(saveAddressForMoisture, pulled);
-    if (pulled.version > 0 && !isnan(pulled.multiple)) {
-       multiple = pulled.multiple;
-    }
-    Particle.function("set" + this->getMoistureName(), setMoistureCalibration);
-    Particle.variable(this->getMoistureName(), multiple);
+    boots->startSerial();
+    setDeviceAddress();
+    pullEpromData();
+    setFunctions();
+   
 }
 
 size_t SoilMoisture::buffSize()

@@ -28,6 +28,7 @@ public:
     u8_t matenanceCount();
     u8_t paramCount();
     size_t buffSize();
+    void restoreDefaults();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
 };
 

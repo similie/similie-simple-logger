@@ -6,7 +6,6 @@
  */
 
 SYSTEM_THREAD(ENABLED);
-
 //SYSTEM_MODE(MANUAL);
 
 #include "resources/bootstrap/bootstrap.h"
@@ -43,43 +42,12 @@ int setSendInverval(String read)
 }
 
 /*
-* setDigital: cloud function that sets a device as digital or analog
-* takes a 1 or 0 input
-*/
-int setDigital(String read)
-{
-  int val = (int)atoi(read);
-  if (val < 0 || val > 1)
-  {
-    return -1;
-  }
-  // digital = (bool)val;
-  boots.setDigital((bool)val);
-  return 1;
-}
-/*
-* setCalibration: cloud function that calibration value
-*/
-int setCalibration(String read)
-{
-  const char *stringCal = read.c_str();
-  double val = ::atof(stringCal);
-  Log.info("setting calibration of %s", stringCal);
-
-  if (val == 0)
-  {
-    return 0;
-  }
-  boots.setCalibration(val);
-  return 1;
-}
-
-/*
 * restoreDefaults: cloud function that clears all config values
 */
 int restoreDefaults(String f)
 {
   boots.restoreDefaults();
+  manager.restoreDefaults();
   return 1;
 }
 
@@ -95,22 +63,14 @@ int setMaintenanceMode(String read)
   return val;
 }
 
-/*
-* timers: just validate our times are constantly active in the main loop
-*/
 
 // setup() runs once, when the device is first turned on.
 void setup()
 {
   Particle.function("setPublicationInterval", setSendInverval);
-  Particle.function("setDigital", setDigital);
-  Particle.function("setCalibration", setCalibration);
   Particle.function("restoreDefaults", restoreDefaults);
   Particle.function("setMaintenanceMode", setMaintenanceMode);
   // // setting variable
-  // manager.init();
-  // waitFor(boots.isStrapped, 10000);
-
   processor.connect();
   manager.init();
   waitFor(boots.isStrapped, 10000);
@@ -122,5 +82,4 @@ void loop()
 {
   manager.loop();
   processor.loop();
-  // Log.info("IS CELULAR READY %d", Cellular.ready());
 }

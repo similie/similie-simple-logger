@@ -18,9 +18,14 @@ String GpsDevice::name()
     return this->deviceName;
 }
 
+void GpsDevice::restoreDefaults()
+{
+
+}
+
 void GpsDevice::init()
 {
-    
+    boots->startSerial();
 }
  
 void GpsDevice::publish(JSONBufferWriter &writer, u8_t attempt_count)

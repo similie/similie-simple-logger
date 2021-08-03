@@ -6,13 +6,17 @@
 #ifndef Utils_h
 #define Utils_h
 
+
 class Utils
 {
 private:
+
 public:
     ~Utils();
     Utils();
     void reboot();
+
+    static bool validConfigIdentity(uint8_t identity);
     String requestDeviceId(int identity, String cmd);
     String receiveDeviceId(int identity);
     void parseSerial(String ourReading, size_t paramLength, size_t max, float  value_hold[][Bootstrap::OVERFLOW_VAL]);
@@ -28,6 +32,7 @@ public:
     float getSum(float values[], size_t MAX);
     float getMedian(float arr[], size_t max);
     static bool connected();
+    static void log(String event, String message);
     size_t skipMultiple(unsigned int size, size_t maxVal , unsigned int threshold);
     static int simCallback(int type, const char *buf, int len, char *value);
 };

@@ -35,9 +35,12 @@ private:
     };
     Bootstrap *boots;
     String serialMsgStr = "0R0!";
-    String deviceName = "Soil Moisture";
+    String deviceName = "SoilMoisture";
     Utils utils;
-    String getMoistureName();
+    
+    void setDeviceAddress();
+    void pullEpromData();
+    void setFunctions();
     void parseSerial(String ourReading);
     bool readyRead = false;
     bool readCompile = false;
@@ -46,6 +49,7 @@ private:
     u8_t maintenanceTick = 0;
     String ourReading = "";
     String getReadContent();
+    String uniqueName();
     bool hasSerialIdentity();
     String constrictSerialIdentity();
     String serialResponseIdentity();
@@ -74,6 +78,7 @@ public:
     u8_t matenanceCount();
     u8_t paramCount();
     size_t buffSize();
+    void restoreDefaults();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
     float extractValue(float values[], size_t key);
     float extractValue(float values[], size_t key, size_t max);

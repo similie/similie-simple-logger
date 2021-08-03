@@ -6,15 +6,22 @@
 #ifndef gps_device_h
 #define gps_device_h
 
-class GpsDevice
+class RainGauge
 {
 private:
     Bootstrap *boots;
-    String deviceName = "GPSDevice";
+     String valueMap[2] =
+        {
+            "pre"};
+    enum
+    {
+        precipitation
+    };
+    String deviceName = "RainGauge";
 public:
-    ~GpsDevice();
-    GpsDevice();
-    GpsDevice(Bootstrap *boots);
+    ~RainGauge();
+    RainGauge();
+    RainGauge(Bootstrap *boots);
     void nullifyPayload(const char *key);
     String name();
     //void storePayload(String payload, String topic);
