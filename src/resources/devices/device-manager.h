@@ -7,7 +7,7 @@
 #include "resources/utils/utils.h"
 #include "device.h"
 #include "wl-device.h"
-// #include "resources/utils/controlled_payload.h"
+#include "rain-gauge.h"
 #include "resources/utils/serial_storage.h"
 
 #include "battery.h"
@@ -36,7 +36,7 @@
 #define BUFF_SIZE 300
 
 const size_t DEVICE_COUNT = 5;
-const size_t DEVICE_AGGR_COUNT = 5;
+const size_t DEVICE_AGGR_COUNT = SEVEN;
 
 class DeviceManager
 {
@@ -51,8 +51,9 @@ private:
     u8_t attempt_count = 0;
     Bootstrap *boots;
     Processor *processor;
+    bool FRESH_START = false;
     const size_t deviceCount = ONE;
-    size_t deviceAggregateCounts[ONE] = {THREE};
+    size_t deviceAggregateCounts[ONE];
     Utils utils;
     HeartBeat *blood;
     unsigned int ROTATION = 0;
@@ -76,7 +77,6 @@ private:
 
 public:
     ~DeviceManager();
-    DeviceManager();
     DeviceManager(Bootstrap *boots, Processor *processor);
     void init();
     static bool isNotPublishing();

@@ -1,14 +1,21 @@
 #include "wl-device.h"
 
-uint16_t saveAddressForWL = 0;
-double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
-bool digital = DIGITAL_DEFAULT;
-/*
-* setDigital: cloud function that sets a device as digital or analog
-* takes a 1 or 0 input
-*/
+WlDevice::~WlDevice()
+{
+}
 
-void saveEEPROM(WLStruct storage) 
+WlDevice::WlDevice(Bootstrap *boots)
+{
+    this->boots = boots;
+}
+
+WlDevice::WlDevice(Bootstrap *boots, int sendIdentity)
+{
+    this->boots = boots;
+    this->sendIdentity = sendIdentity;
+}
+
+void WlDevice::saveEEPROM(WLStruct storage) 
 { 
     if (saveAddressForWL == 0) {
         return;
@@ -17,7 +24,7 @@ void saveEEPROM(WLStruct storage)
     EEPROM.put(saveAddressForWL, storage);
 }
 
-int setDigitalCloud(String read)
+int WlDevice::setDigitalCloud(String read)
 {
   int val = (int)atoi(read);
   if (val < 0 || val > 1)
@@ -26,7 +33,7 @@ int setDigitalCloud(String read)
   }
   digital = (bool)val;
   char saved = WlDevice::isDigital(digital);
-  WLStruct storage = WlDevice::getProm();
+  WLStruct storage = getProm();
   storage.digital = saved;
   WlDevice::setPin(digital);
   if (!Utils::validConfigIdentity(storage.version)) {
@@ -38,7 +45,7 @@ int setDigitalCloud(String read)
 /*
 * setCalibration: cloud function that calibration value
 */
-int setCalibration(String read)
+int WlDevice::setCalibration(String read)
 {
   const char *stringCal = read.c_str();
   double val = ::atof(stringCal);
@@ -51,32 +58,13 @@ int setCalibration(String read)
 
   currentCalibration = val;
 
-  WLStruct storage = WlDevice::getProm();
+  WLStruct storage = getProm();
   storage.calibration = currentCalibration;
   if (!Utils::validConfigIdentity(storage.version)) {
     storage.digital = WlDevice::isDigital(digital);
   }
   saveEEPROM(storage);
   return 1;
-}
-
-
-WlDevice::~WlDevice()
-{
-}
-
-WlDevice::WlDevice()
-{
-}
-WlDevice::WlDevice(Bootstrap *boots)
-{
-    this->boots = boots;
-}
-
-WlDevice::WlDevice(Bootstrap *boots, int sendIdentity)
-{
-    this->boots = boots;
-    this->sendIdentity = sendIdentity;
 }
 
 WLStruct WlDevice::getProm() {
@@ -150,15 +138,21 @@ void WlDevice::restoreDefaults()
 
 bool WlDevice::hasSerialIdentity() 
 {
-    return this->sendIdentity > -1;
+    return utils.hasSerialIdentity(this->sendIdentity);
 }
 
 void WlDevice::setCloudFunctions()
 {
-  Particle.function("setDigital", setDigitalCloud);
-  Particle.function("setCalibration", setCalibration);
-  Particle.variable("digital", digital);
-  Particle.variable("currentCalibration", currentCalibration);
+  String appendage = appendIdentity();
+  Particle.function("setDigital" + appendage, &WlDevice::setDigitalCloud, this);
+  Particle.function("setCalibration" + appendage, &WlDevice::setCalibration, this);
+  Particle.variable("digital" + appendage, digital);
+  Particle.variable("currentCalibration" + appendage, currentCalibration);
+}
+
+String WlDevice::appendIdentity() 
+{
+    return this->hasSerialIdentity() ? String(this->sendIdentity) : "";
 }
 
 String WlDevice::uniqueName() 
@@ -172,15 +166,16 @@ String WlDevice::uniqueName()
 
 void WlDevice::init()
 {
-   // setp
-   delay(6000);
+   // setup
+   setCloudFunctions();
+   Utils::log("WL_BOOT_ADDRESS REGISTRATION", this->uniqueName());
    saveAddressForWL = boots->registerAddress(this->uniqueName(), sizeof(WLStruct));
-   this->config = WlDevice::getProm();
+   Utils::log("WL_BOOT_ADDRESS " + this->uniqueName(), String(saveAddressForWL));
+   this->config = getProm();
    if (!Utils::validConfigIdentity(this->config.version)) {
        restoreDefaults();
    }
    configSetup();
-   Utils::log("WL_BOOT_ADDRESS", String(saveAddressForWL));
 }
 
 int WlDevice::readWL()

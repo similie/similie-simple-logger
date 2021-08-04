@@ -57,10 +57,8 @@ private:
     String serialMsgStr = "0R0!";
 
     Utils utils;
-    //void payloadRestorator(String payload);
     void parseSerial(String ourReading);
     bool readyRead = false;
-    // bool sendingOfflinePayload = false;
     bool readCompile = false;
     bool readReady();
     size_t readSize();
@@ -71,7 +69,6 @@ private:
     bool hasSerialIdentity();
     String constrictSerialIdentity();
     String serialResponseIdentity();
-    bool inValidMessageString(String message);
     String replaceSerialResponceItem(String message);
     bool validMessageString(String message);
     unsigned int READ_THRESHOLD = 12;
@@ -82,7 +79,6 @@ private:
     String fetchReading();
 public:
     ~AllWeather();
-    AllWeather();
     AllWeather(Bootstrap *boots);
     AllWeather(Bootstrap *boots, int identity);
     void read();
@@ -92,7 +88,6 @@ public:
     void init();
     String name();
     void nullifyPayload(const char *key);
-    //void storePayload(String payload, String topic);
     u8_t matenanceCount();
     u8_t paramCount();
     size_t buffSize();
@@ -100,7 +95,6 @@ public:
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
     float extractValue(float values[], size_t key);
     float extractValue(float values[], size_t key, size_t max);
-    //void popOfflineCollection(Processor *processor, String topic, u8_t count);
 };
 
 #endif

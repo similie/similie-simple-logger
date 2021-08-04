@@ -31,12 +31,15 @@ class WlDevice : public Device
 {
 private:
     bool digital = DIGITAL_DEFAULT;
-    // double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
+    uint16_t saveAddressForWL = 0;
+    double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
     void configSetup();
     void restoreDefaults();
     bool isDigital();
-    
-   
+    int setDigitalCloud(String read);
+    int setCalibration(String read);
+    void saveEEPROM(WLStruct storage);
+    String appendIdentity();
     WLStruct config;
     String uniqueName();
     bool hasSerialIdentity();
@@ -46,7 +49,7 @@ private:
     int sendIdentity = -1;
     //String readParams[WL_PARAM_SIZE] = {"wl_pw", "hydrometric_level"};
     // String readParams[WL_PARAM_SIZE] = {"wl_pw"}; // water tank  or wl
-    String readParams[WL_PARAM_SIZE] = {"hydrometric_level"}; // river level or hydrometric level
+    String readParams[WL_PARAM_SIZE] = {"wl"}; // river level or hydrometric level
 
     Utils utils;
     u8_t maintenanceTick = 0;
@@ -63,15 +66,13 @@ private:
 
 public:
     ~WlDevice();
-    WlDevice();
     WlDevice(Bootstrap *boots);
     WlDevice(Bootstrap *boots, int sendIdentity);
-   
     static char setDigital(bool value);
     static bool isDigital(char value);
-    static WLStruct getProm();
     static void setPin(bool digital);
     void read();
+    WLStruct getProm();
     String name();
     void loop();
     void clear();
@@ -80,7 +81,6 @@ public:
     u8_t matenanceCount();
     u8_t paramCount();
     size_t buffSize();
-    
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
 };
 

@@ -20,6 +20,10 @@ SerialStorage::~SerialStorage()
 
 }
 
+void SerialStorage::clearDeviceStorage() 
+{
+    EEPROM.clear();
+}
 
 bool SerialStorage::notSendingOfflineData() {
     return !sendingOffline;

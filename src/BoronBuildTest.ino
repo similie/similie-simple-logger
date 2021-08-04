@@ -21,9 +21,6 @@ Processor processor;
 Utils utils;
 DeviceManager manager(&boots, &processor);
 
-/*
-* This is running the state based on our released values
-*/
 
 int setSendInverval(String read)
 {
@@ -51,26 +48,11 @@ int restoreDefaults(String f)
   return 1;
 }
 
-int setMaintenanceMode(String read)
-{
-  int val = (int)atoi(read);
-  if (val < 0 || val > 1)
-  {
-    return -1;
-  }
-  // digital = (bool)val;
-  boots.setMaintenance((bool)val);
-  return val;
-}
-
-
 // setup() runs once, when the device is first turned on.
 void setup()
 {
   Particle.function("setPublicationInterval", setSendInverval);
   Particle.function("restoreDefaults", restoreDefaults);
-  Particle.function("setMaintenanceMode", setMaintenanceMode);
-  // // setting variable
   processor.connect();
   manager.init();
   waitFor(boots.isStrapped, 10000);

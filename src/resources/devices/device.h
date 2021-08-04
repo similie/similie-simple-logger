@@ -15,8 +15,6 @@ public:
     ~Device();
     Device();
     Device(Bootstrap *boots);
-    virtual void nullifyPayload(const char *key);
-    //virtual void storePayload(String payload, String topic);
     virtual String name();
     virtual void read();
     virtual void loop();
@@ -28,7 +26,6 @@ public:
     virtual void init();
     virtual void restoreDefaults();
     virtual void publish(JSONBufferWriter &writer, u8_t attempt_count);
-   // virtual void popOfflineCollection(Processor *processor, String topic, u8_t count);
 };
 
 #endif

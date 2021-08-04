@@ -22,7 +22,7 @@ public:
     ~SerialStorage();
     SerialStorage();
     SerialStorage(Processor *holdProcessor, Bootstrap *boots);
-    
+    static void clearDeviceStorage();
     static bool notSendingOfflineData();
     void loop();
     void storePayload(String payload, String topic);

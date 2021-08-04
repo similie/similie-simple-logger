@@ -38,14 +38,7 @@ int DeviceManager::rebootRequest(String f)
 DeviceManager::~DeviceManager()
 {
 }
-/**
- * DeviceManager
- * 
- * Default constrictuor
- */
-DeviceManager::DeviceManager()
-{
-}
+
 /**
  * DeviceManager
  * 
@@ -60,18 +53,37 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 {
     this->boots = boots;
     this->processor = processor;
+
+    if (FRESH_START) {
+        storage->clearDeviceStorage();
+    }
+    /**
+    * We need to update the deviceAggregateCounts array.
+    * Normally you will leave the first dimension at ONE_I.
+    * Between the curly braces {NUM}, Set the number of devices you need to initialize.
+    * The max is by default set to 7.
+    */
+    deviceAggregateCounts[ONE_I] =  {THREE}; //{FOUR}; // set the number of devices here
     // the numerical N_I values a indexs from 0, 1, 2 ... n
     // unless others needed. Most values will only needs the 
     // ONE_I for the first dimension.
     this->devices[ONE_I][ONE_I] = new AllWeather(boots, ONE_I);
     this->devices[ONE_I][TWO_I] = new Battery();
     this->devices[ONE_I][THREE_I] = new SoilMoisture(boots, TWO_I);
-    this->devices[ONE_I][FOUR_I] = new WlDevice(boots, THREE_I);
+    // water level
+    // this->devices[ONE_I][FOUR_I] = new WlDevice(boots, THREE_I);
+    // rain gauge
+    //this->devices[ONE_I][FOUR_I] = new RainGauge();
+    // another soil moisture will work
+    //this->devices[ONE_I][FIVE_I] = new SoilMoisture(boots, THREE_I);
     this->blood = new HeartBeat(System.deviceID());
     // end devices
     setParamsCount();
     // set storage when we have a memory card reader
     storage = new SerialStorage(processor, boots);
+
+   
+
 }
 
 

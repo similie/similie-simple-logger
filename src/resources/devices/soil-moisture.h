@@ -37,7 +37,10 @@ private:
     String serialMsgStr = "0R0!";
     String deviceName = "SoilMoisture";
     Utils utils;
-    
+    uint16_t saveAddressForMoisture = -1;
+    double multiple = SOIL_MOISTURE_DEFAULT;
+    float multiplyValue(float value);
+    int setMoistureCalibration(String read);
     void setDeviceAddress();
     void pullEpromData();
     void setFunctions();
@@ -53,7 +56,6 @@ private:
     bool hasSerialIdentity();
     String constrictSerialIdentity();
     String serialResponseIdentity();
-    bool inValidMessageString(String message);
     String replaceSerialResponceItem(String message);
     bool validMessageString(String message);
     unsigned int READ_THRESHOLD = 12;
@@ -65,7 +67,6 @@ private:
     String fetchReading();
 public:
     ~SoilMoisture();
-    SoilMoisture();
     SoilMoisture(Bootstrap *boots);
     SoilMoisture(Bootstrap *boots, int identity);
     void read();
@@ -74,7 +75,6 @@ public:
     void print();
     void init();
     String name();
-    void nullifyPayload(const char *key);
     u8_t matenanceCount();
     u8_t paramCount();
     size_t buffSize();

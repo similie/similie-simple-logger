@@ -15,28 +15,31 @@
 #define ATTEMPT_THRESHOLD 3
 
 #define MAX_SEND_TIME 15
-#define SERIAL_BUFFER_LENGTH 8
+#define SERIAL_BUFFER_LENGTH 5
 #define SERIAL_COMMS_BAUD 9600
+
+#define MAX_U16 65535
+#define MAX_EEPROM_ADDRESS 8197
 
 
 struct DeviceMetaStruct {
     uint8_t version;
     uint8_t count;
-    uint16_t startAddress;
-    uint16_t endAddress;
-    uint16_t address_0;
-    uint16_t address_1;
-    uint16_t address_2;
-    uint16_t address_3;
-    uint16_t address_4;
-    uint16_t address_5;
-    uint16_t address_6;
+    // uint16_t startAddress;
+    // uint16_t endAddress;
+    // uint16_t address_0;
+    // uint16_t address_1;
+    // uint16_t address_2;
+    // uint16_t address_3;
+    // uint16_t address_4;
+    // uint16_t address_5;
+    // uint16_t address_6;
 };
 
 struct DeviceStruct {
     uint8_t version;
     uint16_t size;
-    const char* name;
+    unsigned long name;
     uint16_t address;
 };
 
@@ -61,10 +64,13 @@ private:
     bool bootstrapped = false;
     uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
     int publishedInterval = DEFAULT_PUB_INTERVAL;
-    
+    unsigned long machineName(String name);
     void collectDevices();
+    void setFunctions();
+    int setMaintenanceMode(String read);
      // we can use 255 to know the index is invalid as 0 is a valid index
-    uint8_t maxAddressIndex = 255;
+    // uint8_t maxAddressIndex = 255;
+    int maxAddressIndex();
     uint16_t registeredAddresses[MAX_DEVICES];
    
     DeviceMetaStruct deviceMeta;
@@ -103,8 +109,12 @@ private:
     void processSerial();
     void pushSerial(String serial);
     String popSerial(size_t index);
-
-    uint16_t deviceStartAddress = BEACH_ADDRESS + sizeof(BeachStruct) + 8; 
+    bool exceedsMaxAddressSize(uint16_t address);
+    void setMetaAddresses();
+    uint16_t deviceMetaAdresses[MAX_DEVICES];
+    uint16_t deviceContainerAddressStart = BEACH_ADDRESS + sizeof(BeachStruct) + 8;
+    uint16_t deviceStartAddress = deviceContainerAddressStart  + (sizeof(DeviceStruct) * MAX_DEVICES)  +  (MAX_DEVICES + 1);
+    uint16_t manualDeviceTracker = deviceStartAddress + 8;
 
 public:
     ~Bootstrap();

@@ -1,16 +1,23 @@
 #include "Particle.h"
 #include "string.h"
 #include <stdint.h>
+#include "device.h"
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/processors/Processor.h"
-#ifndef gps_device_h
-#define gps_device_h
+#include "resources/utils/utils.h"
 
-class RainGauge
+// #define RAIN_GAUGE_PIN D7 // Blue when using Port1
+#define RAIN_GAUGE_PIN A1 // Stripe Blue when using Port1
+
+#ifndef rain_gauge_h
+#define rain_gauge_h
+
+class RainGauge : public Device
 {
 private:
+    double perTipMultiple = 0.2; // mm
     Bootstrap *boots;
-     String valueMap[2] =
+    String valueMap[2] =
         {
             "pre"};
     enum
@@ -22,9 +29,10 @@ public:
     ~RainGauge();
     RainGauge();
     RainGauge(Bootstrap *boots);
-    void nullifyPayload(const char *key);
     String name();
-    //void storePayload(String payload, String topic);
+    void setPin();
+    void countChange(void);
+    void setInterrupt();
     void read();
     void loop();
     u8_t matenanceCount();
@@ -35,7 +43,6 @@ public:
     void init();
     void restoreDefaults();
     void publish(JSONBufferWriter &writer, u8_t attempt_count);
-   // void popOfflineCollection(Processor *processor, String topic, u8_t count);
 };
 
 #endif

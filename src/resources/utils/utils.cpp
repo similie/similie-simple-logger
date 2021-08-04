@@ -13,6 +13,28 @@ String Utils::requestDeviceId(int identity, String cmd)
     return "request_" + String(identity) + " " + cmd;
 }
 
+bool Utils::serialMesssageHasError(String message, int identity) {
+    bool error = false;
+    if (message.startsWith("ERROR_" + String(identity))) {
+        String errorMessage = " FOR " + String(identity) + " WITH MESSAGE:: " + message.replace("ERROR_" + String(identity), "");
+        this->log("SERIAL_BUS_ERROR", errorMessage);
+        error = true;
+    }
+    return error;
+}
+
+bool Utils::hasSerialIdentity(int identity)
+{
+    return identity > -1;
+}
+
+bool Utils::inValidMessageString(String message, int identity)
+{
+    return this->serialMesssageHasError(message, identity) || 
+     (this->hasSerialIdentity(identity) && 
+     !message.startsWith(receiveDeviceId(identity)));
+}
+
 String getTimePadding() {
     String time = String(millis());
     uint8_t pad = 10 - time.length();

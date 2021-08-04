@@ -15,9 +15,11 @@ public:
     ~Utils();
     Utils();
     void reboot();
-
+    bool hasSerialIdentity(int identity);
+    bool inValidMessageString(String message, int identity);
     static bool validConfigIdentity(uint8_t identity);
     String requestDeviceId(int identity, String cmd);
+    bool serialMesssageHasError(String message, int identity);
     String receiveDeviceId(int identity);
     void parseSerial(String ourReading, size_t paramLength, size_t max, float  value_hold[][Bootstrap::OVERFLOW_VAL]);
     bool invalidNumber(String value);

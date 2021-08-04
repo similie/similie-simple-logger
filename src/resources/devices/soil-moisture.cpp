@@ -1,9 +1,7 @@
 #include "soil-moisture.h"
 
-double multiple = SOIL_MOISTURE_DEFAULT;
-uint16_t saveAddressForMoisture = -1;
 
-int setMoistureCalibration(String read)
+int SoilMoisture::setMoistureCalibration(String read)
 {
   const char *stringCal = read.c_str();
   double val = ::atof(stringCal);
@@ -33,6 +31,7 @@ void SoilMoisture::restoreDefaults()
 SoilMoisture::~SoilMoisture()
 {
 }
+
 SoilMoisture::SoilMoisture(Bootstrap *boots)
 {
     this->boots = boots;
@@ -44,26 +43,23 @@ SoilMoisture::SoilMoisture(Bootstrap *boots, int identity)
     this->sendIdentity = identity;
 }
 
-SoilMoisture::SoilMoisture()
-{
-}
-
 String SoilMoisture::name() {
     return this->deviceName;
 }
 
-void SoilMoisture::nullifyPayload(const char *key)
+float SoilMoisture::multiplyValue(float value) 
 {
+   return ((value == NO_VALUE) ? NO_VALUE : value * multiple);
 }
 
 float SoilMoisture::extractValue(float values[], size_t key, size_t max)
 {
     switch (key)
     {
-    case vwc:
-        return utils.getMedian(values, max) * multiple;
-    default:
-        return utils.getMedian(values, max);
+        case vwc:
+            return multiplyValue(utils.getMedian(values, max));
+        default:
+            return utils.getMedian(values, max);
     }
 }
 
@@ -186,11 +182,6 @@ bool SoilMoisture::hasSerialIdentity()
     return this->sendIdentity > -1;
 }
 
-bool SoilMoisture::inValidMessageString(String message)
-{
-    return this->hasSerialIdentity() && !message.startsWith(this->serialResponseIdentity());
-}
-
 String SoilMoisture::replaceSerialResponceItem(String message)
 {
     if (!this->hasSerialIdentity())
@@ -204,7 +195,7 @@ String SoilMoisture::replaceSerialResponceItem(String message)
 void SoilMoisture::parseSerial(String ourReading)
 {
 
-    if (inValidMessageString(ourReading))
+    if (utils.inValidMessageString(ourReading, this->sendIdentity))
     {
         Utils::log("SOIL_MOSTURE", "Invalid Message String");
         return;
@@ -246,19 +237,17 @@ void SoilMoisture::pullEpromData()
   if (pulled.version == 1 && !isnan(pulled.multiple)) {
       multiple = pulled.multiple;
   }
-  delay(5000);
   Utils::log("SOIL_MOISTURE_BOOTSTRAP_MULTIPLIER", String(multiple));
 }
 
 void SoilMoisture::setDeviceAddress() {
-    delay(6000);
     saveAddressForMoisture = boots->registerAddress(this->uniqueName(), sizeof(VWCStruct));
     Utils::log("SOIL_MOISTURE_BOOTSTRAP_ADDRESS", String(saveAddressForMoisture));
 }
 
 void SoilMoisture::setFunctions()
 {
-    Particle.function("set" + this->uniqueName(), setMoistureCalibration);
+    Particle.function("set" + this->uniqueName(), &SoilMoisture::setMoistureCalibration, this);
     Particle.variable(this->uniqueName(), multiple); 
 }
 
@@ -268,7 +257,6 @@ void SoilMoisture::init()
     setDeviceAddress();
     pullEpromData();
     setFunctions();
-   
 }
 
 size_t SoilMoisture::buffSize()
