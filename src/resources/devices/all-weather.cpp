@@ -414,7 +414,7 @@ void AllWeather::restoreDefaults()
  */
 size_t AllWeather::buffSize()
 {
-    return 600;
+    return 250;  // 600;
 }
 
 /**

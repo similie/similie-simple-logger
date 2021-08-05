@@ -57,7 +57,7 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     // once flashed and reflash
     // FRESH_START = true;
     if (FRESH_START) {
-        storage->clearDeviceStorage();
+        SerialStorage::clearDeviceStorage();
     }
     /**
     * We need to update the deviceAggregateCounts array.
@@ -73,9 +73,9 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     this->devices[ONE_I][TWO_I] = new Battery();
     this->devices[ONE_I][THREE_I] = new SoilMoisture(boots, TWO_I);
     // water level
-    // this->devices[ONE_I][FOUR_I] = new WlDevice(boots, THREE_I);
+    //this->devices[ONE_I][FOUR_I] = new WlDevice(boots, THREE_I);
     // rain gauge
-    //this->devices[ONE_I][FOUR_I] = new RainGauge();
+    //this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
     // another soil moisture will work
     //this->devices[ONE_I][FIVE_I] = new SoilMoisture(boots, THREE_I);
     this->blood = new HeartBeat(System.deviceID());
@@ -83,6 +83,9 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     setParamsCount();
     // set storage when we have a memory card reader
     storage = new SerialStorage(processor, boots);
+    // this value is the payload values size. We capture the other
+    // values at initialization from the selected devices.
+    DEFAULT_BUFFER_SIZE = 120;
 }
 
 //////////////////////////////
@@ -148,8 +151,7 @@ void DeviceManager::setParamsCount()
 bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
 {
 
-    long time = Time.now(); // - (millis() / 1000);
-    //Sunday, September 13, 2020 12:26:40 PM
+    long time = Time.now(); 
     const long THRESHOLD = 1600000000;
     if (time < THRESHOLD)
     {
@@ -348,7 +350,7 @@ void DeviceManager::publish()
  */
 size_t DeviceManager::getBufferSize()
 {
-    size_t buff_size = 0;
+    size_t buff_size = 120;
     for (size_t i = 0; i < this->deviceCount; i++)
     {
         size_t size = this->deviceAggregateCounts[i];
@@ -437,11 +439,11 @@ void DeviceManager::publisher()
         success = processor->publish(topic, result);
     }
 
-    Log.info("Send %d %d", success, maintenance);
+    Utils::log("SENDING_EVENT_READY", String(success) + " " + String(maintenance));
 
     if (!maintenance && !success)
     {
-        Log.info("SENDING PAYLOAD FAILED. Storing");
+        Utils::log("SENDING PAYLOAD FAILED. Storing", result);
         this->storePayload(result, topic);
     }
     else if (success)

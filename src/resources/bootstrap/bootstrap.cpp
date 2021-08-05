@@ -74,7 +74,6 @@ Bootstrap::~Bootstrap()
 */
 void Bootstrap::init()
 {
-    // EEPROM.clear();
     setFunctions();
     this->setMetaAddresses();
     this->pullRegistration();
@@ -139,36 +138,7 @@ uint16_t Bootstrap::deviceInitAddress()
     return this->deviceStartAddress + 1;
 }
 
-int Bootstrap::maxAddressIndex()
-{
-    int maxAddressIndex = -1;
-    uint16_t maxAddress = deviceInitAddress();
-    for (uint8_t i = 0; i < MAX_DEVICES && i < this->deviceMeta.count; i++) {
-        if (devices[i].address > maxAddress) {
-            maxAddress = devices[i].address;
-            maxAddressIndex = i;
-        }
-    }
-    return maxAddressIndex;
-}
 
-/**
-* @private getNextDeviceAddress
-*
-* gets the next address for device registration
-* @return uint16_t 
-*/
-uint16_t Bootstrap::getNextDeviceAddress() {
-    int mAddress = maxAddressIndex();
-    if (mAddress != -1) {
-        DeviceStruct lastDevice = devices[mAddress];
-        if (Utils::validConfigIdentity(lastDevice.version)) {
-            return lastDevice.size + lastDevice.address + 1;
-        }
-    }
-    uint16_t start = deviceInitAddress();
-    return start;
-}
 /**
 * @private exceedsMaxAddressSize
 *
@@ -203,6 +173,97 @@ void Bootstrap::collectDevices()
     }
 
 }
+
+/**
+* @private maxAddressIndex
+*
+* gets max current registered
+* @return uint16_t 
+*/
+int Bootstrap::maxAddressIndex()
+{
+    int maxAddressIndex = -1;
+    uint16_t maxAddress = deviceInitAddress();
+    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+        uint16_t address = devices[i].address;
+        Serial.print(address);Serial.print(" ");Serial.println(maxAddress);
+        if (this->exceedsMaxAddressSize(address) && address >= maxAddress) {
+            maxAddress = address;
+            maxAddressIndex = i;
+        }
+    }
+    return maxAddressIndex;
+}
+
+/**
+* @private getDeviceByName
+*
+* adds an unregistered device to the meta structure
+* @param String name - the device name
+* @param uint16_t size - the size of data being requested
+* @return DeviceStruct - a device for registration 
+*/
+DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
+{
+    unsigned long dName = this->machineName(name);
+    // delay(10000);
+    // const char * dName = name.c_str();
+    for (size_t i = 0; i < MAX_DEVICES && i < this->deviceMeta.count; i++) {
+      DeviceStruct device = this->devices[i];
+      //Log.info("SEARCHING FOR REGISTERED DEVICE %lu %lu", dName, device.name);
+      Utils::log("SEARCHING_FOR_REGISTERED_DEVICE", String(dName) + " " + String(device.name) + " " + String(dName == device.name));
+      if (dName == device.name) {
+          return device;
+      }
+    }
+    // now build it
+    uint16_t next = getNextDeviceAddress();
+    Utils::log("THIS_IS_THE_NEXT_DEVICE_ADRESS_FOR " + name, String(next));
+    DeviceStruct device = { 1, size, dName, next};
+    this->addNewDeviceToStructure(device);
+    return device;
+}
+/**
+* @public registerAddress
+*
+* adds an unregistered device to the meta structure
+* @param String name - the device name
+* @param uint16_t size - the size of data being requested
+* @return uint16_t - the predictable address for the device 
+*/
+uint16_t Bootstrap::registerAddress(String name, uint16_t size) 
+{
+    // delay(10000);
+    DeviceStruct device = getDeviceByName(name, size);
+    String deviceDetails = String(device.version) + " " + String(device.size) + " " + String(device.name) + " " + String(device.address);
+    Utils::log("REGISTERED_ADDRESS_DETAILS_FOR" + name, deviceDetails);
+    if (!Utils::validConfigIdentity(device.version)) {
+        uint16_t send = manualDeviceTracker + size + 1;
+        manualDeviceTracker = send;
+        return manualDeviceTracker;
+    }
+    return device.address;
+}
+
+/**
+* @private getNextDeviceAddress
+*
+* gets the next address for device registration
+* @return uint16_t 
+*/
+uint16_t Bootstrap::getNextDeviceAddress() {
+    int mAddress = maxAddressIndex();
+
+    if (mAddress != -1) {
+        DeviceStruct lastDevice = devices[mAddress];
+        if (Utils::validConfigIdentity(lastDevice.version)) {
+            return lastDevice.size + lastDevice.address + 8;
+        }
+    }
+    uint16_t start = deviceInitAddress();
+    return start;
+}
+
 /**
 * @private processRegistration
 *
@@ -284,51 +345,7 @@ unsigned long Bootstrap::machineName(String name)
    }
    return manchineName;
 }
-/**
-* @private getDeviceByName
-*
-* adds an unregistered device to the meta structure
-* @param String name - the device name
-* @param uint16_t size - the size of data being requested
-* @return DeviceStruct - a device for registration 
-*/
-DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
-{
-    unsigned long dName = this->machineName(name);
-    for (size_t i = 0; i < MAX_DEVICES && i < this->deviceMeta.count; i++) {
-      DeviceStruct device = this->devices[i];
-      Log.info("SEARCHING FOR REGISTERED DEVICE %lu %lu", dName, device.name);
-      if (dName == device.name) {
-          return device;
-      }
-    }
-    // now build it
-    uint16_t next = getNextDeviceAddress();
-    Utils::log("THIS_IS_THE_NEXT_DEVICE_ADRESS FOR " + name, String(next));
-    DeviceStruct device = { 1, size, dName, next};
-    this->addNewDeviceToStructure(device);
-    return device;
-}
-/**
-* @public registerAddress
-*
-* adds an unregistered device to the meta structure
-* @param String name - the device name
-* @param uint16_t size - the size of data being requested
-* @return uint16_t - the predictable address for the device 
-*/
-uint16_t Bootstrap::registerAddress(String name, uint16_t size) 
-{
-    DeviceStruct device  = getDeviceByName(name, size);
-    String deviceDetails =  String(device.version) + " " + String(device.size) + " " + String(device.name) + " " + String(device.address);
-    Utils::log("REGISTERED_ADDRESS_DETAILS FOR " + name, deviceDetails);
-    if (!Utils::validConfigIdentity(device.version)) {
-        uint16_t send = manualDeviceTracker + size + 1;
-        manualDeviceTracker = send;
-        return manualDeviceTracker;
-    }
-    return device.address;
-}
+
 /**
 * @public hasMaintenance
 *
@@ -423,12 +440,6 @@ bool Bootstrap::isStrapped()
     return this->bootstrapped;
 }
 
-int Bootstrap::getStorageAddress(size_t size) 
-{
-    int send = this->nextAddress;
-    this->nextAddress += size + 8;
-    return send;
-}
 /**
 * @public getMaxVal
 *

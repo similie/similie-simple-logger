@@ -1,12 +1,25 @@
 #include "soil-moisture.h"
 
 
+SoilMoisture::~SoilMoisture()
+{
+}
+
+SoilMoisture::SoilMoisture(Bootstrap *boots)
+{
+    this->boots = boots;
+}
+
+SoilMoisture::SoilMoisture(Bootstrap *boots, int identity)
+{
+    this->boots = boots;
+    this->sendIdentity = identity;
+}
+
+
 int SoilMoisture::setMoistureCalibration(String read)
 {
-  const char *stringCal = read.c_str();
-  double val = ::atof(stringCal);
-  Log.info("setting calibration of %s", stringCal);
-
+  double val = Utils::parseCloudFunctionDouble(read, name());
   if (val == 0)
   {
     return 0;
@@ -26,21 +39,6 @@ void SoilMoisture::restoreDefaults()
     multiple = SOIL_MOISTURE_DEFAULT;
     VWCStruct store = {1, multiple};
     EEPROM.put(saveAddressForMoisture, store);
-}
-
-SoilMoisture::~SoilMoisture()
-{
-}
-
-SoilMoisture::SoilMoisture(Bootstrap *boots)
-{
-    this->boots = boots;
-}
-
-SoilMoisture::SoilMoisture(Bootstrap *boots, int identity)
-{
-    this->boots = boots;
-    this->sendIdentity = identity;
 }
 
 String SoilMoisture::name() {

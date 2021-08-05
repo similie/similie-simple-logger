@@ -20,6 +20,7 @@
 
 #define MAX_U16 65535
 #define MAX_EEPROM_ADDRESS 8197
+#define PRODUCTION false
 
 
 struct DeviceMetaStruct {
@@ -31,6 +32,7 @@ struct DeviceStruct {
     uint8_t version;
     uint16_t size;
     unsigned long name;
+    // const char * name;
     uint16_t address;
 };
 
@@ -85,7 +87,6 @@ private:
     uint8_t beachCount();
     const uint8_t BEACHED_THRSHOLD = 5;
     const static int BEACH_ADDRESS = sizeof(EpromStruct) + 8;
-    int nextAddress = BEACH_ADDRESS + 8;
     bool strappingTimers = false;
     size_t serial_buffer_length = SERIAL_BUFFER_LENGTH;
     String serial_buffer[SERIAL_BUFFER_LENGTH];
@@ -100,7 +101,7 @@ private:
     void processSerial();
     void pushSerial(String serial);
     String popSerial(size_t index);
-    bool exceedsMaxAddressSize(uint16_t address);
+   
     void setMetaAddresses();
     uint16_t deviceMetaAdresses[MAX_DEVICES];
     uint16_t deviceContainerAddressStart = BEACH_ADDRESS + sizeof(BeachStruct) + 8;
@@ -112,7 +113,8 @@ public:
     void timers();
     bool isStrapped();
     void init();
-    int getStorageAddress(size_t size);
+    bool exceedsMaxAddressSize(uint16_t address);
+    // int getStorageAddress(size_t size);
     double getCalibration();
     void restoreDefaults();
     void setPublishTimer(bool time);

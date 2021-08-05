@@ -15,6 +15,7 @@ public:
     ~Utils();
     Utils();
     void reboot();
+    static double parseCloudFunctionDouble(String value, String name);
     bool hasSerialIdentity(int identity);
     bool inValidMessageString(String message, int identity);
     static bool validConfigIdentity(uint8_t identity);
@@ -34,6 +35,7 @@ public:
     float getSum(float values[], size_t MAX);
     float getMedian(float arr[], size_t max);
     static bool connected();
+    // template<typename T>
     static void log(String event, String message);
     size_t skipMultiple(unsigned int size, size_t maxVal , unsigned int threshold);
     static int simCallback(int type, const char *buf, int len, char *value);

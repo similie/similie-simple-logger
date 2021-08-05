@@ -34,7 +34,9 @@ SerialStorage::~SerialStorage()
 */
 void SerialStorage::clearDeviceStorage() 
 {
+    delay(10000);
     EEPROM.clear();
+    Utils::log("EPROM_CLEARED", String(millis()));
 }
 
 /** 

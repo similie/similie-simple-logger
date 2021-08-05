@@ -1,18 +1,90 @@
 #include "utils.h"
 
+/**
+* @deconstructor
+*/
 Utils::~Utils()
 {
 }
 
+/**
+ * @constructor
+ */ 
 Utils::Utils()
 {
 }
 
+/**
+ * @public 
+ * 
+ * parseCloudFunctionDouble
+ * 
+ * Parses a string into a double. Used for parse cloud functions
+ * that are a string into the double value
+ * 
+ * @param String value - the cloud value
+ * @param String name - the name of the device requesting
+ * 
+ * @return double
+ * 
+ */
+double Utils::parseCloudFunctionDouble(String value, String name) {
+  const char *stringCal = value.c_str();
+  double val = ::atof(stringCal);
+  Utils::log("SETTING_CALIBRATION_" + name, "value: " + String(stringCal));
+  return val;
+}
+
+/**
+ * @public 
+ * 
+ * requestDeviceId
+ * 
+ * Returns a concatenated String that contains the request identity, and
+ * command intended over the serial bus
+ * 
+ * @param int identity - devices specific identity
+ * @param String name - the command being sent over the serial bus
+ * 
+ * @return String
+ * 
+ */
 String Utils::requestDeviceId(int identity, String cmd) 
 {
     return "request_" + String(identity) + " " + cmd;
 }
 
+/**
+ * @public 
+ * 
+ * receiveDeviceId
+ * 
+ * Applies the request identity for pulled data off a serialbus
+ * for devices with assinged an identity.
+ * 
+ * @param int identity - devices specific identity
+ * 
+ * @return String 
+ * 
+ */
+String Utils::receiveDeviceId(int identity)
+{
+    return "result_" + String(identity);
+}
+
+/**
+ * @public 
+ * 
+ * serialMesssageHasError
+ * 
+ * Checks to see if there is an error on the serial bus for a specific device
+ * 
+ * @param String message - the message off the serial bus
+ * @param int identity - devices specific identity
+ * 
+ * @return String
+ * 
+ */
 bool Utils::serialMesssageHasError(String message, int identity) {
     bool error = false;
     if (message.startsWith("ERROR_" + String(identity))) {
@@ -23,11 +95,36 @@ bool Utils::serialMesssageHasError(String message, int identity) {
     return error;
 }
 
+/**
+ * @public 
+ * 
+ * hasSerialIdentity
+ * 
+ * Checks an ID to see if has been registered with a value greater than -1 (default)
+ *
+ * @param int identity - devices specific identity
+ * 
+ * @return bool
+ * 
+ */
 bool Utils::hasSerialIdentity(int identity)
 {
     return identity > -1;
 }
 
+/**
+ * @public 
+ * 
+ * inValidMessageString
+ * 
+ * Checks to see if a serial payload is valid for storage
+ *
+ * @param String message - the message off the serial bus
+ * @param int identity - devices specific identity
+ * 
+ * @return bool
+ * 
+ */
 bool Utils::inValidMessageString(String message, int identity)
 {
     return this->serialMesssageHasError(message, identity) || 
@@ -35,6 +132,16 @@ bool Utils::inValidMessageString(String message, int identity)
      !message.startsWith(receiveDeviceId(identity)));
 }
 
+/**
+ * @public 
+ * 
+ * getTimePadding
+ * 
+ * Prefixes milliseconds with zero values for 10 bytes. Used in logging
+ * 
+ * @return String - the milliseconds since boot padded with zeros
+ * 
+ */
 String getTimePadding() {
     String time = String(millis());
     uint8_t pad = 10 - time.length();
@@ -46,22 +153,66 @@ String getTimePadding() {
     return padding + time;
 }
 
+/**
+ * @public 
+ * 
+ * validConfigIdentity
+ * 
+ * All stored config should have a param version set to 1
+ * 
+ * @return uint8_t identity - the version value of the config 
+ * 
+ */
 bool Utils::validConfigIdentity(uint8_t identity) 
 {
     return identity == 1;
 }
 
+/**
+ * @public 
+ * 
+ * log
+ * 
+ * Logs messages to the console
+ * 
+ * @todo Use a template variant to accept parameters other
+ * than a String value
+ * 
+ * @param String event - the context for the logging
+ * @param String message - the actual message
+ * 
+ * @return void
+ * 
+ */
+// template<typename T>
 void Utils::log(String event, String message)
 {
+    /**
+     * For devices we deploy, we can shutdown this logging attribute
+     * Value is found under bootstrap.h
+     */
+    if (PRODUCTION) {
+        return;
+    }
+
     Serial.print(getTimePadding());Serial.print(" [SIMILIE] " + event + ": ");Serial.println(message);
 }
 
-
-String Utils::receiveDeviceId(int identity)
-{
-    return "result_" + String(identity);
-}
-
+/**
+ * @public 
+ * 
+ * parseSerial
+ * 
+ * Parses serial strings sent over the serial bus for Meter SDI-12 devices
+ * 
+ * @param String ourReading - the serial details
+ * @param size_t paramLength - the number of parameters to parse
+ * @param size_t max - the max value for the valuehold array
+ * @param float value_hold[][Bootstrap::OVERFLOW_VAL] - a multi-dimentional array holding the values
+ * 
+ * @return void
+ * 
+ */
 void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float  value_hold[][Bootstrap::OVERFLOW_VAL])
 {
 
@@ -108,6 +259,21 @@ void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float
     }
 }
 
+/**
+ * @public 
+ * 
+ * skipMultiple
+ * 
+ * Some devices don't want or cant process a read on every interval. This sets values
+ * where a read is acceptable
+ * 
+ * @param unsigned int size - the size requested from a 15 interval
+ * @param size_t maxVal - the max interval, normally 15
+ * @param unsigned int threshold - max to do in a given interval
+ * 
+ * @return size_t 
+ * 
+ */
 size_t Utils::skipMultiple(unsigned int size, size_t maxVal , unsigned int threshold) {
     size_t start = 1;
     for (size_t i = 1; i < maxVal; i++)
@@ -123,13 +289,29 @@ size_t Utils::skipMultiple(unsigned int size, size_t maxVal , unsigned int thres
     return start; 
 }
 
+/**
+ * @public 
+ * 
+ * simCallback
+ * 
+ * Callback function used during beach mode to talk to the sym. 
+ * 
+ * @todo add functionality
+ * 
+ * @param int type
+ * @param const char *buf
+ * @param int len
+ * @param char *value
+ * 
+ * @return size_t 
+ * 
+ */
 int Utils::simCallback(int type, const char *buf, int len, char *value)
 {
     if ((type == TYPE_PLUS) && value)
     {
         // if (sscanf(buf, "\r\n+CCID: %[^\r]\r\n", value) == 1)
         /*nothing*/;
-        //   Log.info("HEH>>>>>");
     }
     // Log.info("GOT ME THIS TYPE %d", type);
     // Log.info("GOT ME THIS BUF %s", buf);
@@ -138,11 +320,35 @@ int Utils::simCallback(int type, const char *buf, int len, char *value)
     return WAIT;
 }
 
+/**
+ * @public 
+ * 
+ * connected
+ * 
+ * Wraps system functions to check of the system is online
+ * 
+ *
+ * @return bool 
+ * 
+ */
 bool Utils::connected()
 {
     return Particle.connected() || Cellular.ready();
 }
 
+/**
+ * @public 
+ * 
+ * getSum
+ * 
+ * Sums all values in a float array
+ * 
+ * @param float values[] - the values to sum
+ * @param size_t MAX - the size of the array to scan
+ *
+ * @return float 
+ * 
+ */
 float Utils::getSum(float values[], size_t MAX)
 {
     int sum = 0;
@@ -178,6 +384,19 @@ float Utils::getSum(float values[], size_t MAX)
     return (float)sum / DIVISOR;
 }
 
+/**
+ * @public 
+ * 
+ * getMax
+ * 
+ * Gets the max value of an array
+ * 
+ * @param float values[] - the values to sum
+ * @param size_t MAX - the size of the array to scan
+ *
+ * @return float 
+ * 
+ */
 float Utils::getMax(float values[], size_t MAX)
 {
     float value = 0;
@@ -196,10 +415,21 @@ float Utils::getMax(float values[], size_t MAX)
     return value;
 }
 
-/*
-* Get the middle value or the value toward the zero index
-* this is not a NO_VALUE
-*/
+
+/**
+ * @public 
+ * 
+ * getMax
+ * 
+ * Get the middle value or the value toward the zero index
+ * this is not a NO_VALUE
+ * 
+ * @param float values[] - the values to sum
+ * @param size_t MAX - the size of the array to scan
+ *
+ * @return float 
+ * 
+ */
 float Utils::getMedian(float arr[], size_t max)
 {
     float center = (float)max / 2.0;
@@ -213,6 +443,19 @@ float Utils::getMedian(float arr[], size_t max)
     return value;
 }
 
+/**
+ * @public 
+ * 
+ * containsChar
+ * 
+ * Does the String contain a specific character
+ * 
+ * @param char c - the character
+ * @param String readFrom - the read string
+ *
+ * @return bool 
+ * 
+ */
 bool Utils::containsChar(char c, String readFrom)
 {
     bool contains = false;
@@ -228,6 +471,18 @@ bool Utils::containsChar(char c, String readFrom)
     return contains;
 }
 
+/**
+ * @public 
+ * 
+ * invalidNumber
+ * 
+ * Is the string an invalid number representation
+ * 
+ * @param String value - the read string
+ *
+ * @return bool 
+ * 
+ */
 bool Utils::invalidNumber(String value)
 {
     //value.charAt(j)
@@ -245,13 +500,18 @@ bool Utils::invalidNumber(String value)
     return invalid;
 }
 
-/*
-* shift :  Helper fuction that inserts an element in asscending order into
+/**
+* @public
+* 
+* shift
+* 
+* Helper fuction that inserts an element in asscending order into
 * the sorted array where we can our median value
 * @param int value - the value to be inserted 
 * @param int index - the index where to insert. 
 *     The other values will be pushed to the next index
 * @param int param - the enum value that represents the param
+*
 * @return void;
 */
 void Utils::shift(float value, size_t index, float arr[], size_t size)
@@ -274,33 +534,19 @@ void Utils::shift(float value, size_t index, float arr[], size_t size)
         }
     }
 }
-/*
-* insertValue : insert a value into a multidimentional array in sorted order
-* @param int value - the value to be inserted 
-* @param int param - the enum value that represents the param
-* @return void;
-*/
-void Utils::insertValue(float value, float arr[], size_t size)
-{
-    size_t index = 0;
 
-    float aggr = arr[index];
-
-    while (value >= aggr && aggr != NO_VALUE && index < size)
-    {
-        index++;
-        aggr = arr[index];
-    }
-    shift(value, index, arr, size);
-}
-
-/*
-* shift :  Helper fuction that inserts an element in asscending order into
+/**
+* @public
+*
+* shift 
+*
+* Helper fuction that inserts an element in asscending order into
 * the sorted array where we can our median value
 * @param int value - the value to be inserted 
 * @param int index - the index where to insert. 
 *     The other values will be pushed to the next index
 * @param int param - the enum value that represents the param
+*
 * @return void;
 */
 void Utils::shift(int value, size_t index, int arr[], size_t size)
@@ -323,10 +569,44 @@ void Utils::shift(int value, size_t index, int arr[], size_t size)
         }
     }
 }
-/*
-* insertValue : insert a value into a multidimentional array in sorted order
+
+
+/**
+* @public
+*
+* insertValue 
+*
+* Insert a value into a multidimentional array in sorted order
+*
 * @param int value - the value to be inserted 
 * @param int param - the enum value that represents the param
+*
+* @return void;
+*/
+void Utils::insertValue(float value, float arr[], size_t size)
+{
+    size_t index = 0;
+
+    float aggr = arr[index];
+
+    while (value >= aggr && aggr != NO_VALUE && index < size)
+    {
+        index++;
+        aggr = arr[index];
+    }
+    shift(value, index, arr, size);
+}
+/**
+* @public
+* 
+* insertValue  
+*
+* Insert a value into a multidimentional array in sorted order
+*
+*
+* @param int value - the value to be inserted 
+* @param int param - the enum value that represents the param
+*
 * @return void;
 */
 void Utils::insertValue(int value, int arr[], size_t size)
@@ -343,10 +623,20 @@ void Utils::insertValue(int value, int arr[], size_t size)
     shift(value, index, arr, size);
 }
 
-/*
-* Get the middle value or the value toward the zero index
-* this is not a NO_VALUE
-*/
+/**
+ * @public 
+ * 
+ * getMedian
+ * 
+ * Get the middle value or the value toward the zero index
+ * this is not a NO_VALUE
+ * 
+ * @param int readparam - the expected max value
+ * @param int arr[] - the array of values
+ * 
+ * @return int
+ * 
+ */ 
 int Utils::getMedian(int readparam, int arr[])
 {
     float center = (float)readparam / 2.0;
@@ -360,15 +650,33 @@ int Utils::getMedian(int readparam, int arr[])
     return value;
 }
 
-/*
-* stringConvert :: converts string to a char *
-* @param: String value - to be converted 
-*/
+/**
+ * @public
+ * 
+ * stringConvert 
+ * 
+ * converts string to a char *
+ *
+ * @param: String value - to be converted 
+ * 
+ * @return const * char 
+ * 
+ */ 
 const char *Utils::stringConvert(String value)
 {
     return value.c_str();
 }
 
+/**
+ * @public
+ * 
+ * reboot 
+ * 
+ * Wrapper to reboot the system
+ * 
+ * @return void
+ * 
+ */ 
 void Utils::reboot()
 {
     Log.info("Reboot Event Requested");

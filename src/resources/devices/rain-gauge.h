@@ -6,18 +6,31 @@
 #include "resources/processors/Processor.h"
 #include "resources/utils/utils.h"
 
-// #define RAIN_GAUGE_PIN D7 // Blue when using Port1
-#define RAIN_GAUGE_PIN A1 // Stripe Blue when using Port1
+#define DEFAULT_TIP_SIZE 0.2
+#define RAIN_GAUGE_PIN D7 // Blue when using Port1
+// #define RAIN_GAUGE_PIN A1 // Stripe Blue when using Port1
 
 #ifndef rain_gauge_h
 #define rain_gauge_h
 
+struct RainGaugeStruct {
+    uint8_t version;
+    double calibration;
+};
+
 class RainGauge : public Device
 {
 private:
-    double perTipMultiple = 0.2; // mm
+    volatile bool interruptTrpped = false;
+    uint16_t eepromAddress = 0;
+    int counts = 0;
+    u8_t errorCount = 0;
+    double perTipMultiple = DEFAULT_TIP_SIZE; // mm
     Bootstrap *boots;
-    String valueMap[2] =
+    RainGaugeStruct config;
+    void setPerTipMultiple();
+    bool validAddress();
+    String valueMap[1] =
         {
             "pre"};
     enum
@@ -25,14 +38,17 @@ private:
         precipitation
     };
     String deviceName = "RainGauge";
+    void pullStoredConfig();
+    int setTipMultiple(String value);
+    void cloudFunctions();
+    void setPin();
+    void countChange();
+    void setInterrupt();
+    void reqestAddress();
 public:
     ~RainGauge();
-    RainGauge();
     RainGauge(Bootstrap *boots);
     String name();
-    void setPin();
-    void countChange(void);
-    void setInterrupt();
     void read();
     void loop();
     u8_t matenanceCount();

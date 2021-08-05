@@ -49,6 +49,7 @@ private:
     // ControlledPayload *payloadController[(ControlledPayload::EXPIRATION_TIME / 60) / 1000]; //{ControlledPayload(), ControlledPayload(), ControlledPayload()}
     unsigned int read_count = 0;
     u8_t attempt_count = 0;
+    size_t DEFAULT_BUFFER_SIZE = 0;
     Bootstrap *boots;
     Processor *processor;
     bool FRESH_START = false;
@@ -93,8 +94,6 @@ public:
     static int rebootRequest(String f);
     void loop();
     bool recommendedMaintenace(u8_t damangeCount);
-    // void subscriptionConfirmation(const char *eventName, const char *data);
-    // void subscriptionTermination(const char *eventName, const char *data);
     void restoreDefaults();
 };
 

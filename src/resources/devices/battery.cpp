@@ -50,7 +50,7 @@ void Battery::init()
 
 size_t Battery::buffSize()
 {
-    return 100;
+    return 80;
 }
 
 u8_t Battery::paramCount()

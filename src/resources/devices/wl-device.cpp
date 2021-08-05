@@ -47,10 +47,7 @@ int WlDevice::setDigitalCloud(String read)
 */
 int WlDevice::setCalibration(String read)
 {
-  const char *stringCal = read.c_str();
-  double val = ::atof(stringCal);
-  Log.info("setting calibration of %s", stringCal);
-
+  double val = Utils::parseCloudFunctionDouble(read, uniqueName());
   if (val == 0)
   {
     return 0;
@@ -265,7 +262,7 @@ void WlDevice::print()
 
 size_t WlDevice::buffSize()
 {
-    return 150;
+    return 40;
 }
 
 u8_t WlDevice::paramCount()
