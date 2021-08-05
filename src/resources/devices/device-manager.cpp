@@ -53,7 +53,9 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 {
     this->boots = boots;
     this->processor = processor;
-
+    // to clear EEPROM. Comment this line
+    // once flashed and reflash
+    // FRESH_START = true;
     if (FRESH_START) {
         storage->clearDeviceStorage();
     }
@@ -81,11 +83,42 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     setParamsCount();
     // set storage when we have a memory card reader
     storage = new SerialStorage(processor, boots);
-
-   
-
 }
 
+//////////////////////////////
+/// Publics
+////////////////////////////// 
+
+/**
+ * @public 
+ * 
+ * init
+ * 
+ * Init function called at the device setup
+ * @return void
+ */
+void DeviceManager::init()
+{
+    boots->init();
+    Particle.function("reboot", DeviceManager::rebootRequest);
+    clearArray();
+    iterateDevices(&DeviceManager::initCallback, this);
+}
+
+
+/**
+ * @public
+ * 
+ * setReadCount
+ * 
+ * Sets the read count 
+ * @param unsigned int read_count 
+ * @return void
+ */
+void DeviceManager::setReadCount(unsigned int read_count)
+{
+    this->read_count = read_count;
+}
 
 /**
  * @public 
@@ -98,16 +131,9 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
  */
 void DeviceManager::setParamsCount()
 {
-    for (size_t i = 0; i < this->deviceCount; i++)
-    {
-        size_t size = this->deviceAggregateCounts[i];
-        for (size_t j = 0; j < size; j++)
-        {
-            u8_t count = this->devices[i][j]->paramCount();
-            this->paramsCount += count;
-        }
-    }
+    iterateDevices(&DeviceManager::setParamsCountCallback, this);
 }
+
 
 /**
  * @public 
@@ -144,15 +170,9 @@ bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
  */
 void DeviceManager::restoreDefaults()
 {
-     for (size_t i = 0; i < this->deviceCount; i++)
-    {
-        size_t size = this->deviceAggregateCounts[i];
-        for (size_t j = 0; j < size; j++)
-        {
-            this->devices[i][j]->restoreDefaults();
-        }
-    }
+    iterateDevices(&DeviceManager::restoreDefaultsCallback, this);
 }
+
 /**
  * @public 
  * 
@@ -179,6 +199,59 @@ bool DeviceManager::isNotReading()
 }
 
 /**
+ * @public 
+ * 
+ * clearArray
+ * 
+ * Sends api request to clear devices storage arrays
+ * @return void
+ */
+void DeviceManager::clearArray()
+{
+    iterateDevices(&DeviceManager::clearArrayCallback, this);
+}
+
+/**
+ * @public
+ * 
+ * loop
+ * 
+ * runs off the main loop
+ * @return void
+ */
+void DeviceManager::loop()
+{
+
+    process();
+    boots->timers();
+    storage->loop();
+    
+    if (boots->readTimerFun())
+    {
+        boots->setReadTimer(false);
+        read();
+    }
+
+    if (boots->publishTimerFunc())
+    {
+        boots->setPublishTimer(false);
+        publish();
+    }
+
+    if (processor->hasHeartbeat() && boots->heatbeatTimerFunc())
+    {
+        boots->setHeatbeatTimer(false);
+        heartbeat();
+    }
+
+    iterateDevices(&DeviceManager::loopCallback, this);
+}
+
+//////////////////////////////
+/// Privates
+////////////////////////////// 
+
+/**
  * @private 
  * 
  * storePayload
@@ -190,30 +263,7 @@ void DeviceManager::storePayload(String payload, String topic)
 {
     this->storage->storePayload(payload, topic);
 }
-/**
- * @public 
- * 
- * init
- * 
- * Init function called at the device setup
- * @return void
- */
-void DeviceManager::init()
-{
-    boots->init();
-    Particle.function("reboot", DeviceManager::rebootRequest);
-    clearArray();
-    for (size_t i = 0; i < this->deviceCount; i++)
-    {
-        size_t size = this->deviceAggregateCounts[i];
-        for (size_t j = 0; j < size; j++)
-        {
-            this->devices[i][j]->init();
-        }
-    }
 
-    // this->setSubscriber();
-}
 /**
  * @private 
  * 
@@ -231,38 +281,8 @@ void DeviceManager::heartbeat()
         processor->publish(processor->getHeartbeatTopic(), artery);
     }
 }
-/**
- * @private 
- * 
- * clearArray
- * 
- * Sends api request to clear devices storage arrays
- * @return void
- */
-void DeviceManager::clearArray()
-{
-    for (size_t i = 0; i < this->deviceCount; i++)
-    {
-        size_t size = this->deviceAggregateCounts[i];
-        for (size_t j = 0; j < size; j++)
-        {
-            this->devices[i][j]->clear();
-        }
-    }
-}
-/**
- * @public
- * 
- * setReadCount
- * 
- * Sets the read count 
- * @param unsigned int read_count 
- * @return void
- */
-void DeviceManager::setReadCount(unsigned int read_count)
-{
-    this->read_count = read_count;
-}
+
+
 /**
  * @private
  * 
@@ -275,17 +295,8 @@ void DeviceManager::read()
 {
 
     waitFor(DeviceManager::isNotPublishing, 10000);
-    // checkBootThreshold();
     readBusy = true;
-
-    for (size_t i = 0; i < this->deviceCount; i++)
-    {
-        size_t size = this->deviceAggregateCounts[i];
-        for (size_t j = 0; j < size; j++)
-        {
-            this->devices[i][j]->read();
-        }
-    }
+    iterateDevices(&DeviceManager::setReadCallback, this);
     read_count++;
     if (read_count >= MAX_SEND_TIME)
     {
@@ -427,11 +438,9 @@ void DeviceManager::publisher()
     }
 
     Log.info("Send %d %d", success, maintenance);
-    // this->confirmationExpiredCheck();
 
     if (!maintenance && !success)
     {
-        //this->placePayload(result);
         Log.info("SENDING PAYLOAD FAILED. Storing");
         this->storePayload(result, topic);
     }
@@ -441,181 +450,117 @@ void DeviceManager::publisher()
     }
 
     this->ROTATION++;
-    // Log.info("SENDING EVENT %d, %s :: %s", success, topic.c_str(), result.c_str());
-}
-/**
- * @public
- * 
- * loop
- * 
- * runs off the main loop
- * @return void
- */
-void DeviceManager::loop()
-{
-
-    process();
-    boots->timers();
-    storage->loop();
-    
-    if (boots->readTimerFun())
-    {
-        boots->setReadTimer(false);
-        read();
-    }
-
-    if (boots->publishTimerFunc())
-    {
-        boots->setPublishTimer(false);
-        publish();
-    }
-
-    if (processor->hasHeartbeat() && boots->heatbeatTimerFunc())
-    {
-        boots->setHeatbeatTimer(false);
-        heartbeat();
-    }
-
-    for (size_t i = 0; i < this->deviceCount; i++)
-    {
-        size_t size = this->deviceAggregateCounts[i];
-        for (size_t j = 0; j < size; j++)
-        {
-            this->devices[i][j]->loop();
-        }
-    }
 }
 
-
-// /**
-//  * @private
-//  * 
-//  * checkBootThreshold
-//  * @todo consider value - no longer used
-//  * @return void
-//  */
-// void DeviceManager::checkBootThreshold()
-// {
-//     if (read_count >= boots->getMaxVal())
-//     {
-//         if (attempt_count >= ATTEMPT_THRESHOLD)
-//         {
-//             boots->resetBeachCount();
-//             utils.reboot();
-//         }
-//         else
-//         {
-//             read_count = 0;
-//             clearArray();
-//         }
-//     }
-// }
 
 /**
  * @private 
  * 
- * shuffleLoad
+ * loopCallback
  * 
- * Counts the number of params that the system is collecting from
- * all of the initialized devices
+ * Calls the device loop function during the iteration loop
+ * 
  * @return void
- */
-// void DeviceManager::shuffleLoad(String payloadString)
-// {
+ * 
+*/
+void DeviceManager::loopCallback(Device * device)
+{
+    device->loop();
+}
 
-//     unsigned long size = (ControlledPayload::EXPIRATION_TIME / 60) / 1000;
+/**
+ * @private 
+ * 
+ * setParamsCountCallback
+ * 
+ * Calls the device paramCount function during the iteration loop
+ * 
+ * @return void
+ * 
+*/
+void DeviceManager::setParamsCountCallback(Device * device)
+{
+    u8_t count = device->paramCount();
+    this->paramsCount += count;
+}
 
-//     ControlledPayload *load[size];
-//     ControlledPayload newLoad(this->ROTATION, payloadString);
-//     load[0] = &newLoad;
+/**
+ * @private 
+ * 
+ * restoreDefaultsCallback
+ * 
+ * Calls the device restoreDefaults function during the iteration loop
+ * 
+ * @return void
+ * 
+*/
+void DeviceManager::restoreDefaultsCallback(Device * device)
+{
+    device->restoreDefaults();
+}
 
-//     for (size_t i = 1; i < size; i++)
-//     {
-//         ControlledPayload *payload = this->payloadController[i];
-//         load[i] = payload;
-//     }
+/**
+ * @private 
+ * 
+ * initCallback
+ * 
+ * Calls the device init function during the iteration loop
+ * 
+ * @return void
+ * 
+*/
+void DeviceManager::initCallback(Device * device)
+{
+  device->init();
+}
 
-//     for (size_t i = 0; i < size; i++)
-//     {
-//         this->payloadController[i] = load[i];
-//     }
-// }
+/**
+ * @private 
+ * 
+ * clearArrayCallback
+ * 
+ * Calls the device clear function during the iteration loop
+ * 
+ * @return void
+ * 
+*/
+void DeviceManager::clearArrayCallback(Device * device) 
+{
+  device->clear();
+}
 
-// //unsigned long size = (ControlledPayload::EXPIRATION_TIME / 60) / 1000;
-// void DeviceManager::placePayload(String payloadString)
-// {
-//     unsigned long size = (ControlledPayload::EXPIRATION_TIME / 60) / 1000;
-//     for (size_t i = 0; i < size; i++)
-//     {
+/**
+ * @private 
+ * 
+ * setReadCallback
+ * 
+ * Calls the device read function during the iteration loop
+ * 
+ * @return void
+ * 
+*/
+void DeviceManager::setReadCallback(Device * device) {
+  device->read();
+} 
 
-//         ControlledPayload *payload = this->payloadController[i];
-//         Log.info("CAN I PLACE THIS PAYLOAD %d %u", ControlledPayload::isExpired(payload), payload->getTarget());
-//         if (ControlledPayload::isExpired(payload))
-//         {
-//             // here we replace it with a new load;
-//             Log.info("WHAT IS THE BEACH STREET %u", this->ROTATION);
-//             ControlledPayload load(this->ROTATION, payloadString);
-//             this->payloadController[i] = &load;
-//             break;
-//         }
-
-//         if (i == size - 1)
-//         {
-//             this->shuffleLoad(payloadString);
-//             // we are at the end
-//         }
-//     }
-// }
-// void DeviceManager::confirmationExpiredCheck()
-// {
-//     unsigned long size = (ControlledPayload::EXPIRATION_TIME / 60) / 1000;
-//     for (u8_t i = 0; i < size; i++)
-//     {
-//         // ControlledPayload *payload = this->payloadController[i];
-//         // if (ControlledPayload::isExpired(payload) && payload->getHoldings() != NULL)
-//         // {
-//         //     this->storePayload(payload->getHoldings());
-//         // }
-//     }
-// }
-
-// void DeviceManager::nullifyPayload(const char *key)
-// {
-//     // char *ptr;
-//     int target = atoi(key);
-//     if (target == 0)
-//     {
-//         return;
-//     }
-
-//     Log.info("Nullifying %d", target);
-
-//     unsigned long size = (ControlledPayload::EXPIRATION_TIME / 60) / 1000;
-//     for (u8_t i = 0; i < size; i++)
-//     {
-//         ControlledPayload *payload = this->payloadController[i];
-//         Log.info("IS IT ON TARGET %d %u", payload->onTarget(target), payload->getTarget());
-//         if (payload->onTarget(target))
-//         {
-//             Log.info(" GETTING BEACHED AS " + payload->getHoldings());
-//         }
-//     }
-// }
-
-// void DeviceManager::subscriptionConfirmation(const char *eventName, const char *data)
-// {
-//     Log.info("eventName=%s data=%s", eventName, data);
-//     // this->nullifyPayload(data);
-// }
-
-// void DeviceManager::subscriptionTermination(const char *eventName, const char *data)
-// {
-//     Log.info("eventName=%s data=%s", eventName, data);
-//     this->nullifyPayload(data);
-// }
-
-// void DeviceManager::setSubscriber()
-// {
-//     Particle.subscribe(this->SUSCRIPTION_CONFIRMATION + System.deviceID(), &DeviceManager::subscriptionConfirmation, this);
-//     Particle.subscribe(this->SUSCRIPTION_TERMINATION + System.deviceID(), &DeviceManager::subscriptionTermination, this);
-// }
+/**
+ * @private 
+ * 
+ * iterateDevices
+ * 
+ * Iterates through all the devices and calls the supplied callback
+ * 
+ * @return void
+ * 
+*/
+void DeviceManager::iterateDevices(void (DeviceManager::*iter) (Device * d) , DeviceManager *binding)
+{
+    for (size_t i = 0; i < this->deviceCount; i++)
+    {
+        size_t size = this->deviceAggregateCounts[i];
+        for (size_t j = 0; j < size; j++)
+        {   
+            (binding->*iter)(this->devices[i][j]);
+        }
+    }
+}

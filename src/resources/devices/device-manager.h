@@ -74,7 +74,13 @@ private:
     size_t getBufferSize();
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
     // void setSubscriber();
-
+    void loopCallback(Device * device);
+    void setParamsCountCallback(Device * device);
+    void restoreDefaultsCallback(Device * device);
+    void initCallback(Device * device); 
+    void clearArrayCallback(Device * device);
+    void setReadCallback(Device * device);
+    void iterateDevices(void (DeviceManager::*iter) (Device * d) , DeviceManager *binding);
 public:
     ~DeviceManager();
     DeviceManager(Bootstrap *boots, Processor *processor);

@@ -20,7 +20,6 @@ private:
 
 public:
     ~SerialStorage();
-    SerialStorage();
     SerialStorage(Processor *holdProcessor, Bootstrap *boots);
     static void clearDeviceStorage();
     static bool notSendingOfflineData();

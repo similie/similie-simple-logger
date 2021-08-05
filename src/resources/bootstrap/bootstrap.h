@@ -25,15 +25,6 @@
 struct DeviceMetaStruct {
     uint8_t version;
     uint8_t count;
-    // uint16_t startAddress;
-    // uint16_t endAddress;
-    // uint16_t address_0;
-    // uint16_t address_1;
-    // uint16_t address_2;
-    // uint16_t address_3;
-    // uint16_t address_4;
-    // uint16_t address_5;
-    // uint16_t address_6;
 };
 
 struct DeviceStruct {

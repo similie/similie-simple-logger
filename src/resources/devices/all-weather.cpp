@@ -98,7 +98,7 @@ float AllWeather::extractValue(float values[], size_t key)
  */
 void AllWeather::publish(JSONBufferWriter &writer, u8_t attempt_count)
 {
-    print();
+    // print();
     size_t MAX = readSize();
     for (size_t i = 0; i < AllWeather::PARAM_LENGTH; i++)
     {
