@@ -1,16 +1,16 @@
 # SimilieLogger
 
-This project is the primary firmware for running our field-based data loggers using Particle's architecture. The is software has been testing using Particle's 3.0 and 3.1-based firmware. It may compile with older versions, but we have found problems running the firmware with 3rd-party SIM cards. Additionally the software is intended for Particle's 3rd-gen Born, Argon Series. It is untested with other generatations.
+This project is the primary firmware for running our field-based data loggers using Particle's architecture. The software has been testing using Particle's 3.0 and 3.1-based firmware. It may compile with older versions, but we have found problems running the firmware with 3rd-party SIM cards. Additionally the software is intended for Particle's 3rd-gen Born, Argon Series and untested with other generatations. For devices requiring serial communications such as the Atmos41 or Terros 10/11, please see our repository [similie/sdi12-allweather-interface](https://github.com/similie/sdi12-allweather-interface)
 
 ## Basic Architecture Overview
 
-The below image provides the basic visual representation for the architectural overview. The device manager class manages the devices and their correspending payloads. The processor classes send the payloads over the internet. Bootstrap manages read/publish timings and the associated cloud configuration.
+The below image provides the basic visual representation for the architectural overview. The device-manager class works the device API and manages the correspending payloads. The processor classes send the payloads over the internet. Bootstrap manages read/publish timings and the associated cloud configuration.
 
-![Similie Logger Architecture](/SimilieLogger.svg)
+![Similie Logger Architecture](/LoggerArchitecture.svg)
 
 ## Device Config
 
-You can configure the software in the device-manager constructor `/src/resources/devices/device-manager.cpp`. The following provides an example configuration with one AllWeather Sensor, a Soil Moisture, and the default battery sensor.
+You can configure the software in the device-manager constructor `/src/resources/devices/device-manager.cpp`. The following provides an example configuration with one AllWeather device, a SoilMoisture device, and the default Battery device.
 
 ```
 DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
@@ -46,7 +46,7 @@ This is the file that specifies the name and version number of the libraries tha
 
 #### Projects with external libraries
 
-We use CellularHelper for our HeartBeat class. It is a simple library that analyzing the SIM/Cellular details for the Boron-class products. It should not be used if setting up the solution with the Argon-line of devices. Additionally, we can use other libraries for our processors or devices if required. However, the default solution only requires CellularHelper to send periodic heartbeat details.
+We use CellularHelper for our HeartBeat class. It is a simple library that analyzes the SIM/Cellular details for the Boron-class products. It should not be used if the solution runs with the Argon-line of devices. Additionally, we can use other libraries for our processors or devices if required. However, the default solution only requires CellularHelper to send periodic heartbeat details.
 
 ## Compiling your project
 
