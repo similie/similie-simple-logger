@@ -4,7 +4,7 @@ This project is the primary firmware for running our field-based data loggers us
 
 ## Basic Architecture Overview
 
-The below image provides the basic visual representation for the architectural overview. The device-manager class works the device API and manages the correspending payloads. The processor classes send the payloads over the internet. Bootstrap manages read/publish timings and the associated cloud configuration.
+The below image provides the basic visual representation for the architectural overview. The device-manager class works with the Device API and manages the correspending payloads. The processor classes send the payloads over the internet. Bootstrap manages read/publish timings and the associated cloud configuration.
 
 ![Similie Logger Architecture](/LoggerArchitecture.svg)
 
