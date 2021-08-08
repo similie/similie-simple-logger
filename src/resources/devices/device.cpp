@@ -44,6 +44,15 @@ void Device::publish(JSONBufferWriter &writer, u8_t attempt_count)
 {
 }
 
+/**
+ * @public
+ * 
+ * restoreDefaults
+ * 
+ * Called when defaults should be restored
+ * 
+ * @return void
+ */
 void Device::restoreDefaults()
 {  
 }

@@ -1,20 +1,45 @@
 #include "wl-device.h"
-
+/**
+ * Deconstructor
+ */
 WlDevice::~WlDevice()
 {
 }
 
+/**
+ * Constructor
+ * 
+ * @param Bootstrap boots - the bootstrap object
+ */
 WlDevice::WlDevice(Bootstrap *boots)
 {
     this->boots = boots;
 }
 
+/**
+ * Constructor
+ * 
+ * @param Bootstrap boots - the bootstrap object
+ * @param int sendIdentity - the integer the identifies 
+ *        the specific device instance
+ */
 WlDevice::WlDevice(Bootstrap *boots, int sendIdentity)
 {
     this->boots = boots;
     this->sendIdentity = sendIdentity;
 }
 
+
+
+/**
+ * @private
+ * 
+ * saveEEPROM
+ * 
+ * @param WLStruct storage - the config payload needing storage
+ * 
+ * @return void
+ */
 void WlDevice::saveEEPROM(WLStruct storage) 
 { 
     if (saveAddressForWL == 0) {
@@ -24,6 +49,18 @@ void WlDevice::saveEEPROM(WLStruct storage)
     EEPROM.put(saveAddressForWL, storage);
 }
 
+/**
+ * @private
+ * 
+ * setDigitalCloud
+ * 
+ * Cloud function for setting the device on a digital or 
+ * analogue pin.
+ * 
+ * @param String read - payload from the particle API
+ * 
+ * @return int
+ */
 int WlDevice::setDigitalCloud(String read)
 {
   int val = (int)atoi(read);
@@ -42,8 +79,16 @@ int WlDevice::setDigitalCloud(String read)
   saveEEPROM(storage);
   return 1;
 }
-/*
-* setCalibration: cloud function that calibration value
+
+/**
+* @private
+* 
+* setCalibration 
+*
+* Cloud function for setting the calibration value
+* @param String read - payload from the particle API
+* 
+* @return int
 */
 int WlDevice::setCalibration(String read)
 {
@@ -64,26 +109,49 @@ int WlDevice::setCalibration(String read)
   return 1;
 }
 
+/**
+* @private
+* 
+* getProm 
+*
+* Returns the wl configuration structure
+* 
+* @return WlDevice
+*/
 WLStruct WlDevice::getProm() {
   WLStruct prom;
   EEPROM.put(saveAddressForWL, prom);
   return prom;
 }
 
-String WlDevice::name() {
-    return this->deviceName;
-}
 
-/*
+/**
+* @private
+*
+*
+* setDigital
+*
 * We represent the digital bool as y or n so as to 
 * have a value for the default
+* 
+* @param bool value 
+* @return char - the value for storing in EEPROM
 */
 char WlDevice::setDigital(bool value) 
 {
     return value ? 'y' : 'n';
 }
-/*
-* @private isDigital : Tells us if a config value is digital
+
+/**
+* @private 
+*
+* isDigital 
+* 
+* Tells us if a config value is digital
+* 
+* @param char value - is it digital or analogue
+*
+* @return bool
 */
 bool WlDevice::isDigital(char value)
 {
@@ -101,6 +169,17 @@ bool WlDevice::isDigital(char value)
     }
 }
 
+/**
+* @private 
+*
+* setPin 
+* 
+* Sets the pin based on the digital configuration
+* 
+* @param bool digital - ?
+*
+* @return void
+*/
 void WlDevice::setPin(bool digital) 
 {
     if (digital)
@@ -114,6 +193,15 @@ void WlDevice::setPin(bool digital)
     }
 }
 
+/**
+* @private 
+*
+* configSetup 
+* 
+* Uses the EEPROM-based config and bootstraps the device 
+*
+* @return void
+*/
 void WlDevice::configSetup() 
 {
     digital = WlDevice::isDigital(this->config.digital);
@@ -123,21 +211,29 @@ void WlDevice::configSetup()
    
 }
 
-void WlDevice::restoreDefaults() 
-{
-    digital = DIGITAL_DEFAULT;
-    WlDevice::setPin(digital);
-    currentCalibration = digital ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
-    this->config.calibration = currentCalibration;
-    this->config.digital = digital;
-    saveEEPROM(this->config);
-}
-
+/**
+* @private 
+*
+* restoreDefaults 
+* 
+* Restores the default values
+*
+* @return void
+*/
 bool WlDevice::hasSerialIdentity() 
 {
     return utils.hasSerialIdentity(this->sendIdentity);
 }
 
+/**
+* @private 
+*
+* setCloudFunctions 
+* 
+* Binds cloud functions with the particle console
+*
+* @return void
+*/
 void WlDevice::setCloudFunctions()
 {
   String appendage = appendIdentity();
@@ -147,11 +243,30 @@ void WlDevice::setCloudFunctions()
   Particle.variable("currentCalibration" + appendage, currentCalibration);
 }
 
+/**
+* @private 
+*
+* appendIdentity 
+* 
+* If there is an integer identity, it concats the id as a string
+*
+* @return String
+*/
 String WlDevice::appendIdentity() 
 {
     return this->hasSerialIdentity() ? String(this->sendIdentity) : "";
 }
 
+/**
+* @private 
+*
+* uniqueName 
+* 
+* If there is an integer identity, it concats the id with the name, otherwise
+* it simply returns the given name
+*
+* @return String
+*/
 String WlDevice::uniqueName() 
 {
     if (this->hasSerialIdentity())
@@ -161,20 +276,15 @@ String WlDevice::uniqueName()
     return this->name();
 }
 
-void WlDevice::init()
-{
-   // setup
-   setCloudFunctions();
-   Utils::log("WL_BOOT_ADDRESS REGISTRATION", this->uniqueName());
-   saveAddressForWL = boots->registerAddress(this->uniqueName(), sizeof(WLStruct));
-   Utils::log("WL_BOOT_ADDRESS " + this->uniqueName(), String(saveAddressForWL));
-   this->config = getProm();
-   if (!Utils::validConfigIdentity(this->config.version)) {
-       restoreDefaults();
-   }
-   configSetup();
-}
-
+/**
+* @private 
+*
+* readWL 
+* 
+*  Performs the actual work for reading the wl sensor
+*
+* @return int
+*/
 int WlDevice::readWL()
 {
     long timeout = 1000;
@@ -224,6 +334,71 @@ void WlDevice::publish(JSONBufferWriter &writer, u8_t attempt_count)
     }
 }
 
+/**
+* @public 
+*
+* name 
+* 
+* Returns the device name
+*
+* @return String
+*/
+String WlDevice::name() {
+    return this->deviceName;
+}
+
+
+/**
+* @public 
+*
+* restoreDefaults 
+* 
+* Restores the default values
+*
+* @return void
+*/
+void WlDevice::restoreDefaults() 
+{
+    digital = DIGITAL_DEFAULT;
+    WlDevice::setPin(digital);
+    currentCalibration = digital ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
+    this->config.calibration = currentCalibration;
+    this->config.digital = digital;
+    saveEEPROM(this->config);
+}
+
+/**
+* @public 
+*
+* init 
+* 
+* Init function for device setup
+*
+* @return void
+*/
+void WlDevice::init()
+{
+   // setup
+   setCloudFunctions();
+   Utils::log("WL_BOOT_ADDRESS REGISTRATION", this->uniqueName());
+   saveAddressForWL = boots->registerAddress(this->uniqueName(), sizeof(WLStruct));
+   Utils::log("WL_BOOT_ADDRESS " + this->uniqueName(), String(saveAddressForWL));
+   this->config = getProm();
+   if (!Utils::validConfigIdentity(this->config.version)) {
+       restoreDefaults();
+   }
+   configSetup();
+}
+
+/**
+* @public 
+*
+* read 
+* 
+* Calls the logic for performing a read event
+*
+* @return void
+*/
 void WlDevice::read()
 {
     int read = readWL();
@@ -234,10 +409,28 @@ void WlDevice::read()
     }
 }
 
+/**
+* @public 
+*
+* loop 
+* 
+* No functionality required for this device
+*
+* @return void
+*/
 void WlDevice::loop()
 {
 }
 
+/**
+* @public 
+*
+* clear 
+* 
+* Clears the VALUE_HOLD array
+*
+* @return void
+*/
 void WlDevice::clear()
 {
     for (size_t i = 0; i < PARAM_LENGTH; i++)
@@ -249,6 +442,15 @@ void WlDevice::clear()
     }
 }
 
+/**
+* @public 
+*
+* print 
+* 
+* Prints the VALUE_HOLD array
+*
+* @return void
+*/
 void WlDevice::print()
 {
     for (size_t i = 0; i < PARAM_LENGTH; i++)
@@ -260,16 +462,43 @@ void WlDevice::print()
     }
 }
 
+/**
+* @public 
+*
+* buffSize 
+* 
+* How many bytes do we need for this device
+*
+* @return size_t
+*/
 size_t WlDevice::buffSize()
 {
     return 40;
 }
 
+/**
+* @public 
+*
+* paramCount 
+* 
+* How many parameters are there for this device
+*
+* @return u8_t
+*/
 u8_t WlDevice::paramCount()
 {
     return PARAM_LENGTH;
 }
 
+/**
+* @public 
+*
+* matenanceCount 
+* 
+* How many parameters are sending valid data
+*
+* @return u8_t
+*/
 u8_t WlDevice::matenanceCount()
 {
     u8_t maintenance = this->maintenanceTick;

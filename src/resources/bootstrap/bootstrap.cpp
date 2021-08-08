@@ -265,7 +265,9 @@ uint16_t Bootstrap::getNextDeviceAddress() {
 }
 
 /**
-* @private processRegistration
+* @private 
+*
+* processRegistration
 *
 * pulls the registered devices meta details into memory
 * @return void 
@@ -473,7 +475,7 @@ unsigned int Bootstrap::getReadTime()
 /**
 * @public buildSendInterval
 *
-* chages the interval that the system sends back data and adjusts the read
+* Chages the interval that the system sends back data and adjusts the read
 * interval accoringly.
 * @param int interval - the int value for publishing
 * @return void 
