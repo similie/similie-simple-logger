@@ -16,7 +16,7 @@ class AllWeather : public Device
 private:
     String valueMap[17] =
         {
-            "s",
+            "sol",
             "pre",
             "s",
             "s_d",
