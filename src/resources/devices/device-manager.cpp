@@ -1,34 +1,9 @@
 #include "device-manager.h"
 
-bool publishBusy = false;
-bool readBusy = false;
-bool rebootEvent = false;
+// bool publishBusy = false;
+// bool readBusy = false;
+// bool rebootEvent = false;
 
-/**
- * process
- * 
- * This waits until there is a request 
- * to reboot the system
- * @return void
- */
-void process()
-{
-    if (rebootEvent)
-    {
-        delay(1000);
-        System.reset();
-    }
-}
-/**
-* @public rebootRequest
-*  cloud function that calls a reboot request
-*/
-int DeviceManager::rebootRequest(String f)
-{
-    Log.info("Reboot requested");
-    rebootEvent = true;
-    return 1;
-}
 
 /**
  * ~DeviceManager
@@ -49,10 +24,8 @@ DeviceManager::~DeviceManager()
  * @param BootStrap * boots - the bootstrap object
  * @param Processor * processor - the process for sending data
  */
-DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
+DeviceManager::DeviceManager(Processor *processor)
 {
-    this->boots = boots;
-    this->processor = processor;
     // to clear EEPROM. Comment this line
     // once flashed and reflash
     // FRESH_START = true;
@@ -65,32 +38,53 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
     * Between the curly braces {NUM}, Set the number of devices you need to initialize.
     * The max is by default set to 7.
     */
-    deviceAggregateCounts[ONE_I] =  {FOUR}; //{FOUR}; // set the number of devices here
+    deviceAggregateCounts[ONE_I] =  {THREE}; //{FOUR}; // set the number of devices here
     // the numerical N_I values a indexs from 0, 1, 2 ... n
     // unless others needed. Most values will only needs the 
     // ONE_I for the first dimension.
-    this->devices[ONE_I][ONE_I] = new AllWeather(boots, ONE_I);
+    this->devices[ONE_I][ONE_I] = new AllWeather(&boots, ONE_I);
     this->devices[ONE_I][TWO_I] = new Battery();
-    this->devices[ONE_I][THREE_I] = new SoilMoisture(boots, TWO_I);
+    //  this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
     // water level
-    this->devices[ONE_I][FOUR_I] = new WlDevice(boots, THREE_I);
+    this->devices[ONE_I][FOUR_I] = new WlDevice(&boots, THREE_I);
     // rain gauge
     //this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
     // another soil moisture will work
     //this->devices[ONE_I][FIVE_I] = new SoilMoisture(boots, THREE_I);
     this->blood = new HeartBeat(System.deviceID());
     // end devices
-    setParamsCount();
     // set storage when we have a memory card reader
-    storage = new SerialStorage(processor, boots);
-    // this value is the payload values size. We capture the other
-    // values at initialization from the selected devices.
-    DEFAULT_BUFFER_SIZE = 120;
+    storage = new SerialStorage(processor, &boots);
+    // instantiate the processor
+    this->processor = processor;
 }
 
 //////////////////////////////
 /// Publics
 ////////////////////////////// 
+/**
+ * @public 
+ * 
+ * setSendInverval
+ * 
+ * Cloud function for setting the send interval
+ * @return void
+ */
+int DeviceManager::setSendInverval(String read)
+{
+  
+  int val = (int)atoi(read);
+  // we dont let allows less than one or greater than 15
+  if (val < 1 || val > 15)
+  {
+    return 0;
+  }
+  Utils::log("CLOUD_REQUESTED_INTERVAL_CHANGE", "setting payload delivery for every " + String(val) + " minutes");
+  this->buildSendInverval(val);
+  return val;
+}
+
+
 
 /**
  * @public 
@@ -102,8 +96,11 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
  */
 void DeviceManager::init()
 {
-    boots->init();
-    Particle.function("reboot", DeviceManager::rebootRequest);
+    setParamsCount();
+    processor->connect();
+    boots.init();
+    waitForTrue(&DeviceManager::isStrapped, this, 10000);
+    setCloudFunction();
     clearArray();
     iterateDevices(&DeviceManager::initCallback, this);
 }
@@ -164,20 +161,6 @@ bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
 /**
  * @public 
  * 
- * restoreDefaults
- * 
- * Calls the devices to restore their default values
- * should there be a request
- * @return void 
- */
-void DeviceManager::restoreDefaults()
-{
-    iterateDevices(&DeviceManager::restoreDefaultsCallback, this);
-}
-
-/**
- * @public 
- * 
  * isNotPublishing
  * 
  * It is not currently in publish mode
@@ -187,6 +170,7 @@ bool DeviceManager::isNotPublishing()
 {
     return !publishBusy;
 }
+
 /**
  * @public 
  * 
@@ -223,26 +207,27 @@ void DeviceManager::clearArray()
  */
 void DeviceManager::loop()
 {
+    process();  
+    boots.timers();
+    processor->loop();
+    storage->loop();  
+   
 
-    process();
-    boots->timers();
-    storage->loop();
-    
-    if (boots->readTimerFun())
+    if (boots.readTimerFun())
     {
-        boots->setReadTimer(false);
+        boots.setReadTimer(false);
         read();
     }
 
-    if (boots->publishTimerFunc())
+    if (boots.publishTimerFunc())
     {
-        boots->setPublishTimer(false);
+        boots.setPublishTimer(false);
         publish();
     }
 
-    if (processor->hasHeartbeat() && boots->heatbeatTimerFunc())
+    if (processor->hasHeartbeat() && boots.heatbeatTimerFunc())
     {
-        boots->setHeatbeatTimer(false);
+        boots.setHeatbeatTimer(false);
         heartbeat();
     }
 
@@ -252,6 +237,88 @@ void DeviceManager::loop()
 //////////////////////////////
 /// Privates
 ////////////////////////////// 
+
+/**
+ * @private
+ * 
+ * process
+ * 
+ * This waits until there is a request 
+ * to reboot the system
+ * 
+ * @return void
+ */
+void DeviceManager::process()
+{
+    if (rebootEvent)
+    {
+        delay(1000);
+        System.reset();
+    }
+}
+
+/**
+* @private 
+*
+* rebootRequest
+*
+* Cloud function that calls a reboot request
+* @param String read 
+*/
+int DeviceManager::rebootRequest(String read)
+{
+    Log.info("Reboot requested");
+    rebootEvent = true;
+    return 1;
+}
+
+/**
+ * @private 
+ * 
+ * restoreDefaults
+ * 
+ * Cloud function for resetting defaults
+ * 
+ * @param String read 
+ * 
+ * @return void 
+ */
+int DeviceManager::restoreDefaults(String read)
+{
+  this->processRestoreDefaults();
+  return 1;
+}
+
+
+/**
+ * @private 
+ * 
+ * restoreDefaults
+ * 
+ * Calls the devices to restore their default values
+ * should there be a request
+ * @return void 
+ */
+void DeviceManager::processRestoreDefaults()
+{
+    boots.restoreDefaults();
+    iterateDevices(&DeviceManager::restoreDefaultsCallback, this);
+}
+
+/**
+ * @private 
+ * 
+ * setCloudFunction
+ * 
+ * Sets the cloud functions for the device
+ * @return void
+ */
+void DeviceManager::setCloudFunction()
+{
+    Particle.function("setPublicationInterval", &DeviceManager::setSendInverval, this);
+    Particle.function("restoreDefaults", &DeviceManager::restoreDefaults, this);
+    Particle.function("reboot", &DeviceManager::rebootRequest, this);
+}
 
 /**
  * @private 
@@ -284,7 +351,6 @@ void DeviceManager::heartbeat()
     }
 }
 
-
 /**
  * @private
  * 
@@ -295,8 +361,7 @@ void DeviceManager::heartbeat()
  */
 void DeviceManager::read()
 {
-
-    waitFor(DeviceManager::isNotPublishing, 10000);
+    waitForTrue(&DeviceManager::isNotPublishing, this, 10000);
     readBusy = true;
     iterateDevices(&DeviceManager::setReadCallback, this);
     read_count++;
@@ -320,7 +385,8 @@ void DeviceManager::publish()
 {
     Log.info("READY TO PUBLISH: event=%d", DeviceManager::isNotReading());
     // checkBootThreshold();
-    waitFor(DeviceManager::isNotReading, 10000);
+    waitForTrue(&DeviceManager::isNotReading, this, 10000);
+    //waitFor(DeviceManager::isNotReading, 10000);
     publishBusy = true;
 
     publisher();
@@ -425,7 +491,7 @@ void DeviceManager::publisher()
     writer.endObject();
     // we do this so if things get beached, it automatically hits a maintenance mode
     bool recommenededMainteanc = recommendedMaintenace(maintenanceCount);
-    bool inMaintenance = boots->hasMaintenance();
+    bool inMaintenance = boots.hasMaintenance();
     bool maintenance = recommenededMainteanc || inMaintenance;
     attempt_count = 0;
     read_count = 0;
@@ -454,6 +520,23 @@ void DeviceManager::publisher()
     this->ROTATION++;
 }
 
+
+/**
+ * @private 
+ * 
+ * buildSendInverval
+ * 
+ * Called from a cloud function for setting up the timing mechanism
+ * @return void
+ */
+void DeviceManager::buildSendInverval(int interval)
+{
+  
+
+  this->setReadCount(0);
+  this->clearArray();
+  boots.buildSendInterval(interval);
+}
 
 /**
  * @private 
@@ -545,6 +628,23 @@ void DeviceManager::setReadCallback(Device * device) {
   device->read();
 } 
 
+
+
+/**
+ * @private 
+ * 
+ * isStrapped
+ * 
+ * Checkts to see if bootstrap is finished bootstrapping 
+ * 
+ * @return void
+ * 
+*/
+bool DeviceManager::isStrapped()
+{
+    return this->boots.isStrapped();
+}
+
 /**
  * @private 
  * 
@@ -565,4 +665,28 @@ void DeviceManager::iterateDevices(void (DeviceManager::*iter) (Device * d) , De
             (binding->*iter)(this->devices[i][j]);
         }
     }
+}
+
+/**
+ * @private 
+ * 
+ * waitForTrue
+ * 
+ * Similie to particle's waitFor function but want it working with 
+ * member functions.
+ * 
+ * @param bool() function - the function that needs to been called
+ * @param unsigned long time - to wait for
+ * 
+ * @return bool
+ * 
+*/
+bool DeviceManager::waitForTrue(bool (DeviceManager::*func)(), DeviceManager *binding, unsigned long time)
+{
+    bool valid = false;
+    unsigned long then = millis();
+    while(!valid && (millis() - time) < then) {
+     valid = (binding->*func)();  
+    }
+    return valid;
 }

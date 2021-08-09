@@ -41,16 +41,17 @@ const size_t DEVICE_AGGR_COUNT = SEVEN;
 class DeviceManager
 {
 private: 
-    // bool readBusy = false;
-    // bool publishBusy = false;
     SerialStorage *storage;
-    // String SUSCRIPTION_CONFIRMATION = "Ai/Post/Confirm/";
-    // String SUSCRIPTION_TERMINATION = "Ai/Post/Terminate/";
-    // ControlledPayload *payloadController[(ControlledPayload::EXPIRATION_TIME / 60) / 1000]; //{ControlledPayload(), ControlledPayload(), ControlledPayload()}
+    bool publishBusy = false;
+    bool readBusy = false;
+    bool rebootEvent = false;
+    void process();
     unsigned int read_count = 0;
     u8_t attempt_count = 0;
-    size_t DEFAULT_BUFFER_SIZE = 0;
-    Bootstrap *boots;
+    // this value is the payload values size. We capture the other
+    // values at initialization from the selected devices
+    size_t DEFAULT_BUFFER_SIZE = 120;
+    Bootstrap boots;
     Processor *processor;
     bool FRESH_START = false;
     const size_t deviceCount = ONE;
@@ -67,34 +68,38 @@ private:
     void popOfflineCollection();
     void confirmationExpiredCheck();
     void read();
-    // void checkBootThreshold();
     void publish();
     void publisher();
     void manageManualModel();
     void heartbeat();
     size_t getBufferSize();
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
-    // void setSubscriber();
+    void setCloudFunction();
     void loopCallback(Device * device);
     void setParamsCountCallback(Device * device);
     void restoreDefaultsCallback(Device * device);
     void initCallback(Device * device); 
     void clearArrayCallback(Device * device);
     void setReadCallback(Device * device);
+    void buildSendInverval(int interval);
+    int restoreDefaults(String read);
+    void processRestoreDefaults();
+    int rebootRequest(String f);
+    bool isNotPublishing();
+    bool isNotReading();
+    bool isStrapped();
+    bool waitForTrue(bool (DeviceManager::*func)(),  DeviceManager *binding, unsigned long time);
     void iterateDevices(void (DeviceManager::*iter) (Device * d) , DeviceManager *binding);
 public:
     ~DeviceManager();
-    DeviceManager(Bootstrap *boots, Processor *processor);
+    DeviceManager(Processor *processor);
     void init();
-    static bool isNotPublishing();
-    static bool isNotReading();
+    int setSendInverval(String read);
     void clearArray();
     void setParamsCount();
     void setReadCount(unsigned int read_count);
-    static int rebootRequest(String f);
     void loop();
     bool recommendedMaintenace(u8_t damangeCount);
-    void restoreDefaults();
 };
 
 #endif
