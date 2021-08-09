@@ -1,6 +1,6 @@
 # SimilieLogger
 
-This project is the primary firmware for running our field-based data loggers using Particle's architecture. The software has been testing using Particle's 3.0 and 3.1-based firmware. It may compile with older versions, but we have found problems running the firmware with 3rd-party SIM cards. Additionally the software is intended for Particle's 3rd-gen Born, Argon Series and untested with other generatations. For devices requiring serial communications such as the Atmos41 or Terros 10/11, please see our repository [similie/sdi12-allweather-interface](https://github.com/similie/sdi12-allweather-interface)
+This project is the primary firmware for running our field-based data loggers using Particle's IoT architecture. The software has been testing using Particle's 3.0 and 3.1-based firmware. It may compile with older versions, but we have found problems running the firmware with 3rd-party SIM cards. Additionally the software is intended for Particle's 3rd-gen Boron/Argon Series and untested with other generatations. For devices requiring serial communications such as the Atmos41 or Terros 10/11, please see our repository [similie/sdi12-allweather-interface](https://github.com/similie/sdi12-allweather-interface)
 
 ## Basic Architecture Overview
 
@@ -32,7 +32,7 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 #### `/src` folder:
 
 This is the source folder that contains the firmware files for your project. It should _not_ be renamed.
-Anything that is in this folder when you compile your project will be sent to our compile service and compiled into a firmware binary for the Particle device that you have targeted.
+Anything that is in this folder when you compile your project will be sent to the Particle compile service and compiled into a firmware binary for the device that you have targeted.
 
 If your application contains multiple files, they should all be included in the `src` folder. If your firmware depends on Particle libraries, those dependencies are specified in the `project.properties` file referenced below.
 

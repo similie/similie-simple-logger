@@ -1,10 +1,4 @@
 #include "device-manager.h"
-
-// bool publishBusy = false;
-// bool readBusy = false;
-// bool rebootEvent = false;
-
-
 /**
  * ~DeviceManager
  * 
@@ -20,8 +14,7 @@ DeviceManager::~DeviceManager()
  * Default constrictuor. Add your devices to the devices muti-dimentional 
  * array. Generally we will only need one device array established. But there
  * are options for more. The limit is 7 devices applied to a given box.
- * 
- * @param BootStrap * boots - the bootstrap object
+ *
  * @param Processor * processor - the process for sending data
  */
 DeviceManager::DeviceManager(Processor *processor)
@@ -44,12 +37,12 @@ DeviceManager::DeviceManager(Processor *processor)
     // ONE_I for the first dimension.
     this->devices[ONE_I][ONE_I] = new AllWeather(&boots, ONE_I);
     this->devices[ONE_I][TWO_I] = new Battery();
-    //  this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
+    // this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
     // water level
     this->devices[ONE_I][FOUR_I] = new WlDevice(&boots, THREE_I);
     // rain gauge
     //this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
-    // another soil moisture will work
+    // another soil moisture will also work
     //this->devices[ONE_I][FIVE_I] = new SoilMoisture(boots, THREE_I);
     this->blood = new HeartBeat(System.deviceID());
     // end devices
@@ -60,7 +53,7 @@ DeviceManager::DeviceManager(Processor *processor)
 }
 
 //////////////////////////////
-/// Publics
+/// Public Functions
 ////////////////////////////// 
 /**
  * @public 
@@ -84,8 +77,6 @@ int DeviceManager::setSendInverval(String read)
   return val;
 }
 
-
-
 /**
  * @public 
  * 
@@ -104,7 +95,6 @@ void DeviceManager::init()
     clearArray();
     iterateDevices(&DeviceManager::initCallback, this);
 }
-
 
 /**
  * @public
@@ -133,7 +123,6 @@ void DeviceManager::setParamsCount()
 {
     iterateDevices(&DeviceManager::setParamsCountCallback, this);
 }
-
 
 /**
  * @public 
@@ -235,9 +224,8 @@ void DeviceManager::loop()
 }
 
 //////////////////////////////
-/// Privates
+/// Private Functions
 ////////////////////////////// 
-
 /**
  * @private
  * 
@@ -373,6 +361,7 @@ void DeviceManager::read()
     readBusy = false;
     Log.info("READCOUNT=%d", read_count);
 }
+
 /**
  * @private
  * 
@@ -406,6 +395,7 @@ void DeviceManager::publish()
     read_count = 0;
     publishBusy = false;
 }
+
 /**
  * @private
  * 
@@ -436,6 +426,7 @@ size_t DeviceManager::getBufferSize()
 
     return buff_size;
 }
+
 /**
  * @private
  * 
@@ -448,6 +439,7 @@ void DeviceManager::popOfflineCollection()
 {
     this->storage->popOfflineCollection(this->POP_COUNT_VALUE);
 }
+
 /**
  * @private
  * 
@@ -519,7 +511,6 @@ void DeviceManager::publisher()
 
     this->ROTATION++;
 }
-
 
 /**
  * @private 
@@ -627,8 +618,6 @@ void DeviceManager::clearArrayCallback(Device * device)
 void DeviceManager::setReadCallback(Device * device) {
   device->read();
 } 
-
-
 
 /**
  * @private 
