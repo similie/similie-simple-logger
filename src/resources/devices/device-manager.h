@@ -72,6 +72,7 @@ private:
     void publisher();
     void manageManualModel();
     void heartbeat();
+    void processTimers();
     size_t getBufferSize();
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
     void setCloudFunction();

@@ -200,26 +200,7 @@ void DeviceManager::loop()
     boots.timers();
     processor->loop();
     storage->loop();  
-   
-
-    if (boots.readTimerFun())
-    {
-        boots.setReadTimer(false);
-        read();
-    }
-
-    if (boots.publishTimerFunc())
-    {
-        boots.setPublishTimer(false);
-        publish();
-    }
-
-    if (processor->hasHeartbeat() && boots.heatbeatTimerFunc())
-    {
-        boots.setHeatbeatTimer(false);
-        heartbeat();
-    }
-
+    processTimers();
     iterateDevices(&DeviceManager::loopCallback, this);
 }
 
@@ -242,6 +223,36 @@ void DeviceManager::process()
     {
         delay(1000);
         System.reset();
+    }
+}
+
+/**
+ * @private
+ * 
+ * processTimers
+ * 
+ * Checks the timers to see if they are ready for the various events
+ * 
+ * @return void
+ */
+void DeviceManager::processTimers()
+{
+if (boots.readTimerFun())
+    {
+        boots.setReadTimer(false);
+        read();
+    }
+
+    if (boots.publishTimerFunc())
+    {
+        boots.setPublishTimer(false);
+        publish();
+    }
+
+    if (processor->hasHeartbeat() && boots.heatbeatTimerFunc())
+    {
+        boots.setHeatbeatTimer(false);
+        heartbeat();
     }
 }
 
