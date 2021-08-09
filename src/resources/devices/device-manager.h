@@ -89,6 +89,7 @@ private:
     bool isNotPublishing();
     bool isNotReading();
     bool isStrapped();
+    void setParamsCount();
     bool waitForTrue(bool (DeviceManager::*func)(),  DeviceManager *binding, unsigned long time);
     void iterateDevices(void (DeviceManager::*iter) (Device * d) , DeviceManager *binding);
 public:
@@ -97,7 +98,6 @@ public:
     void init();
     int setSendInverval(String read);
     void clearArray();
-    void setParamsCount();
     void setReadCount(unsigned int read_count);
     void loop();
     bool recommendedMaintenace(u8_t damangeCount);

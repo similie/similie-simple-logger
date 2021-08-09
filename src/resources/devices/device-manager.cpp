@@ -39,9 +39,9 @@ DeviceManager::DeviceManager(Processor *processor)
     this->devices[ONE_I][TWO_I] = new Battery();
     // this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
     // water level
-    this->devices[ONE_I][FOUR_I] = new WlDevice(&boots, THREE_I);
+    this->devices[ONE_I][THREE_I] = new WlDevice(&boots, TWO_I);
     // rain gauge
-    //this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
+    // this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
     // another soil moisture will also work
     //this->devices[ONE_I][FIVE_I] = new SoilMoisture(boots, THREE_I);
     this->blood = new HeartBeat(System.deviceID());
@@ -65,7 +65,6 @@ DeviceManager::DeviceManager(Processor *processor)
  */
 int DeviceManager::setSendInverval(String read)
 {
-  
   int val = (int)atoi(read);
   // we dont let allows less than one or greater than 15
   if (val < 1 || val > 15)
@@ -113,20 +112,6 @@ void DeviceManager::setReadCount(unsigned int read_count)
 /**
  * @public 
  * 
- * setParamsCount
- * 
- * Counts the number of params that the system is collecting from
- * all of the initialized devices
- * @return void
- */
-void DeviceManager::setParamsCount()
-{
-    iterateDevices(&DeviceManager::setParamsCountCallback, this);
-}
-
-/**
- * @public 
- * 
  * recommendedMaintenace
  * 
  * Is maintenance mode recommeneded based on the timestamps
@@ -136,7 +121,6 @@ void DeviceManager::setParamsCount()
  */
 bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
 {
-
     long time = Time.now(); 
     const long THRESHOLD = 1600000000;
     if (time < THRESHOLD)
@@ -206,7 +190,21 @@ void DeviceManager::loop()
 
 //////////////////////////////
 /// Private Functions
-////////////////////////////// 
+//////////////////////////////
+/**
+ * @public 
+ * 
+ * setParamsCount
+ * 
+ * Counts the number of params that the system is collecting from
+ * all of the initialized devices
+ * @return void
+ */
+void DeviceManager::setParamsCount()
+{
+   iterateDevices(&DeviceManager::setParamsCountCallback, this);
+}
+
 /**
  * @private
  * 
@@ -533,8 +531,6 @@ void DeviceManager::publisher()
  */
 void DeviceManager::buildSendInverval(int interval)
 {
-  
-
   this->setReadCount(0);
   this->clearArray();
   boots.buildSendInterval(interval);
