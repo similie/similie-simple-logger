@@ -31,15 +31,15 @@ DeviceManager::DeviceManager(Processor *processor)
     * Between the curly braces {NUM}, Set the number of devices you need to initialize.
     * The max is by default set to 7.
     */
-    deviceAggregateCounts[ONE_I] =  {THREE}; //{FOUR}; // set the number of devices here
+    deviceAggregateCounts[ONE_I] =  {FOUR}; //{FOUR}; // set the number of devices here
     // the numerical N_I values a indexs from 0, 1, 2 ... n
     // unless others needed. Most values will only needs the 
     // ONE_I for the first dimension.
     this->devices[ONE_I][ONE_I] = new AllWeather(&boots, ONE_I);
     this->devices[ONE_I][TWO_I] = new Battery();
-    // this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
+    this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
     // water level
-    this->devices[ONE_I][THREE_I] = new WlDevice(&boots, TWO_I);
+    this->devices[ONE_I][FOUR_I] = new WlDevice(&boots, TWO_I);
     // rain gauge
     // this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
     // another soil moisture will also work
