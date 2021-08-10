@@ -121,6 +121,10 @@ String SerialStorage::getPopStartIndex(String read)
 */
 void SerialStorage::popOfflineCollection(u8_t count)
 {
+    if (!boots->hasSerial()) {
+        return;
+    }
+
     sendingOffline = true;
     delay(100);
     String send = "pop " + String(count);
@@ -232,37 +236,42 @@ size_t SerialStorage::firstSpaceIndex(String value, u8_t index)
 */
 void SerialStorage::storePayload(String payload, String topic)
 {
+    if (!boots->hasSerial()) {
+        return;
+    }
+
     sendingOffline = true;
+    // let's let everything clear from the buffer if there's
+    // data being delivered
+    Serial1.flush();
+    delay(100);
     String send = topic + " " + payload + "\n";
     size_t length = send.length();
-    u8_t MAX_CHUNCK = 100;
+    // there is a lot of noise this function picks up on the co-processor. I think it is related
+    // with tight memory limitations with the 32u4 chip.
+    u8_t MAX_CHUNCK = 50;
     String push = "push ";
     size_t i = 0;   
     while (i < length)
-    {
-        size_t local = 0;
-        for (size_t j = 0; j < push.length(); j++)
+    { 
+        // print push to tag the payload as a storage event
+        Serial1.print(push);
+        for (size_t j = 0; j < MAX_CHUNCK && i < length; j++)
         {
-            // Serial.write(push.charAt(j));
-            Serial1.write(push.charAt(j));
-            local++;
-        }
-
-        for (size_t j = 0; j < MAX_CHUNCK - local && i < length; j++)
-        {
-            // Serial.write(send.charAt(i));
             Serial1.write(send.charAt(i));
-            local++;
             i++;
         }
 
         if (i < length) {
             Serial1.write('\0');
-            delay(100);
+            delay(10);
         }
     }
+    // give the little logger time 
+    //  to wrap things up
+    delay(50);
     Serial1.flush();
-    delay(100);
+    delay(50);
     sendingOffline = false;
 }
 

@@ -1,6 +1,18 @@
 #include "soil-moisture.h"
 
 /**
+ * @description
+ * 
+ * Works the the Terros 11 all-in-one weather sensor from Meter.
+ * https://www.metergroup.com/environment/products/teros-11/
+ * 
+ * Since particle does not support SDI-12, we use a 32u4 co-processor.  
+ * https://www.adafruit.com/product/2796
+ * The source code we use can be found: https://github.com/similie/sdi12-allweather-interface
+ * 
+ */
+
+/**
  * Deconstructor
  */ 
 SoilMoisture::~SoilMoisture()

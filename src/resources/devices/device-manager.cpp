@@ -235,7 +235,7 @@ void DeviceManager::process()
  */
 void DeviceManager::processTimers()
 {
-if (boots.readTimerFun())
+    if (boots.readTimerFun())
     {
         boots.setReadTimer(false);
         read();
