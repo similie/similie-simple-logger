@@ -55,3 +55,7 @@ When you're ready to compile your project, make sure you have the correct Partic
 - Everything in the `/src` folder, including your `.ino` application file
 - The `project.properties` file for your project
 - Any libraries stored under `lib/<libraryname>/src`
+
+## License
+
+GNU GENERAL PUBLIC LICENSE V3

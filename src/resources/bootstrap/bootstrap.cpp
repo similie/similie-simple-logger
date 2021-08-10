@@ -1,12 +1,12 @@
 #include "bootstrap.h"
 #include "resources/utils/utils.h"
 
-bool publishHeartbeat = false;
-bool readReleased = false;
-bool publishReleased = false;
-bool staticBootstrapped = false;
+static bool publishHeartbeat = false;
+static bool readReleased = false;
+static bool publishReleased = false;
+static bool staticBootstrapped = false;
 // for memory debugging
-uint32_t freememLast = 0;
+static uint32_t freememLast = 0;
 /**
 * releaseRead
 * 
@@ -17,6 +17,7 @@ void releaseRead()
 {
     readReleased = true;
 }
+
 /**
 * releasePublishRead
 * 
@@ -27,6 +28,7 @@ void releasePublishRead()
 {
     publishReleased = true;
 }
+
 /*
 * releasePublishRead
 * 
@@ -37,6 +39,7 @@ void releaseHeartbeat()
 {
     publishHeartbeat = true;
 }
+
 /**
 * printMemory
 * 
@@ -56,6 +59,7 @@ Timer readtimer(Bootstrap::ONE_MINUTE, releaseRead);
 Timer heartBeatTimer(Bootstrap::HEARTBEAT_TIMER, releaseHeartbeat);
 Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true);
 // Timer memoryPrinter(10000, printMemory);
+
 /**
 * @constructor Bootstrap
 */
@@ -108,6 +112,7 @@ int Bootstrap::setMaintenanceMode(String read)
   setMaintenance((bool)val);
   return val;
 }
+
 /**
 * @private setFunctions
 *
@@ -117,6 +122,18 @@ int Bootstrap::setMaintenanceMode(String read)
 void Bootstrap::setFunctions() {
     Particle.function("setMaintenanceMode", &Bootstrap::setMaintenanceMode, this);
 }
+
+/**
+* @public hasSerial
+*
+* Sends back if true if there was a valid pingpong event
+* @return bool
+*/
+bool Bootstrap::hasSerial()
+{
+    return this->hasSerialComms;
+}
+
 /**
 * @public epromSize
 *
@@ -127,6 +144,7 @@ size_t Bootstrap::epromSize()
 {
     return EEPROM.length()-1;
 }
+
 /**
 * @private deviceInitAddress
 *
@@ -137,7 +155,6 @@ uint16_t Bootstrap::deviceInitAddress()
 {
     return this->deviceStartAddress + 1;
 }
-
 
 /**
 * @private exceedsMaxAddressSize
@@ -150,6 +167,7 @@ bool Bootstrap::exceedsMaxAddressSize(uint16_t address)
 {
     return address > 0 && address < MAX_EEPROM_ADDRESS && address < Bootstrap::epromSize();
 }
+
 /**
 * @private collectDevices
 *
@@ -223,6 +241,7 @@ DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
     this->addNewDeviceToStructure(device);
     return device;
 }
+
 /**
 * @public registerAddress
 *
@@ -284,6 +303,7 @@ void Bootstrap::processRegistration()
         collectDevices();
     }
 }
+
 /**
 * @private setMetaAddresses
 *
@@ -298,6 +318,7 @@ void Bootstrap::setMetaAddresses()
         deviceMetaAdresses[i] = deviceContainerAddressStart + (size * i) + i; 
     }
 }
+
 /**
 * @private pullRegistration
 *
@@ -358,6 +379,7 @@ bool Bootstrap::hasMaintenance()
 {
     return this->maintenaceMode;
 }
+
 /**
 * @public setMaintenance
 *
@@ -368,6 +390,7 @@ void Bootstrap::setMaintenance(bool maintain)
 {
     this->maintenaceMode = maintain;
 }
+
 /**
 * @public publishTimerFunc
 *
@@ -378,6 +401,7 @@ bool Bootstrap::publishTimerFunc()
 {
     return publishReleased;
 }
+
 /**
 * @public heatbeatTimerFunc
 *
@@ -388,6 +412,7 @@ bool Bootstrap::heatbeatTimerFunc()
 {
     return publishHeartbeat;
 }
+
 /**
 * @public readTimerFun
 *
@@ -398,6 +423,7 @@ bool Bootstrap::readTimerFun()
 {
     return readReleased;
 }
+
 /**
 * @public setPublishTimer
 *
@@ -409,6 +435,7 @@ void Bootstrap::setPublishTimer(bool time)
 {
     publishReleased = time;
 }
+
 /**
 * @public setHeatbeatTimer
 *
@@ -420,6 +447,7 @@ void Bootstrap::setHeatbeatTimer(bool time)
 {
     publishHeartbeat = time;
 }
+
 /**
 * @public setReadTimer
 *
@@ -431,6 +459,7 @@ void Bootstrap::setReadTimer(bool time)
 {
     readReleased = time;
 }
+
 /**
 * @public isStrapped
 *
@@ -452,6 +481,7 @@ size_t Bootstrap::getMaxVal()
 {
     return this->MAX_VALUE_THRESHOLD;
 }
+
 /**
 * @public getPublishTime
 *
@@ -462,6 +492,7 @@ unsigned int Bootstrap::getPublishTime()
 {
     return this->PUBLISH_TIMER;
 }
+
 /**
 * @public getReadTime
 *
@@ -472,6 +503,7 @@ unsigned int Bootstrap::getReadTime()
 {
     return this->READ_TIMER;
 }
+
 /**
 * @public buildSendInterval
 *
@@ -527,6 +559,7 @@ EpromStruct Bootstrap::getsavedConfig()
     }
     return values;
 }
+
 /**
 * @private resetBeachCount
 *
@@ -537,6 +570,7 @@ void Bootstrap::resetBeachCount()
 {
     beachReset();
 }
+
 /**
 * @private resetBeachCount
 *
@@ -549,6 +583,7 @@ void Bootstrap::beachReset()
     BeachStruct rebeach = {0, 0};
     EEPROM.put(Bootstrap::BEACH_ADDRESS, rebeach);
 }
+
 /**
 * @private beachCount
 *
@@ -566,6 +601,7 @@ uint8_t Bootstrap::beachCount()
     }
     return beachAttempts.count;
 }
+
 /**
 * @private isBeached
 *
@@ -577,11 +613,11 @@ bool Bootstrap::isBeached()
     uint8_t bCount = beachCount();
     uint8_t beachedIncrement = bCount + 1;
     BeachStruct beachBase = {0, beachedIncrement};
-
     EEPROM.put(Bootstrap::BEACH_ADDRESS, beachBase);
     Log.info("GOT THIS BEACH COUNT %u of %u and increment %u", bCount, BEACHED_THRSHOLD, beachBase.count);
     return bCount >= BEACHED_THRSHOLD;
 }
+
 /**
 * @private beach
 *
@@ -618,9 +654,7 @@ void Bootstrap::beach()
     Cellular.command("AT+COPS=0,2\r\n");
     resetBeachCount();
     delay(2000);
-    // System.reset();
 }
-
 
 /*
 * @private putSavedConfig: 
@@ -630,11 +664,11 @@ void Bootstrap::beach()
 */
 void Bootstrap::putSavedConfig(EpromStruct config)
 {
-    // EEPROM.clear();
     config.version = 1;
     Log.info("PUTTING version %d publish: %d", config.version, config.pub);
     EEPROM.put(EPROM_ADDRESS, config);
 }
+
 /*
 * @private bootstrap: 
 *
@@ -644,7 +678,6 @@ void Bootstrap::putSavedConfig(EpromStruct config)
 void Bootstrap::bootstrap()
 {
     // delay(5000);
-
     if (isBeached())
     {
         beach();
@@ -657,6 +690,7 @@ void Bootstrap::bootstrap()
     bootstrapped = true;
     staticBootstrapped = true;
 }
+
 /*
 * restoreDefaults
 * 
@@ -670,6 +704,7 @@ void Bootstrap::restoreDefaults()
     EpromStruct defObject = {1, publicationIntervalInMinutes};
     putSavedConfig(defObject);
 }
+
 /*
 * batteryController
 * 
@@ -723,11 +758,6 @@ void Bootstrap::timers()
     }
 }
 
-
-/**
- * Serial Controller Elements
- */
-
 /** 
  * @private serialInit
  * 
@@ -741,6 +771,8 @@ void Bootstrap::serialInit() {
    }
 
    Serial1.begin(SERIAL_COMMS_BAUD);
+   delay(100);
+   pingSerialComms();
 }
 
 /** 
@@ -750,7 +782,7 @@ void Bootstrap::serialInit() {
  * 
 */
 int Bootstrap::serialBuilder() {
-  int avail = Serial1.available();
+    int avail = Serial1.available();
     for (int i = 0; i < avail; i++)
     {
         char inChar = Serial1.read();
@@ -775,10 +807,10 @@ int Bootstrap::serialBuilder() {
  * 
  * 
 */
-
 bool Bootstrap::checkHasId() {
-    Log.info(serialReadContent);
-    return serialReadContent.indexOf(" ") != -1;
+    // Log.info(serialReadContent);
+    return serialReadContent.indexOf(" ") != -1 || 
+        serialReadContent.equals("pong");
 }
 
 /** 
@@ -794,11 +826,14 @@ void Bootstrap::processSerial()
     }
     
     if (serialBuilder() && checkHasId()) {
-        // now store
+        // we set this to true, because a serial device might have been
+        // plugged in
+        pingPong();
         Utils::log("SERIAL_CONTENT_RECEIVED" , serialReadContent);
         storeSerialContent();
     }
 }
+
 /** 
  * @public startSerial
  * 
@@ -814,7 +849,6 @@ void Bootstrap::startSerial()
     wantsSerial = true;
 }
 
-
 /** 
  * @private storeSerialContent
  * 
@@ -823,6 +857,10 @@ void Bootstrap::startSerial()
 */
 void Bootstrap::storeSerialContent() 
 {  
+    if (serialReadContent.equals("pong")) {
+        serialReadContent = "";
+        return pingPong();
+    }
     if (serialStoreIndex < 0 || serialStoreIndex >= serial_buffer_length) {
         serialStoreIndex = 0;
     }
@@ -890,8 +928,6 @@ size_t Bootstrap::indexCounter(size_t startIndex) {
     }
 }
 
-
-
 /**
  * @public fetchSerial 
  * 
@@ -918,4 +954,31 @@ String Bootstrap::fetchSerial(String identity)
         j = indexCounter(startindex + i);
     }
     return "";
+}
+
+/**
+ * @public pingPong 
+ * 
+ * If anything valid is put over the serial bus. Let's 
+ * just run with the serial comms
+ * 
+ * @return void
+ * 
+ * */
+void Bootstrap::pingPong() {
+    hasSerialComms = true;
+}
+
+/**
+ * @public pingSerialComms 
+ * 
+ * Checks to validate if there is a valid serial
+ * device connected.
+ * 
+ * @return void
+ * 
+ * */
+void Bootstrap::pingSerialComms()
+{
+    Serial1.println("ping");
 }

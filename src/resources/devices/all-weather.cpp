@@ -1,20 +1,34 @@
 #include "all-weather.h"
 /**
- * @deconstructor default deconstructor
+ * @description
+ * 
+ * Works the the Atmos 41 all-in-one weather sensor from Meter.
+ * https://www.metergroup.com/environment/products/atmos-41-weather-station/
+ * 
+ * Since particle does not support SDI-12, we use a 32u4 co-processor.  
+ * https://www.adafruit.com/product/2796
+ * The source code we use can be found: https://github.com/similie/sdi12-allweather-interface
+ * 
+ */
+
+/**
+ * deconstructor 
  */
 AllWeather::~AllWeather()
 {
 }
+
 /**
- * @constructor default constructor
+ * default constructor
  * @param Bootstrap boots - bootstrap object
  */
 AllWeather::AllWeather(Bootstrap *boots)
 {
     this->boots = boots;
 }
+
 /**
- * @constructor default constructor
+ * constructor
  * @param Bootstrap boots - bootstrap object
  * @param int identity - numerical value used to idenify the device
  */

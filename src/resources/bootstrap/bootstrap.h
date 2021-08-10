@@ -52,6 +52,7 @@ class Bootstrap
 {
 private:
     bool wantsSerial = false;
+    bool hasSerialComms = false;
     void pullRegistration();
     void addNewDeviceToStructure(DeviceStruct device);
     bool bootstrapped = false;
@@ -63,6 +64,8 @@ private:
     int setMaintenanceMode(String read);
      // we can use 255 to know the index is invalid as 0 is a valid index
     // uint8_t maxAddressIndex = 255;
+    void pingSerialComms();
+    void pingPong();
     int maxAddressIndex();
     uint16_t registeredAddresses[MAX_DEVICES];
    
@@ -111,6 +114,7 @@ private:
 public:
     ~Bootstrap();
     void timers();
+    bool hasSerial();
     bool isStrapped();
     void init();
     bool exceedsMaxAddressSize(uint16_t address);
