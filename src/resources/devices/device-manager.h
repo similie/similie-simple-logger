@@ -9,6 +9,7 @@
 #include "wl-device.h"
 #include "rain-gauge.h"
 #include "resources/utils/serial_storage.h"
+#include "resources/utils/configurator.h"
 
 #include "battery.h"
 #include "all-weather.h"
@@ -35,6 +36,11 @@
 #define device_manager_h
 #define BUFF_SIZE 300
 
+#define DEFVICE_FAILED_TO_INSTANTIATE 0
+#define DEVICES_ALREADY_INSTANTIATED -1
+#define DEVICES_AT_MAX -2
+#define DEVICES_VIOLATES_RULES -3
+
 const size_t DEVICE_COUNT = 5;
 const size_t DEVICE_AGGR_COUNT = SEVEN;
 
@@ -46,8 +52,12 @@ private:
     bool readBusy = false;
     bool rebootEvent = false;
     void process();
+    const char * AI_DEVICE_LIST_EVENT = "Ai/Get/Devices";
     unsigned int read_count = 0;
     u8_t attempt_count = 0;
+    Configurator config;
+    void strapDevices();
+    int applyDevice(Device * device, String deviceString, bool startup);
     // this value is the payload values size. We capture the other
     // values at initialization from the selected devices
     size_t DEFAULT_BUFFER_SIZE = 120;
@@ -55,7 +65,7 @@ private:
     Processor *processor;
     bool FRESH_START = false;
     const size_t deviceCount = ONE;
-    size_t deviceAggregateCounts[ONE];
+    size_t deviceAggregateCounts[ONE] = {0};
     Utils utils;
     HeartBeat *blood;
     unsigned int ROTATION = 0;
@@ -74,8 +84,11 @@ private:
     void heartbeat();
     void processTimers();
     size_t getBufferSize();
+    void packagePayload(JSONBufferWriter * writer);
+    String devicesString[MAX_DEVICES];
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
     void setCloudFunction();
+    void copyDevicesFromIndex(int index);
     void loopCallback(Device * device);
     void setParamsCountCallback(Device * device);
     void restoreDefaultsCallback(Device * device);
@@ -89,6 +102,17 @@ private:
     bool isNotPublishing();
     bool isNotReading();
     bool isStrapped();
+    void setCloudFunctions();
+    // for device configuration
+    void clearDeviceString();
+    bool publishDeviceList();
+    size_t countDeviceType(String deviceName);
+    bool violatesDeviceRules(String value);
+    int addDevice(String value);
+    int removeDevice(String value);
+    int showDevices(String value);
+    int clearAllDevices(String value);
+
     void setParamsCount();
     bool waitForTrue(bool (DeviceManager::*func)(),  DeviceManager *binding, unsigned long time);
     void iterateDevices(void (DeviceManager::*iter) (Device * d) , DeviceManager *binding);

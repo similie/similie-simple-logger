@@ -96,6 +96,51 @@ void Bootstrap::init()
 }
 
 /**
+* @public 
+* 
+* strapDevices
+*
+* Received cloud function maintenance mode request
+* @param String * decvices[]  
+* @return void
+*/
+void Bootstrap::storeDevice(String device, int index)
+{
+    DeviceConfig confg = {1};
+    if (device.equals("")) {
+        confg = {255};
+    }
+    Utils::machineNameDirect(device, confg.device);
+    uint16_t address = deviceConfigAdresses[index];
+    Serial.print("Storing Device ");Serial.print(device);Serial.print(" ");Serial.print(address);Serial.print(" ");Serial.print(confg.version);Serial.print(" ");Serial.println(index);
+    EEPROM.put(address, confg);
+}
+
+/**
+* @public 
+* 
+* strapDevices
+*
+* Received cloud function maintenance mode request
+* @param String * decvices[]  
+* @return void
+*/
+void Bootstrap::strapDevices(String devices[])
+{
+    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+       uint16_t address = deviceConfigAdresses[i];
+       DeviceConfig confg;
+       EEPROM.get(address, confg);
+       Serial.print("PULLING ADDRESS AT INDEX ");Serial.print(i);Serial.print(" ");Serial.print(confg.version);Serial.print(" ");Serial.println(address);
+       if (Utils::validConfigIdentity(confg.version)) {
+          devices[i] = Utils::machineToReadableName(confg.device);
+       } else {
+          devices[i] = "";
+       }
+    }
+}
+
+/**
 * @private setMaintenanceMode
 *
 * Received cloud function maintenance mode request
@@ -153,7 +198,7 @@ size_t Bootstrap::epromSize()
 */
 uint16_t Bootstrap::deviceInitAddress() 
 {
-    return this->deviceStartAddress + 1;
+    return this->DEVICE_SPECIFIC_CONFIG_ADDRESS;
 }
 
 /**
@@ -163,9 +208,9 @@ uint16_t Bootstrap::deviceInitAddress()
 * MAX_EEPROM_ADDRESS 8197 MAX_U16 65535
 * @return bool 
 */
-bool Bootstrap::exceedsMaxAddressSize(uint16_t address)
+bool Bootstrap::doesNotExceedsMaxAddressSize(uint16_t address)
 {
-    return address > 0 && address < MAX_EEPROM_ADDRESS && address < Bootstrap::epromSize();
+    return address >= deviceInitAddress() && address < Bootstrap::epromSize();
 }
 
 /**
@@ -205,7 +250,7 @@ int Bootstrap::maxAddressIndex()
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
         uint16_t address = devices[i].address;
         Serial.print(address);Serial.print(" ");Serial.println(maxAddress);
-        if (this->exceedsMaxAddressSize(address) && address >= maxAddress) {
+        if (this->doesNotExceedsMaxAddressSize(address)) {
             maxAddress = address;
             maxAddressIndex = i;
         }
@@ -223,7 +268,7 @@ int Bootstrap::maxAddressIndex()
 */
 DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
 {
-    unsigned long dName = this->machineName(name);
+    unsigned long dName = Utils::machineName(name, true);
     // delay(10000);
     // const char * dName = name.c_str();
     for (size_t i = 0; i < MAX_DEVICES && i < this->deviceMeta.count; i++) {
@@ -255,8 +300,9 @@ uint16_t Bootstrap::registerAddress(String name, uint16_t size)
     // delay(10000);
     DeviceStruct device = getDeviceByName(name, size);
     String deviceDetails = String(device.version) + " " + String(device.size) + " " + String(device.name) + " " + String(device.address);
-    Utils::log("REGISTERED_ADDRESS_DETAILS_FOR" + name, deviceDetails);
+    Utils::log("REGISTERED_ADDRESS_DETAILS_FOR " + name, deviceDetails);
     if (!Utils::validConfigIdentity(device.version)) {
+        // I need to know the number of devices
         uint16_t send = manualDeviceTracker + size + 1;
         manualDeviceTracker = send;
         return manualDeviceTracker;
@@ -294,9 +340,9 @@ uint16_t Bootstrap::getNextDeviceAddress() {
 void Bootstrap::processRegistration()
 {
     Utils::log("EPROM_REGISTRATION", String(this->deviceMeta.count ) + " " + String(this->deviceMeta.version ));
-    if (this->deviceMeta.version != 1) {
+    if (!Utils::validConfigIdentity(this->deviceMeta.version)) {
         this->deviceMeta = {1, 0};
-        EEPROM.put(this->deviceStartAddress, this->deviceMeta);
+        EEPROM.put(DEVICE_META_ADDRESS, this->deviceMeta);
     } 
      
     if (this->deviceMeta.count > 0) {
@@ -313,9 +359,13 @@ void Bootstrap::processRegistration()
 */
 void Bootstrap::setMetaAddresses()
 {
+    delay(3000);
     uint16_t size = sizeof(DeviceStruct);
+    uint16_t sizeConf = sizeof(DeviceConfig);
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
-        deviceMetaAdresses[i] = deviceContainerAddressStart + (size * i) + i; 
+        deviceMetaAdresses[i] = DEVICE_CONFIG_STORAGE_META_ADDRESS + (size * i) + i; 
+        deviceConfigAdresses[i] = DEVICE_HOLD_ADDRESS + (sizeConf * i) + i;
+        Utils::log("DEVICE_CONFIGURATION_ADDRESS, index " + String(i), "META ADDRESS " + String(deviceMetaAdresses[i]) + " DEVICE ADDRESS " + String(deviceConfigAdresses[i]) );
     }
 }
 
@@ -327,7 +377,8 @@ void Bootstrap::setMetaAddresses()
 */
 void Bootstrap::pullRegistration() 
 {
-  EEPROM.get(this->deviceStartAddress, this->deviceMeta);
+  delay(1000);
+  EEPROM.get(DEVICE_META_ADDRESS, this->deviceMeta);
   processRegistration();
 }
 
@@ -341,32 +392,16 @@ void Bootstrap::pullRegistration()
 void Bootstrap::addNewDeviceToStructure(DeviceStruct device) 
 {
     if (device.address > this->epromSize()) {
+        Utils::log("ERROR_ADDING_DEVICE: Address_EXCEEDED" , String(device.address));
         return;
     }
     uint16_t address = deviceMetaAdresses[deviceMeta.count];
     // now add based on to the next index
+    Utils::log("DEVICE_IS_BEING_ADDED", "At address: " +  String(address) + " with index " + String(deviceMeta.count) + " and name " + String(device.name) );
     devices[deviceMeta.count] = device;
     EEPROM.put(address, device);
     this->deviceMeta.count++;
-    EEPROM.put(this->deviceStartAddress, this->deviceMeta);
-}
-
-/**
-* @private machineName
-*
-* converts a string to an integerm for searachble
-* EEPROM storage
-* @param String name - the device name
-* @return unsigned int 
-*/
-unsigned long Bootstrap::machineName(String name)
-{
-   unsigned int manchineName = 0;
-   for (uint8_t i = 0; i < name.length(); i++) {
-       char c = name.charAt(i);
-       manchineName += (unsigned int)c * name.length();
-   }
-   return manchineName;
+    EEPROM.put(DEVICE_META_ADDRESS, this->deviceMeta);
 }
 
 /**
@@ -505,7 +540,46 @@ unsigned int Bootstrap::getReadTime()
 }
 
 /**
-* @public buildSendInterval
+* @public 
+*
+* resumePublication
+*
+* Stops the timers
+* @return void 
+*/
+void Bootstrap::haultPublication()
+{
+    if (readtimer.isActive())
+    {
+        readtimer.stop();
+        readtimer.reset();
+    }
+    if (publishtimer.isActive())
+    {
+        publishtimer.stop();
+        publishtimer.reset();
+    }
+
+}
+
+/**
+* @public 
+*
+* resumePublication
+*
+* Starts the timers
+* @return void 
+*/
+void Bootstrap::resumePublication()
+{
+    readtimer.start();
+    publishtimer.start();
+}
+
+/**
+* @public 
+* 
+* buildSendInterval
 *
 * Chages the interval that the system sends back data and adjusts the read
 * interval accoringly.
@@ -519,22 +593,10 @@ void Bootstrap::buildSendInterval(int interval)
     publishedInterval = interval;
     this->READ_TIMER = (unsigned int)(MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
     this->PUBLISH_TIMER = (unsigned int)(publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND);
-
-    if (readtimer.isActive())
-    {
-        readtimer.stop();
-        readtimer.reset();
-    }
-    if (publishtimer.isActive())
-    {
-        publishtimer.stop();
-        publishtimer.reset();
-    }
+    haultPublication();
     publishtimer.changePeriod(PUBLISH_TIMER);
     readtimer.changePeriod(READ_TIMER);
-    readtimer.start();
-    publishtimer.start();
-
+    resumePublication();
     EpromStruct config = getsavedConfig();
     config.pub = publicationIntervalInMinutes;
     putSavedConfig(config);
@@ -593,7 +655,7 @@ void Bootstrap::beachReset()
 uint8_t Bootstrap::beachCount()
 {
     BeachStruct beachAttempts;
-    EEPROM.get(Bootstrap::BEACH_ADDRESS, beachAttempts);
+    EEPROM.get(BEACH_ADDRESS, beachAttempts);
     if (beachAttempts.version != 0)
     {
         beachReset();
@@ -613,7 +675,7 @@ bool Bootstrap::isBeached()
     uint8_t bCount = beachCount();
     uint8_t beachedIncrement = bCount + 1;
     BeachStruct beachBase = {0, beachedIncrement};
-    EEPROM.put(Bootstrap::BEACH_ADDRESS, beachBase);
+    EEPROM.put(BEACH_ADDRESS, beachBase);
     Log.info("GOT THIS BEACH COUNT %u of %u and increment %u", bCount, BEACHED_THRSHOLD, beachBase.count);
     return bCount >= BEACHED_THRSHOLD;
 }

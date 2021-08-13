@@ -1,6 +1,7 @@
 #include "Particle.h"
 #include "string.h"
 
+#define DEVICE_BYTE_BUFFER_SIZE 48
 #ifndef bootstrap_h
 #define bootstrap_h
 
@@ -22,6 +23,10 @@
 #define MAX_EEPROM_ADDRESS 8197
 #define PRODUCTION false
 
+struct DeviceConfig {
+    uint8_t version;
+    byte device[DEVICE_BYTE_BUFFER_SIZE];
+};
 
 struct DeviceMetaStruct {
     uint8_t version;
@@ -58,24 +63,20 @@ private:
     bool bootstrapped = false;
     uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
     int publishedInterval = DEFAULT_PUB_INTERVAL;
-    unsigned long machineName(String name);
+    // unsigned long machineName(String name);
     void collectDevices();
     void setFunctions();
     int setMaintenanceMode(String read);
      // we can use 255 to know the index is invalid as 0 is a valid index
-    // uint8_t maxAddressIndex = 255;
     void pingSerialComms();
     void pingPong();
-    int maxAddressIndex();
-    uint16_t registeredAddresses[MAX_DEVICES];
-   
+    int maxAddressIndex();   
     DeviceMetaStruct deviceMeta;
     DeviceStruct devices[MAX_DEVICES];
     DeviceStruct getDeviceByName(String name,  uint16_t size);
     uint16_t getNextDeviceAddress();
     uint16_t deviceInitAddress();
     void processRegistration();
-    // bool isDigital(char value);
     bool maintenaceMode = false;
     void batteryController();
     void bootstrap();
@@ -89,7 +90,7 @@ private:
     const unsigned int BEACH_LISTEN_TIME = 240 * MILISECOND;
     uint8_t beachCount();
     const uint8_t BEACHED_THRSHOLD = 5;
-    const static int BEACH_ADDRESS = sizeof(EpromStruct) + 8;
+    
     bool strappingTimers = false;
     size_t serial_buffer_length = SERIAL_BUFFER_LENGTH;
     String serial_buffer[SERIAL_BUFFER_LENGTH];
@@ -104,21 +105,33 @@ private:
     void processSerial();
     void pushSerial(String serial);
     String popSerial(size_t index);
-   
+    // EEPROM Address Management
     void setMetaAddresses();
     uint16_t deviceMetaAdresses[MAX_DEVICES];
-    uint16_t deviceContainerAddressStart = BEACH_ADDRESS + sizeof(BeachStruct) + 8;
-    uint16_t deviceStartAddress = deviceContainerAddressStart  + (sizeof(DeviceStruct) * MAX_DEVICES)  +  (MAX_DEVICES + 1);
-    uint16_t manualDeviceTracker = deviceStartAddress + 8;
-
+    uint16_t deviceConfigAdresses[MAX_DEVICES];
+    // BEACH Storage
+    static const uint16_t BEACH_ADDRESS = sizeof(EpromStruct) + 8;  
+    // Device Meta Storage
+    const uint16_t DEVICE_META_ADDRESS = BEACH_ADDRESS  + sizeof(BeachStruct) + 8;
+    // Stores count details
+    const uint16_t DEVICE_CONFIG_STORAGE_META_ADDRESS = sizeof(DeviceMetaStruct) + 8;
+    // Device Type Storage
+    const uint16_t DEVICE_HOLD_ADDRESS = DEVICE_CONFIG_STORAGE_META_ADDRESS  + (sizeof(DeviceStruct) * MAX_DEVICES)  +  (MAX_DEVICES + 2) + 8;
+    // Now the storage for the specific devices
+    const uint16_t DEVICE_SPECIFIC_CONFIG_ADDRESS = DEVICE_HOLD_ADDRESS + ((sizeof(DeviceConfig) + 4) * MAX_DEVICES)  +  (MAX_DEVICES + 2); 
+    // in case we have to manually issue an address on first come first serve.
+    uint16_t manualDeviceTracker = DEVICE_SPECIFIC_CONFIG_ADDRESS;  
 public:
     ~Bootstrap();
     void timers();
     bool hasSerial();
     bool isStrapped();
     void init();
-    bool exceedsMaxAddressSize(uint16_t address);
-    // int getStorageAddress(size_t size);
+    bool doesNotExceedsMaxAddressSize(uint16_t address);
+    void strapDevices(String devices[]);
+    void storeDevice(String device, int index);
+    void haultPublication();
+    void resumePublication();
     double getCalibration();
     void restoreDefaults();
     void setPublishTimer(bool time);
@@ -132,7 +145,6 @@ public:
     bool publishTimerFunc();
     bool heatbeatTimerFunc();
     bool readTimerFun();
-    // bool isDigital();
     bool isBeached();
     void beach();
     void resetBeachCount();

@@ -264,7 +264,7 @@ void SerialStorage::storePayload(String payload, String topic)
 
         if (i < length) {
             Serial1.write('\0');
-            delay(10);
+            delay(100);
         }
     }
     // give the little logger time 
