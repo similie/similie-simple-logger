@@ -10,7 +10,7 @@ The below image provides the basic visual representation for the architectural o
 
 ## Device Config
 
-If needing just a single set of devices that compose a single dataset, all configuration can be done through the Particle cloud. Find the `addDevice` function and place your device's string value into input console. The format for the device is in the folling form `device:[identity]:[pin]`. The identity and pin are only required for some devices and the pin is optional for others. We arbitrarily set a max device limit of 7, but this can be changed under `bootstrap.h` by altering the `MAX_DEVICES` macro. If new devices are added, there should be a corresponding representation under `configurator.h`. The follow provides a list of available devices:
+If needing just a single set of devices that compose a single dataset, all configuration can be done through the Particle cloud. Find the `addDevice` function and place your device's string value into input console. The format for the device is in the following form `device:[identity]:[pin]`. The identity and pin are only required for some devices and the pin is optional for others. We arbitrarily set a max device limit of 7, but this can be changed under `bootstrap.h` by altering the `MAX_DEVICES` macro. If new devices are added, there should be a corresponding representation under `configurator.h`. The follow provides a list of available devices:
 
 ```
 all_weather:0 // pin 10 for the 32u4.
@@ -26,7 +26,7 @@ sonic_sensor:0:10 // unless deploying multiple sensors, both the pin and identit
 
 ```
 
-To remove a single device, you can select the `showDevices` function without any input parameters. A corresponding cloud event will send a list of all connected devices. Simply copy the full string name populate the `removeDevice` function with this value. To delete all devices you can use the `clearAllDevices` function with the text `DELETE` in the input field.
+To remove a single device, you can select the `showDevices` function without any input parameters. A corresponding cloud event will send a list of all connected devices. Simply copy the full string name and populate the `removeDevice` function with this value. To delete all devices you can use the `clearAllDevices` function with the text `DELETE` in the input field.
 
 In addition to the cloud configurator, you can configure the device suite in the device-manager constructor `/src/resources/devices/device-manager.cpp`. The advantage of using this method is that you can create multiple datasets with your devices. The following provides an example configuration with one AllWeather device, a SoilMoisture device, and the default Battery device.
 
@@ -67,4 +67,4 @@ When you're ready to compile your project, make sure you have the correct Partic
 
 GNU GENERAL PUBLIC LICENSE V3
 
-Supported by Similie and made with Love in Timor-Leste
+Supported by Similie and made with LOVE in Timor-Leste
