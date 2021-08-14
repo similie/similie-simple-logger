@@ -1,4 +1,4 @@
-# SimilieLogger
+# Similie AiLogger
 
 This project is the primary firmware for running our field-based data loggers using Particle's IoT architecture. The software has been testing using Particle's 3.0 and 3.1-based firmware. It may compile with older versions, but we have found problems running the firmware with 3rd-party SIM cards. Additionally the software is intended for Particle's 3rd-gen Boron/Argon Series and untested with other generatations. For devices requiring serial communications such as the Atmos41 or Terros 10/11, please see our repository [similie/sdi12-allweather-interface](https://github.com/similie/sdi12-allweather-interface)
 
