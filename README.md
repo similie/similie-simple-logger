@@ -17,11 +17,13 @@ all_weather:0 // pin 10 for the 32u4.
 all_weather:1 // pin 11 for the 32u4.
 soil_moisture:0 // pin 10 for the 32u4.
 soil_moisture:1 // pin 11 for the 32u4.
-// if both a soil moisture and an all_weather are deployed, they should should have differnt identities
+// if both a soil moisture and an all_weather are deployed,
+// they should should have differnt identities
 rain_gauge
 gps
 battery // this reads the particle's fuel gauge api
-sonic_sensor:0:10 // Both the pin and identity are optional unless deploying multiple sensors on the save device
+sonic_sensor:0:10 // Both the pin and identity are optional
+        //unless deploying multiple sensors on the save device
 ```
 
 In addition to the cloud configurator, you can configure the device suite in the device-manager constructor `/src/resources/devices/device-manager.cpp`. The advantage of using this method is that you can create multiple datasets with your devices. The following provides an example configuration with one AllWeather device, a SoilMoisture device, and the default Battery device.
