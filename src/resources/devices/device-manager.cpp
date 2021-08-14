@@ -279,7 +279,7 @@ void DeviceManager::processTimers()
 */
 int DeviceManager::rebootRequest(String read)
 {
-    Log.info("Reboot requested");
+    Utils::log("REBOOT_EVENT_REQUESTED", "Shutting down");
     rebootEvent = true;
     return 1;
 }
@@ -297,6 +297,7 @@ int DeviceManager::rebootRequest(String read)
  */
 int DeviceManager::restoreDefaults(String read)
 {
+    Utils::log("RESTORING_DEVICE_DEFAULTS", read);
     this->processRestoreDefaults();
     return 1;
 }
@@ -357,7 +358,7 @@ void DeviceManager::heartbeat()
     if (processor->connected())
     {
         String artery = blood->pump();
-        Log.info("pumping blood %s", utils.stringConvert(artery));
+        Utils::log("SENDING_HEARTBEAT", artery);
         processor->publish(processor->getHeartbeatTopic(), artery);
     }
 }
@@ -405,14 +406,11 @@ void DeviceManager::publish()
 
     if (attempt_count < ATTEMPT_THRESHOLD)
     {
-        // force this puppy to try and connect. May not be needed in automatic mode
-        // Particle.connect();
-        // Cellular.connect();
         attempt_count++;
     }
     else
     {
-        Log.info("I NEED HELP!. MY OFFLINE COUNT IS BEACHED AS %d", attempt_count);
+        Utils::log("ON_LINE_FALURE", String::format("OFFLINE COUNT %d", attempt_count));
         attempt_count = 0;
     }
     read_count = 0;
@@ -486,10 +484,6 @@ void DeviceManager::publisher()
     memset(buf, 0, sizeof(buf));
     JSONBufferWriter writer(buf, sizeof(buf) - 1);
     packagePayload(&writer);
-    // writer.beginObject();
-    // writer.name("device").value(System.deviceID());
-    // writer.name("target").value(this->ROTATION);
-    // writer.name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
     u8_t maintenanceCount = 0;
     for (size_t i = 0; i < this->deviceCount; i++)
     {
@@ -1008,13 +1002,12 @@ void DeviceManager::strapDevices()
     for (uint8_t i = 0; i < MAX_DEVICES; i++)
     {
         String device = devicesString[i];
-        Serial.println("_____________________________________________\n");
-        Utils::log("BOOTSTRAPPING_DEVICE", device);
+        Utils::log("BOOTSTRAPPING_DEVICE_________________________", device);
         if (!device.equals(""))
         {
             applyDevice(config.addDevice(device, &boots), device, true);
-        }
-        Serial.println("_____________________________________________\n");
+        }               
+        Utils::log("_____________________________________________", "\n");
     }
 }
 
@@ -1039,15 +1032,12 @@ int DeviceManager::applyDevice(Device *device, String deviceString, bool startup
     boots.haultPublication();
     // we should clear the devices since we are resetting the clocks
     // We are only working with the first dimension
-    // Serial.print("FUCKT HIS SHIT");Serial.println(this->deviceAggregateCounts[ONE_I]);
     this->devices[ONE_I][deviceAggregateCounts[ONE_I]] = device;
-    //Serial.println("BEACHSTREET 1");
-    // run the device init
-    //Serial.println("BEACHSTREET 2");
+    // Run the init function
     this->devices[ONE_I][deviceAggregateCounts[ONE_I]]->init();
-    //Serial.println("BEACHSTREET 3");
+    // Set the device name
     this->devicesString[deviceAggregateCounts[ONE_I]] = deviceString;
-    //Serial.println("BEACHSTREET 4");
+    // Increment Count
     this->deviceAggregateCounts[ONE_I]++;
     if (!startup)
     {
@@ -1055,6 +1045,5 @@ int DeviceManager::applyDevice(Device *device, String deviceString, bool startup
     }
     setReadCount(0);
     boots.resumePublication();
-    //Serial.print("BEACHSTREET 5 ");Serial.println(this->deviceAggregateCounts[ONE_I]);
     return this->deviceAggregateCounts[ONE_I];
 }
