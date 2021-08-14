@@ -30,7 +30,9 @@ struct WLStruct {
 class WlDevice : public Device
 {
 private:
+    int readPin = 0; 
     bool digital = DIGITAL_DEFAULT;
+    int getPin();
     uint16_t saveAddressForWL = 0;
     double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
     void configSetup();
@@ -44,12 +46,13 @@ private:
     String uniqueName();
     bool hasSerialIdentity();
     void setCloudFunctions();
+    String getParamName(size_t index);
     Bootstrap *boots;
     String deviceName = "wl";
     int sendIdentity = -1;
     //String readParams[WL_PARAM_SIZE] = {"wl_pw", "hydrometric_level"};
     // String readParams[WL_PARAM_SIZE] = {"wl_pw"}; // water tank  or wl
-    String readParams[WL_PARAM_SIZE] = {"wl"}; // river level or hydrometric level
+    String readParams[WL_PARAM_SIZE] = {"dist"}; // river level or hydrometric level
 
     Utils utils;
     u8_t maintenanceTick = 0;
@@ -68,9 +71,10 @@ public:
     ~WlDevice();
     WlDevice(Bootstrap *boots);
     WlDevice(Bootstrap *boots, int sendIdentity);
-    static char setDigital(bool value);
-    static bool isDigital(char value);
-    static void setPin(bool digital);
+    WlDevice(Bootstrap *boots, int sendIdentity, int readPin);
+    char setDigital(bool value);
+    bool isDigital(char value);
+    void setPin(bool digital);
     void read();
     WLStruct getProm();
     String name();

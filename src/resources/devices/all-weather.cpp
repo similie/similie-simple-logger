@@ -127,6 +127,10 @@ void AllWeather::publish(JSONBufferWriter &writer, u8_t attempt_count)
             param = "_FAILURE_";
         }
         float paramValue = extractValue(VALUE_HOLD[i], i, MAX);
+        if (isnan(paramValue)) {
+            paramValue = NO_VALUE;
+        }
+
         if (paramValue == NO_VALUE)
         {
             maintenanceTick++;

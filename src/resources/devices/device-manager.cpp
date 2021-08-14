@@ -19,42 +19,51 @@ DeviceManager::~DeviceManager()
  */
 DeviceManager::DeviceManager(Processor *processor)
 {
-    // to clear EEPROM. Comment this line
-    // once flashed and reflash
+    // To clear EEPROM. Comment this line
+    // once flashed you should reflash to avoid dataloss
     // FRESH_START = true;
-    if (FRESH_START) {
+    if (FRESH_START)
+    {
         SerialStorage::clearDeviceStorage();
     }
-    /**
-    * We need to update the deviceAggregateCounts array.
-    * Normally you will leave the first dimension at ONE_I.
-    * Between the curly braces {NUM}, Set the number of devices you need to initialize.
-    * The max is by default set to 7.
-    */
-    deviceAggregateCounts[ONE_I] =  {THREE}; //{FOUR}; // set the number of devices here
-    // the numerical N_I values a indexs from 0, 1, 2 ... n
-    // unless others needed. Most values will only needs the 
-    // ONE_I for the first dimension.
-    this->devices[ONE_I][ONE_I] = new AllWeather(&boots, ONE_I);
-    this->devices[ONE_I][TWO_I] = new Battery();
-    // this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
-    // water level
-    this->devices[ONE_I][THREE_I] = new WlDevice(&boots, TWO_I);
-    // rain gauge
-    // this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
-    // another soil moisture will also work
-    //this->devices[ONE_I][FIVE_I] = new SoilMoisture(boots, THREE_I);
+    
     this->blood = new HeartBeat(System.deviceID());
     // end devices
     // set storage when we have a memory card reader
     storage = new SerialStorage(processor, &boots);
     // instantiate the processor
     this->processor = processor;
+    /**
+    * Our primary method of device configuration is via the particle
+    * cloud using the addDevice function. However, we can also configure
+    * our devices directly in the constructor by setting the deviceAggregateCounts array.
+    * Normally you will leave the first dimension at ONE_I.
+    * Between the curly braces {NUM}, Set the number of devices you need to initialize.
+    * The max is by default set to 7. If you want to collect multiple datasets, then set 
+    * another dimension. This behavior is not support through cloud configuration 
+    * (only a single dataset is available), but it can be set here manually.
+    */
+    // deviceAggregateCounts[ONE_I] =  {ONE}; //{FOUR}; // set the number of devices here
+    // the numerical N_I values a indexs from 0, 1, 2 ... n
+    // unless others datasets are needed. Most values will only needs the
+    // ONE_I for the first dimension.
+    // this->devices[ONE_I][ONE_I] = new Battery();
+    // all weather
+    // this->devices[ONE_I][ONE_I] = new AllWeather(&boots, ONE_I);
+    // battery
+    // this->devices[ONE_I][TWO_I] = new Battery();
+    // soil moisture
+    // this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
+    // // water level
+    // this->devices[ONE_I][FOUR_I] = new WlDevice(&boots, TWO_I);
+    // rain gauge
+    // this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
+   
 }
 
 //////////////////////////////
 /// Public Functions
-////////////////////////////// 
+//////////////////////////////
 /**
  * @public 
  * 
@@ -65,15 +74,15 @@ DeviceManager::DeviceManager(Processor *processor)
  */
 int DeviceManager::setSendInverval(String read)
 {
-  int val = (int)atoi(read);
-  // we dont let allows less than one or greater than 15
-  if (val < 1 || val > 15)
-  {
-    return 0;
-  }
-  Utils::log("CLOUD_REQUESTED_INTERVAL_CHANGE", "setting payload delivery for every " + String(val) + " minutes");
-  this->buildSendInverval(val);
-  return val;
+    int val = (int)atoi(read);
+    // we dont let allows less than one or greater than 15
+    if (val < 1 || val > 15)
+    {
+        return 0;
+    }
+    Utils::log("CLOUD_REQUESTED_INTERVAL_CHANGE", "setting payload delivery for every " + String(val) + " minutes");
+    this->buildSendInverval(val);
+    return val;
 }
 
 /**
@@ -86,13 +95,20 @@ int DeviceManager::setSendInverval(String read)
  */
 void DeviceManager::init()
 {
-    setParamsCount();
+    // apply delay to see the devices bootstrapping
+    // in the serial console
+    // delay(10000);
     processor->connect();
     boots.init();
     waitForTrue(&DeviceManager::isStrapped, this, 10000);
+    // if there are already default devices, let's process 
+    // their init before we run the dynamic configuration
+    iterateDevices(&DeviceManager::initCallback, this);
+    strapDevices();
+    setParamsCount();
     setCloudFunction();
     clearArray();
-    iterateDevices(&DeviceManager::initCallback, this);
+    setCloudFunctions();
 }
 
 /**
@@ -121,7 +137,7 @@ void DeviceManager::setReadCount(unsigned int read_count)
  */
 bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
 {
-    long time = Time.now(); 
+    long time = Time.now();
     const long THRESHOLD = 1600000000;
     if (time < THRESHOLD)
     {
@@ -180,10 +196,10 @@ void DeviceManager::clearArray()
  */
 void DeviceManager::loop()
 {
-    process();  
+    process();
     boots.timers();
     processor->loop();
-    storage->loop();  
+    storage->loop();
     processTimers();
     iterateDevices(&DeviceManager::loopCallback, this);
 }
@@ -202,7 +218,7 @@ void DeviceManager::loop()
  */
 void DeviceManager::setParamsCount()
 {
-   iterateDevices(&DeviceManager::setParamsCountCallback, this);
+    iterateDevices(&DeviceManager::setParamsCountCallback, this);
 }
 
 /**
@@ -282,10 +298,9 @@ int DeviceManager::rebootRequest(String read)
  */
 int DeviceManager::restoreDefaults(String read)
 {
-  this->processRestoreDefaults();
-  return 1;
+    this->processRestoreDefaults();
+    return 1;
 }
-
 
 /**
  * @private 
@@ -368,7 +383,7 @@ void DeviceManager::read()
     }
 
     readBusy = false;
-    Log.info("READCOUNT=%d", read_count);
+    Utils::log("READ_EVENT", "READCOUNT=" + String(read_count));
 }
 
 /**
@@ -381,9 +396,9 @@ void DeviceManager::read()
  */
 void DeviceManager::publish()
 {
-    Log.info("READY TO PUBLISH: event=%d", DeviceManager::isNotReading());
     // checkBootThreshold();
     waitForTrue(&DeviceManager::isNotReading, this, 10000);
+    Utils::log("PUBLICATION_EVENT", "EVENT=" + processor->getPublishTopic(false));
     //waitFor(DeviceManager::isNotReading, 10000);
     publishBusy = true;
 
@@ -449,6 +464,14 @@ void DeviceManager::popOfflineCollection()
     this->storage->popOfflineCollection(this->POP_COUNT_VALUE);
 }
 
+void DeviceManager::packagePayload(JSONBufferWriter *writer)
+{
+    writer->beginObject();
+    writer->name("device").value(System.deviceID());
+    writer->name("target").value(this->ROTATION);
+    writer->name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
+}
+
 /**
  * @private
  * 
@@ -463,10 +486,11 @@ void DeviceManager::publisher()
     char buf[getBufferSize()];
     memset(buf, 0, sizeof(buf));
     JSONBufferWriter writer(buf, sizeof(buf) - 1);
-    writer.beginObject();
-    writer.name("device").value(System.deviceID());
-    writer.name("target").value(this->ROTATION);
-    writer.name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
+    packagePayload(&writer);
+    // writer.beginObject();
+    // writer.name("device").value(System.deviceID());
+    // writer.name("target").value(this->ROTATION);
+    // writer.name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
     u8_t maintenanceCount = 0;
     for (size_t i = 0; i < this->deviceCount; i++)
     {
@@ -531,9 +555,9 @@ void DeviceManager::publisher()
  */
 void DeviceManager::buildSendInverval(int interval)
 {
-  this->setReadCount(0);
-  this->clearArray();
-  boots.buildSendInterval(interval);
+    this->setReadCount(0);
+    this->clearArray();
+    boots.buildSendInterval(interval);
 }
 
 /**
@@ -546,7 +570,7 @@ void DeviceManager::buildSendInverval(int interval)
  * @return void
  * 
 */
-void DeviceManager::loopCallback(Device * device)
+void DeviceManager::loopCallback(Device *device)
 {
     device->loop();
 }
@@ -561,7 +585,7 @@ void DeviceManager::loopCallback(Device * device)
  * @return void
  * 
 */
-void DeviceManager::setParamsCountCallback(Device * device)
+void DeviceManager::setParamsCountCallback(Device *device)
 {
     u8_t count = device->paramCount();
     this->paramsCount += count;
@@ -577,7 +601,7 @@ void DeviceManager::setParamsCountCallback(Device * device)
  * @return void
  * 
 */
-void DeviceManager::restoreDefaultsCallback(Device * device)
+void DeviceManager::restoreDefaultsCallback(Device *device)
 {
     device->restoreDefaults();
 }
@@ -592,9 +616,9 @@ void DeviceManager::restoreDefaultsCallback(Device * device)
  * @return void
  * 
 */
-void DeviceManager::initCallback(Device * device)
+void DeviceManager::initCallback(Device *device)
 {
-  device->init();
+    device->init();
 }
 
 /**
@@ -607,9 +631,9 @@ void DeviceManager::initCallback(Device * device)
  * @return void
  * 
 */
-void DeviceManager::clearArrayCallback(Device * device) 
+void DeviceManager::clearArrayCallback(Device *device)
 {
-  device->clear();
+    device->clear();
 }
 
 /**
@@ -622,9 +646,10 @@ void DeviceManager::clearArrayCallback(Device * device)
  * @return void
  * 
 */
-void DeviceManager::setReadCallback(Device * device) {
-  device->read();
-} 
+void DeviceManager::setReadCallback(Device *device)
+{
+    device->read();
+}
 
 /**
  * @private 
@@ -651,13 +676,13 @@ bool DeviceManager::isStrapped()
  * @return void
  * 
 */
-void DeviceManager::iterateDevices(void (DeviceManager::*iter) (Device * d) , DeviceManager *binding)
+void DeviceManager::iterateDevices(void (DeviceManager::*iter)(Device *d), DeviceManager *binding)
 {
     for (size_t i = 0; i < this->deviceCount; i++)
     {
         size_t size = this->deviceAggregateCounts[i];
         for (size_t j = 0; j < size; j++)
-        {   
+        {
             (binding->*iter)(this->devices[i][j]);
         }
     }
@@ -681,8 +706,330 @@ bool DeviceManager::waitForTrue(bool (DeviceManager::*func)(), DeviceManager *bi
 {
     bool valid = false;
     unsigned long then = millis();
-    while(!valid && (millis() - time) < then) {
-     valid = (binding->*func)();  
+    while (!valid && (millis() - time) < then)
+    {
+        valid = (binding->*func)();
     }
     return valid;
+}
+
+/**
+ * @private 
+ * 
+ * setCloudFunctions
+ * 
+ * sets the cloud functions from particle
+ * 
+ * @return void
+ * 
+*/
+void DeviceManager::setCloudFunctions()
+{
+    Particle.function("addDevice", &DeviceManager::addDevice, this);
+    Particle.function("removeDevice", &DeviceManager::removeDevice, this);
+    Particle.function("showDevices", &DeviceManager::showDevices, this);
+    Particle.function("clearAllDevices", &DeviceManager::clearAllDevices, this);
+}
+
+/**
+ * @private 
+ * 
+ * clearDeviceString
+ * 
+ * Clears the device  string array
+ * 
+ * @return size_t
+ * 
+*/
+void DeviceManager::clearDeviceString()
+{
+    for (uint8_t i = 0; i < MAX_DEVICES; i++)
+    {
+        devicesString[i] = "";
+    }
+}
+
+/**
+ * @private 
+ * 
+ * clearAllDevice
+ * 
+ * Clears the device table and EEPROM
+ * 
+ * @return size_t
+ * 
+*/
+int DeviceManager::clearAllDevices(String value)
+{
+    Utils::log("DEVICE_CLEARING_EVENT_WAS_CALLED", "clearing all data and values");
+    boots.haultPublication();
+    deviceAggregateCounts[ONE_I] = 0;
+    clearDeviceString();
+    clearArray();
+    setReadCount(0);
+    EEPROM.clear();
+    boots.clearDeviceConfigArray();
+    boots.resumePublication();
+    return 1;
+}
+
+/**
+ * @private 
+ * 
+ * countDeviceType
+ * 
+ * Counts the number of active devices with a current device tag
+ * 
+ * @return size_t
+ * 
+*/
+size_t DeviceManager::countDeviceType(String deviceName)
+{
+    size_t count = 0;
+    for (uint8_t i = 0; i < MAX_DEVICES; i++)
+    {
+        String device = devicesString[i];
+        if (device.startsWith(deviceName))
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+bool DeviceManager::violatesDeviceRules(String value)
+{
+    bool violation = true;
+    // Serial.print("Beached 1 ");Serial.println(value);
+    // if it already contains the device.
+    if (Utils::containsValue(devicesString, MAX_DEVICES, value) > -1)
+    {
+        return violation;
+    }
+    // get the config details
+    String configurationStore[CONFIG_STORAGE_MAX];
+    // put it into an array
+    config.loadConfigurationStorage(value, configurationStore, CONFIG_STORAGE_MAX);
+    String deviceName = configurationStore[DEVICE_NAME_INDEX];
+    // if we have no device of this type, fail it
+    int deviceIndex = config.getEnumIndex(deviceName);
+    //Serial.print("Beached 2 ");Serial.print(deviceIndex);Serial.print(" ");Serial.println(deviceIndex);
+    if (deviceIndex == -1)
+    {
+        return violation;
+    }
+    /**
+    * We count the number and make sure there aren't too many
+    */
+    size_t occurrences = countDeviceType(deviceName);
+    //Serial.print("Beached 3 ");Serial.println(occurrences);
+    if (config.violatesOccurances(deviceName, occurrences))
+    {
+        return violation;
+    }
+
+    return !violation;
+}
+/**
+ * @private 
+ * 
+ * setCloudFunctions
+ * 
+ * sets the cloud functions from particle
+ * 
+ * @param String - value from the cloud function
+ * 
+ * @return void
+ * 
+*/
+int DeviceManager::addDevice(String value)
+{
+    if (Utils::containsValue(devicesString, MAX_DEVICES, value) != -1)
+    {
+        return DEVICES_ALREADY_INSTANTIATED;
+    }
+    else if (this->deviceAggregateCounts[ONE_I] >= MAX_DEVICES)
+    {
+        return DEVICES_AT_MAX;
+    }
+    else if (violatesDeviceRules(value))
+    {
+        return DEVICES_VIOLATES_RULES;
+    }
+
+    int valid = applyDevice(config.addDevice(value, &boots), value, true);
+    if (valid == 0)
+    {
+        return DEFVICE_FAILED_TO_INSTANTIATE;
+    }
+    setParamsCount();
+    boots.storeDevice(value, valid - 1);
+    return valid;
+}
+
+/**
+ * @private 
+ * 
+ * copyDevicesFromIndex
+ * 
+ * Moves the device list from the current index to next index
+ * 
+ * @param String - value from the cloud function
+ * 
+ * @return int
+ * 
+*/
+void DeviceManager::copyDevicesFromIndex(int index)
+{
+    delete devices[ONE_I][index];
+    devices[ONE_I][index] = new Device();
+    devicesString[index] = "";
+
+    for (size_t i = index + 1; i < deviceAggregateCounts[ONE_I]; i++)
+    {
+        // kill this object
+        delete devices[ONE_I][i - 1];
+        // set the one prior
+        devices[ONE_I][i - 1] = devices[ONE_I][i];
+        // devices[ONE_I][i] = new Device();
+        // and kill this one too.
+        delete devices[ONE_I][i];
+        String name = devicesString[i];
+        devicesString[i] = "";
+        if (!name.equals(""))
+        {
+            devicesString[i - 1] = name;
+            boots.storeDevice(name, i - 1);
+        }
+        else
+        {
+            boots.storeDevice("", i);
+        }
+    }
+}
+
+/**
+ * @private 
+ * 
+ * setCloudFunctions
+ * 
+ * sets the cloud functions from particle
+ * 
+ * @param String - value from the cloud function
+ * 
+ * @return int
+ * 
+*/
+int DeviceManager::removeDevice(String value)
+{
+    Utils::log("DEVICE_REMOVAL_EVENT_CALLED", value);
+    int valid = Utils::containsValue(devicesString, MAX_DEVICES, value);
+    if (valid > -1)
+    {
+        boots.haultPublication();
+        copyDevicesFromIndex(valid);
+        deviceAggregateCounts[ONE_I]--;
+        boots.resumePublication();
+    }
+    return valid;
+}
+
+bool DeviceManager::publishDeviceList()
+{
+    char buf[300];
+    memset(buf, 0, sizeof(buf));
+    JSONBufferWriter writer(buf, sizeof(buf) - 1);
+    packagePayload(&writer);
+    writer.name("payload").beginObject();
+    for (size_t i = 0; i < MAX_DEVICES; i++)
+    {
+        String d = devicesString[i];
+        writer.name(String(i)).value(d);
+    }
+    writer.endObject();
+    writer.endObject();
+    return processor->publish(AI_DEVICE_LIST_EVENT, String(buf));
+}
+
+/**
+ * @private 
+ * 
+ * showDevices
+ *
+ * Pulls the devices and sends the payload over the processor
+ * @param String - value from the cloud function
+ *  
+ * @return int
+ * 
+*/
+int DeviceManager::showDevices(String value)
+{
+    int valid = publishDeviceList() ? 1 : 0;
+    return valid;
+}
+
+/**
+ * @private 
+ * 
+ * strapDevices
+ *
+ * Pulls the devices from bootstraps EPROM
+ *  
+ * @return void
+*/
+void DeviceManager::strapDevices()
+{
+    boots.strapDevices(devicesString);
+    for (uint8_t i = 0; i < MAX_DEVICES; i++)
+    {
+        String device = devicesString[i];
+        Serial.println("_____________________________________________\n");
+        Utils::log("BOOTSTRAPPING_DEVICE", device);
+        if (!device.equals(""))
+        {
+            applyDevice(config.addDevice(device, &boots), device, true);
+        }
+        Serial.println("_____________________________________________\n");
+    }
+}
+
+/**
+ * @private 
+ * 
+ * applyDevice
+ *
+ * Adds the device to the scope
+ *  
+ * @return void
+ * 
+*/
+int DeviceManager::applyDevice(Device *device, String deviceString, bool startup)
+{
+    // we also need to make sure it's cool with the rules
+    if (device == NULL)
+    {
+        return Utils::log("BOOTSTRAPPING_DEVICE_FAILED", deviceString, 0);
+    }
+
+    boots.haultPublication();
+    // we should clear the devices since we are resetting the clocks
+    // We are only working with the first dimension
+    // Serial.print("FUCKT HIS SHIT");Serial.println(this->deviceAggregateCounts[ONE_I]);
+    this->devices[ONE_I][deviceAggregateCounts[ONE_I]] = device;
+    //Serial.println("BEACHSTREET 1");
+    // run the device init
+    //Serial.println("BEACHSTREET 2");
+    this->devices[ONE_I][deviceAggregateCounts[ONE_I]]->init();
+    //Serial.println("BEACHSTREET 3");
+    this->devicesString[deviceAggregateCounts[ONE_I]] = deviceString;
+    //Serial.println("BEACHSTREET 4");
+    this->deviceAggregateCounts[ONE_I]++;
+    if (!startup)
+    {
+        this->clearArray();
+    }
+    setReadCount(0);
+    boots.resumePublication();
+    //Serial.print("BEACHSTREET 5 ");Serial.println(this->deviceAggregateCounts[ONE_I]);
+    return this->deviceAggregateCounts[ONE_I];
 }

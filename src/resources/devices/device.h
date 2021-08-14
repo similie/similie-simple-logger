@@ -12,7 +12,7 @@ private:
     Bootstrap *boots;
 
 public:
-    ~Device();
+    virtual ~Device();
     Device();
     Device(Bootstrap *boots);
     virtual String name();

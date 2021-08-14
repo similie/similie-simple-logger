@@ -1,0 +1,54 @@
+#include "Particle.h"
+// #include "resources/devices/device-manager.h"
+#include "resources/devices/device.h"
+#include "resources/devices/all-weather.h"
+#include "resources/devices/soil-moisture.h"
+#include "resources/devices/wl-device.h"
+#include "resources/devices/rain-gauge.h"
+#include "resources/devices/gps-device.h"
+#include "resources/devices/battery.h"
+#include "utils.h"
+
+#define CONFIG_STORAGE_MAX 5
+#define CURRENT_DEVICES_COUNT 6
+
+#define DEVICE_NAME_INDEX 0
+#define DEVICE_IDENTITY_INDEX 1
+#define DEVICE_PIN_INDEX 2
+#define DEVICE_FUTURE_INDEX 3
+#define DEVICE_FUTURE_2_INDEX 4
+
+#ifndef configurator_h
+#define configurator_h
+
+
+class Configurator
+{
+private:
+    String devicesAvaliable[CURRENT_DEVICES_COUNT] = {"all_weather", "soil_moisture", "rain_gauge", "gps_device", "battery", "sonic_sensor"};
+    enum  {
+        all_weather,
+        soil_moisture,
+        rain_gauge,
+        gps_device,
+        battery,
+        sonic_sensor
+    };
+
+    
+    Device * pullDeviceType(String configurationStore[], Bootstrap * boots);
+    bool applyDevice(Device * d);
+    bool noIdentity(String configurationStore[], int index);
+    int parseIdentity(String value);
+public:
+    ~Configurator();
+    Configurator();
+    int getEnumIndex(String value);
+    bool violatesOccurances(String value, int occrances);
+    void loadConfigurationStorage(String payload, String configurationStore[],  size_t size);
+    Device * addDevice(String payload, Bootstrap * boots);
+    bool removeDevice(String payload);
+    void currentDevices(JSONBufferWriter * writer);
+};
+
+#endif

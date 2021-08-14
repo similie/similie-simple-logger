@@ -9,7 +9,7 @@ Utils::~Utils()
 
 /**
  * @constructor
- */ 
+ */
 Utils::Utils()
 {
 }
@@ -28,11 +28,12 @@ Utils::Utils()
  * @return double
  * 
  */
-double Utils::parseCloudFunctionDouble(String value, String name) {
-  const char *stringCal = value.c_str();
-  double val = ::atof(stringCal);
-  Utils::log("SETTING_CALIBRATION_" + name, "value: " + String(stringCal));
-  return val;
+double Utils::parseCloudFunctionDouble(String value, String name)
+{
+    const char *stringCal = value.c_str();
+    double val = ::atof(stringCal);
+    Utils::log("SETTING_CALIBRATION_" + name, "value: " + String(stringCal));
+    return val;
 }
 
 /**
@@ -49,7 +50,7 @@ double Utils::parseCloudFunctionDouble(String value, String name) {
  * @return String
  * 
  */
-String Utils::requestDeviceId(int identity, String cmd) 
+String Utils::requestDeviceId(int identity, String cmd)
 {
     return "request_" + String(identity) + " " + cmd;
 }
@@ -85,9 +86,11 @@ String Utils::receiveDeviceId(int identity)
  * @return String
  * 
  */
-bool Utils::serialMesssageHasError(String message, int identity) {
+bool Utils::serialMesssageHasError(String message, int identity)
+{
     bool error = false;
-    if (message.startsWith("ERROR_" + String(identity))) {
+    if (message.startsWith("ERROR_" + String(identity)))
+    {
         String errorMessage = " FOR " + String(identity) + " WITH MESSAGE:: " + message.replace("ERROR_" + String(identity), "");
         this->log("SERIAL_BUS_ERROR", errorMessage);
         error = true;
@@ -127,9 +130,9 @@ bool Utils::hasSerialIdentity(int identity)
  */
 bool Utils::inValidMessageString(String message, int identity)
 {
-    return this->serialMesssageHasError(message, identity) || 
-     (this->hasSerialIdentity(identity) && 
-     !message.startsWith(receiveDeviceId(identity)));
+    return this->serialMesssageHasError(message, identity) ||
+           (this->hasSerialIdentity(identity) &&
+            !message.startsWith(receiveDeviceId(identity)));
 }
 
 /**
@@ -142,11 +145,13 @@ bool Utils::inValidMessageString(String message, int identity)
  * @return String - the milliseconds since boot padded with zeros
  * 
  */
-String getTimePadding() {
+String getTimePadding()
+{
     String time = String(millis());
     uint8_t pad = 10 - time.length();
     String padding = "";
-    for (uint8_t i = 0; i < pad; i++) {
+    for (uint8_t i = 0; i < pad; i++)
+    {
         padding += "0";
     }
 
@@ -163,7 +168,7 @@ String getTimePadding() {
  * @return uint8_t identity - the version value of the config 
  * 
  */
-bool Utils::validConfigIdentity(uint8_t identity) 
+bool Utils::validConfigIdentity(uint8_t identity)
 {
     return identity == 1;
 }
@@ -191,11 +196,133 @@ void Utils::log(String event, String message)
      * For devices we deploy, we can shutdown this logging attribute
      * Value is found under bootstrap.h
      */
-    if (PRODUCTION) {
+    if (PRODUCTION)
+    {
         return;
     }
 
-    Serial.print(getTimePadding());Serial.print(" [SIMILIE] " + event + ": ");Serial.println(message);
+    Serial.print(getTimePadding());
+    Serial.print(" [SIMILIE] " + event + ": ");
+    Serial.println(message);
+}
+
+/**
+ * @public 
+ * 
+ * log
+ * 
+ * Wrapper to log with error code
+ * 
+ * @todo Use a template variant to accept parameters other
+ * than a String value
+ * 
+ * @param String event - the context for the logging
+ * @param String message - the actual message
+ * @param int errorCode - any code you want to slip in
+ * 
+ * @return int
+ * 
+ */
+int Utils::log(String event, String message, int errorCode)
+{
+    log(event, message);
+    return errorCode;
+}
+
+/**
+* @private public
+*
+* machineName
+*
+* converts a string to an long for searachble
+* EEPROM storage
+* @param String name - the device name
+* @return unsigned long 
+*/
+unsigned long Utils::machineName(String name, bool unique)
+{
+    unsigned long manchineName = 0;
+    uint16_t multiple = unique ? name.length() : 1;
+    for (uint8_t i = 0; i < name.length(); i++)
+    {
+        char c = name.charAt(i);
+        manchineName += (unsigned long)c * multiple;
+    }
+    return manchineName;
+}
+
+/**
+* @private public
+*
+* machineNameDirect
+*
+* converts a string to an long for searachble
+* EEPROM storage
+* @param String name - the device name
+* @param byte * restore
+*
+* @return unsigned long 
+*/
+void Utils::machineNameDirect(String name, byte * save)
+{
+    name.getBytes(save, name.length() + 1);
+}
+
+/**
+* @private public
+*
+* machineToReadableName
+* 
+* Reverts manchine name values back to a string 
+* 
+* @param byte * restore
+* @return String 
+*/
+String Utils::machineToReadableName(byte * restore)
+{
+    String send = "";
+
+    byte b = 255;
+    uint8_t i = 0;
+    while (b != 0 && i < DEVICE_BYTE_BUFFER_SIZE)
+    {
+        b = restore[i];
+        
+        char c = (char)b;
+        send += String(c);
+        i++;
+    }
+
+    return send;
+}
+
+/**
+ * @public 
+ * 
+ * containsValue
+ * 
+ * Does the array contain a specifig string value
+ * 
+ * @param String arr[] - the array
+ * @param size_t size - array size
+ * @param String value - the value to search
+ * 
+ * @return bool
+ * 
+ */
+int Utils::containsValue(String arr[], size_t size, String value)
+{
+    int has = -1;
+    for (size_t i = 0; i < size; i++)
+    {
+        String check = arr[i];
+        if (check.equals(value))
+        {
+            has = i;
+            break;
+        }
+    }
+    return has;
 }
 
 /**
@@ -213,7 +340,7 @@ void Utils::log(String event, String message)
  * @return void
  * 
  */
-void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float  value_hold[][Bootstrap::OVERFLOW_VAL])
+void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float value_hold[][Bootstrap::OVERFLOW_VAL])
 {
 
     size_t j = 1;
@@ -274,7 +401,8 @@ void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float
  * @return size_t 
  * 
  */
-size_t Utils::skipMultiple(unsigned int size, size_t maxVal , unsigned int threshold) {
+size_t Utils::skipMultiple(unsigned int size, size_t maxVal, unsigned int threshold)
+{
     size_t start = 1;
     for (size_t i = 1; i < maxVal; i++)
     {
@@ -286,7 +414,7 @@ size_t Utils::skipMultiple(unsigned int size, size_t maxVal , unsigned int thres
             break;
         }
     }
-    return start; 
+    return start;
 }
 
 /**
@@ -414,7 +542,6 @@ float Utils::getMax(float values[], size_t MAX)
     }
     return value;
 }
-
 
 /**
  * @public 
@@ -570,7 +697,6 @@ void Utils::shift(int value, size_t index, int arr[], size_t size)
     }
 }
 
-
 /**
 * @public
 *
@@ -636,7 +762,7 @@ void Utils::insertValue(int value, int arr[], size_t size)
  * 
  * @return int
  * 
- */ 
+ */
 int Utils::getMedian(int readparam, int arr[])
 {
     float center = (float)readparam / 2.0;
@@ -661,7 +787,7 @@ int Utils::getMedian(int readparam, int arr[])
  * 
  * @return const * char 
  * 
- */ 
+ */
 const char *Utils::stringConvert(String value)
 {
     return value.c_str();
@@ -676,7 +802,7 @@ const char *Utils::stringConvert(String value)
  * 
  * @return void
  * 
- */ 
+ */
 void Utils::reboot()
 {
     Log.info("Reboot Event Requested");

@@ -201,7 +201,7 @@ void RainGauge::restoreDefaults()
  */
 bool RainGauge::validAddress()
 {
-   return boots->exceedsMaxAddressSize(eepromAddress);
+   return boots->doesNotExceedsMaxAddressSize(eepromAddress);
 }
 
 /**
