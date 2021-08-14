@@ -116,14 +116,7 @@ void Configurator::loadConfigurationStorage(String payload, String configuration
     if (i < size) {
         configurationStore[i] = value;
     }
-
     Utils::log("CONFIGURATION_DEFINITION FOR " , payload);
-    Serial.println("_____________________________________________");
-   
-    // for (uint8_t i = 0; i < CONFIG_STORAGE_MAX; i++) {
-    //     String val = configurationStore[i];
-    //     Utils::log("CONFIGURATION_DEFINITION FOR " + payload, val);
-    // }
 }
 
 /**
@@ -206,9 +199,11 @@ Device * Configurator::pullDeviceType(String configurationStore[], Bootstrap * b
     switch(index) 
     {
         case all_weather:
-            return new AllWeather(boots, parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
+            return new AllWeather(boots, 
+                parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
         case soil_moisture:
-            return new SoilMoisture(boots, parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]) );
+            return new SoilMoisture(boots, 
+                parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]) );
         case rain_gauge:
             return new RainGauge(boots);
         case gps_device:
@@ -216,6 +211,11 @@ Device * Configurator::pullDeviceType(String configurationStore[], Bootstrap * b
         case battery:
             return new Battery();
         case sonic_sensor:
+            if (!configurationStore[DEVICE_PIN_INDEX].equals("")) {
+                return new WlDevice(boots, 
+                    parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]) , 
+                    parseIdentity(configurationStore[DEVICE_PIN_INDEX]));
+            }
             return new WlDevice(boots, parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]) );
         default:
             return NULL;

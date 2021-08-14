@@ -50,7 +50,7 @@ void printMemory()
 {
     uint32_t freemem = System.freeMemory();
     int delta = (int)freememLast - (int)freemem;
-    Log.info("MEMORY CHANGE current: %lu, last %lu, delta: %d", freemem, freememLast, delta);
+    Utils::log("MEMORY CHANGE", String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
     freememLast = freemem;
 }
 // timer setup. This are the heartbeat of the system. Triggers system events
@@ -98,7 +98,7 @@ void Bootstrap::init()
 /**
 * @public 
 * 
-* strapDevices
+* storeDevice
 *
 * Received cloud function maintenance mode request
 * @param String * decvices[]  
@@ -112,7 +112,7 @@ void Bootstrap::storeDevice(String device, int index)
     }
     Utils::machineNameDirect(device, confg.device);
     uint16_t address = deviceConfigAdresses[index];
-    Serial.print("Storing Device ");Serial.print(device);Serial.print(" ");Serial.print(address);Serial.print(" ");Serial.print(confg.version);Serial.print(" ");Serial.println(index);
+    Utils::log("STORING_DEVICE_CONFIGURATION", String("Device %o Address %o Version %o Index %d").format(device, address, confg.version, index));
     EEPROM.put(address, confg);
 }
 
@@ -125,13 +125,12 @@ void Bootstrap::storeDevice(String device, int index)
 * @param String * decvices[]  
 * @return void
 */
-void Bootstrap::strapDevices(String devices[])
+void Bootstrap::strapDevices(String * devices)
 {
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
        uint16_t address = deviceConfigAdresses[i];
        DeviceConfig confg;
        EEPROM.get(address, confg);
-       Serial.print("PULLING ADDRESS AT INDEX ");Serial.print(i);Serial.print(" ");Serial.print(confg.version);Serial.print(" ");Serial.println(address);
        if (Utils::validConfigIdentity(confg.version)) {
           devices[i] = Utils::machineToReadableName(confg.device);
        } else {
@@ -249,7 +248,7 @@ int Bootstrap::maxAddressIndex()
     uint16_t maxAddress = deviceInitAddress();
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
         uint16_t address = devices[i].address;
-        Serial.print(address);Serial.print(" ");Serial.println(maxAddress);
+        Utils::log("ADDRESS_SEARCH_EVENT", String::format("Address, %hu Current Max, %u", address, maxAddress));
         if (this->doesNotExceedsMaxAddressSize(address)) {
             maxAddress = address;
             maxAddressIndex = i;
@@ -281,10 +280,53 @@ DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
     }
     // now build it
     uint16_t next = getNextDeviceAddress();
+    /*
+           uint8_t version;
+    uint16_t size;
+    unsigned long name;
+    // const char * name;
+    uint16_t address;
+    */
     Utils::log("THIS_IS_THE_NEXT_DEVICE_ADRESS_FOR " + name, String(next));
     DeviceStruct device = { 1, size, dName, next};
     this->addNewDeviceToStructure(device);
     return device;
+}
+
+/**
+* @private 
+*
+* saveDeviceMetaDetails
+*
+* Saves the device meta structure
+*
+*
+* @return void
+*/
+void Bootstrap::saveDeviceMetaDetails()
+{
+  EEPROM.put(DEVICE_META_ADDRESS, this->deviceMeta);  
+}
+
+
+/**
+* @private 
+*
+* clearDeviceConfigArray
+*
+* adds an unregistered device to the meta structure
+*
+*
+* @return void
+*/
+void Bootstrap::clearDeviceConfigArray()
+{
+    deviceMeta = {1,0};
+    saveDeviceMetaDetails();
+    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+        DeviceStruct d = {255, 0};
+        devices[i] = d;
+    }
 }
 
 /**
@@ -303,8 +345,8 @@ uint16_t Bootstrap::registerAddress(String name, uint16_t size)
     Utils::log("REGISTERED_ADDRESS_DETAILS_FOR " + name, deviceDetails);
     if (!Utils::validConfigIdentity(device.version)) {
         // I need to know the number of devices
-        uint16_t send = manualDeviceTracker + size + 1;
-        manualDeviceTracker = send;
+        uint16_t send = manualDeviceTracker;
+        manualDeviceTracker = send + size + 8;
         return manualDeviceTracker;
     }
     return device.address;
@@ -342,7 +384,7 @@ void Bootstrap::processRegistration()
     Utils::log("EPROM_REGISTRATION", String(this->deviceMeta.count ) + " " + String(this->deviceMeta.version ));
     if (!Utils::validConfigIdentity(this->deviceMeta.version)) {
         this->deviceMeta = {1, 0};
-        EEPROM.put(DEVICE_META_ADDRESS, this->deviceMeta);
+        saveDeviceMetaDetails();
     } 
      
     if (this->deviceMeta.count > 0) {
@@ -359,7 +401,7 @@ void Bootstrap::processRegistration()
 */
 void Bootstrap::setMetaAddresses()
 {
-    delay(3000);
+    // delay(3000);
     uint16_t size = sizeof(DeviceStruct);
     uint16_t sizeConf = sizeof(DeviceConfig);
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
@@ -377,7 +419,7 @@ void Bootstrap::setMetaAddresses()
 */
 void Bootstrap::pullRegistration() 
 {
-  delay(1000);
+  // delay(1000);
   EEPROM.get(DEVICE_META_ADDRESS, this->deviceMeta);
   processRegistration();
 }
@@ -397,11 +439,11 @@ void Bootstrap::addNewDeviceToStructure(DeviceStruct device)
     }
     uint16_t address = deviceMetaAdresses[deviceMeta.count];
     // now add based on to the next index
-    Utils::log("DEVICE_IS_BEING_ADDED", "At address: " +  String(address) + " with index " + String(deviceMeta.count) + " and name " + String(device.name) );
+    Utils::log("DEVICE_IS_BEING_ADDED", String::format("Storing to %hu, At index, %u, With Version %u, And machine name %u", address, deviceMeta.count, device.version, device.name));
     devices[deviceMeta.count] = device;
     EEPROM.put(address, device);
     this->deviceMeta.count++;
-    EEPROM.put(DEVICE_META_ADDRESS, this->deviceMeta);
+    saveDeviceMetaDetails();
 }
 
 /**

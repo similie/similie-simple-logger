@@ -29,7 +29,44 @@ WlDevice::WlDevice(Bootstrap *boots, int sendIdentity)
     this->sendIdentity = sendIdentity;
 }
 
+/**
+ * Constructor
+ * 
+ * @param Bootstrap boots - the bootstrap object
+ * @param int sendIdentity - the integer the identifies 
+ *        the specific device instance
+ */
+WlDevice::WlDevice(Bootstrap *boots, int sendIdentity, int readPin)
+{
+    this->readPin = readPin;
+    this->boots = boots;
+    this->sendIdentity = sendIdentity;
+}
 
+/**
+ * @private
+ * 
+ * getPin
+ * 
+ * Gets the configured pin
+ * 
+ * @return int
+ */
+int WlDevice::getPin()
+{
+    if (this->readPin != 0)
+    {
+        return this->readPin;
+    }
+    else if (digital)
+    {
+        return DIG_PIN;
+    }
+    else
+    {
+        return AN_PIN;
+    }
+}
 
 /**
  * @private
@@ -40,9 +77,10 @@ WlDevice::WlDevice(Bootstrap *boots, int sendIdentity)
  * 
  * @return void
  */
-void WlDevice::saveEEPROM(WLStruct storage) 
-{ 
-    if (saveAddressForWL == 0) {
+void WlDevice::saveEEPROM(WLStruct storage)
+{
+    if (saveAddressForWL == 0)
+    {
         return;
     }
     storage.version = 1;
@@ -63,21 +101,22 @@ void WlDevice::saveEEPROM(WLStruct storage)
  */
 int WlDevice::setDigitalCloud(String read)
 {
-  int val = (int)atoi(read);
-  if (val < 0 || val > 1)
-  {
-    return 0;
-  }
-  digital = (bool)val;
-  char saved = WlDevice::isDigital(digital);
-  WLStruct storage = getProm();
-  storage.digital = saved;
-  WlDevice::setPin(digital);
-  if (!Utils::validConfigIdentity(storage.version)) {
-    storage.calibration = currentCalibration;
-  }
-  saveEEPROM(storage);
-  return 1;
+    int val = (int)atoi(read);
+    if (val < 0 || val > 1)
+    {
+        return 0;
+    }
+    digital = (bool)val;
+    char saved = WlDevice::isDigital(digital);
+    WLStruct storage = getProm();
+    storage.digital = saved;
+    WlDevice::setPin(digital);
+    if (!Utils::validConfigIdentity(storage.version))
+    {
+        storage.calibration = currentCalibration;
+    }
+    saveEEPROM(storage);
+    return 1;
 }
 
 /**
@@ -92,21 +131,22 @@ int WlDevice::setDigitalCloud(String read)
 */
 int WlDevice::setCalibration(String read)
 {
-  double val = Utils::parseCloudFunctionDouble(read, uniqueName());
-  if (val == 0)
-  {
-    return 0;
-  }
+    double val = Utils::parseCloudFunctionDouble(read, uniqueName());
+    if (val == 0)
+    {
+        return 0;
+    }
 
-  currentCalibration = val;
+    currentCalibration = val;
 
-  WLStruct storage = getProm();
-  storage.calibration = currentCalibration;
-  if (!Utils::validConfigIdentity(storage.version)) {
-    storage.digital = WlDevice::isDigital(digital);
-  }
-  saveEEPROM(storage);
-  return 1;
+    WLStruct storage = getProm();
+    storage.calibration = currentCalibration;
+    if (!Utils::validConfigIdentity(storage.version))
+    {
+        storage.digital = WlDevice::isDigital(digital);
+    }
+    saveEEPROM(storage);
+    return 1;
 }
 
 /**
@@ -118,12 +158,12 @@ int WlDevice::setCalibration(String read)
 * 
 * @return WlDevice
 */
-WLStruct WlDevice::getProm() {
-  WLStruct prom;
-  EEPROM.put(saveAddressForWL, prom);
-  return prom;
+WLStruct WlDevice::getProm()
+{
+    WLStruct prom;
+    EEPROM.get(saveAddressForWL, prom);
+    return prom;
 }
-
 
 /**
 * @private
@@ -137,7 +177,7 @@ WLStruct WlDevice::getProm() {
 * @param bool value 
 * @return char - the value for storing in EEPROM
 */
-char WlDevice::setDigital(bool value) 
+char WlDevice::setDigital(bool value)
 {
     return value ? 'y' : 'n';
 }
@@ -180,16 +220,17 @@ bool WlDevice::isDigital(char value)
 *
 * @return void
 */
-void WlDevice::setPin(bool digital) 
+void WlDevice::setPin(bool digital)
 {
+    int pin = getPin();
     if (digital)
     {
 
-        pinMode(DIG_PIN, INPUT);
+        pinMode(pin, INPUT);
     }
     else
     {
-        pinMode(AN_PIN, INPUT_PULLDOWN);
+        pinMode(pin, INPUT_PULLDOWN);
     }
 }
 
@@ -202,13 +243,12 @@ void WlDevice::setPin(bool digital)
 *
 * @return void
 */
-void WlDevice::configSetup() 
+void WlDevice::configSetup()
 {
     digital = WlDevice::isDigital(this->config.digital);
     const double calibration = this->config.calibration;
     currentCalibration = calibration;
     WlDevice::setPin(digital);
-   
 }
 
 /**
@@ -220,7 +260,7 @@ void WlDevice::configSetup()
 *
 * @return void
 */
-bool WlDevice::hasSerialIdentity() 
+bool WlDevice::hasSerialIdentity()
 {
     return utils.hasSerialIdentity(this->sendIdentity);
 }
@@ -236,11 +276,11 @@ bool WlDevice::hasSerialIdentity()
 */
 void WlDevice::setCloudFunctions()
 {
-  String appendage = appendIdentity();
-  Particle.function("setDigital" + appendage, &WlDevice::setDigitalCloud, this);
-  Particle.function("setCalibration" + appendage, &WlDevice::setCalibration, this);
-  Particle.variable("digital" + appendage, digital);
-  Particle.variable("currentCalibration" + appendage, currentCalibration);
+    String appendage = appendIdentity();
+    Particle.function("setDistanceAsDigital" + appendage, &WlDevice::setDigitalCloud, this);
+    Particle.function("setDistanceCalibration" + appendage, &WlDevice::setCalibration, this);
+    Particle.variable("isDistanceDigital" + appendage, digital);
+    Particle.variable("getDistanceCalibration" + appendage, currentCalibration);
 }
 
 /**
@@ -252,7 +292,7 @@ void WlDevice::setCloudFunctions()
 *
 * @return String
 */
-String WlDevice::appendIdentity() 
+String WlDevice::appendIdentity()
 {
     return this->hasSerialIdentity() ? String(this->sendIdentity) : "";
 }
@@ -267,7 +307,7 @@ String WlDevice::appendIdentity()
 *
 * @return String
 */
-String WlDevice::uniqueName() 
+String WlDevice::uniqueName()
 {
     if (this->hasSerialIdentity())
     {
@@ -301,7 +341,7 @@ int WlDevice::readWL()
     {
         long currentTime = millis();
         long read = 0;
-       
+
         utils.insertValue(read, reads, doCount);
         // break off it it is taking too long
         if (currentTime - lastTime > timeout)
@@ -318,11 +358,30 @@ int WlDevice::readWL()
     return round(pw * currentCalibration);
 }
 
+String WlDevice::getParamName(size_t index)
+{
+    String param = readParams[index];
+    if (this->hasSerialIdentity())
+    {
+        return param + String::format("_%d", sendIdentity);
+    }
+    return param;
+}
+
+/**
+* @public 
+*
+* publish
+* 
+* Called during a publish event
+*
+* @return void
+*/
 void WlDevice::publish(JSONBufferWriter &writer, u8_t attempt_count)
 {
     for (size_t i = 0; i < PARAM_LENGTH; i++)
     {
-        String param = readParams[i];
+        String param = getParamName(i);
         int median = utils.getMedian(attempt_count, VALUE_HOLD[i]);
         if (median == 0)
         {
@@ -343,10 +402,10 @@ void WlDevice::publish(JSONBufferWriter &writer, u8_t attempt_count)
 *
 * @return String
 */
-String WlDevice::name() {
+String WlDevice::name()
+{
     return this->deviceName;
 }
-
 
 /**
 * @public 
@@ -357,7 +416,7 @@ String WlDevice::name() {
 *
 * @return void
 */
-void WlDevice::restoreDefaults() 
+void WlDevice::restoreDefaults()
 {
     digital = DIGITAL_DEFAULT;
     WlDevice::setPin(digital);
@@ -378,16 +437,17 @@ void WlDevice::restoreDefaults()
 */
 void WlDevice::init()
 {
-   // setup
-   setCloudFunctions();
-   Utils::log("WL_BOOT_ADDRESS REGISTRATION", this->uniqueName());
-   saveAddressForWL = boots->registerAddress(this->uniqueName(), sizeof(WLStruct));
-   Utils::log("WL_BOOT_ADDRESS " + this->uniqueName(), String(saveAddressForWL));
-   this->config = getProm();
-   if (!Utils::validConfigIdentity(this->config.version)) {
-       restoreDefaults();
-   }
-   configSetup();
+    // setup
+    setCloudFunctions();
+    Utils::log("WL_BOOT_ADDRESS REGISTRATION", this->uniqueName());
+    saveAddressForWL = boots->registerAddress(this->uniqueName(), sizeof(WLStruct));
+    Utils::log("WL_BOOT_ADDRESS " + this->uniqueName(), String(saveAddressForWL));
+    this->config = getProm();
+    if (!Utils::validConfigIdentity(this->config.version))
+    {
+        restoreDefaults();
+    }
+    configSetup();
 }
 
 /**

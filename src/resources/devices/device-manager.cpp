@@ -19,39 +19,46 @@ DeviceManager::~DeviceManager()
  */
 DeviceManager::DeviceManager(Processor *processor)
 {
-    // to clear EEPROM. Comment this line
-    // once flashed and reflash
+    // To clear EEPROM. Comment this line
+    // once flashed you should reflash to avoid dataloss
     // FRESH_START = true;
     if (FRESH_START)
     {
         SerialStorage::clearDeviceStorage();
     }
-    /**
-    * We need to update the deviceAggregateCounts array.
-    * Normally you will leave the first dimension at ONE_I.
-    * Between the curly braces {NUM}, Set the number of devices you need to initialize.
-    * The max is by default set to 7.
-    */
-    // deviceAggregateCounts[ONE_I] =  {ONE}; //{FOUR}; // set the number of devices here
-    // the numerical N_I values a indexs from 0, 1, 2 ... n
-    // unless others needed. Most values will only needs the
-    // ONE_I for the first dimension.
-    // this->devices[ONE_I][ONE_I] = new Battery();
-    // this->devices[ONE_I][ONE_I] = new AllWeather(&boots, ONE_I);
-    // this->devices[ONE_I][TWO_I] = new Battery();
-    // this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
-    // // water level
-    // this->devices[ONE_I][FOUR_I] = new WlDevice(&boots, TWO_I);
-    // rain gauge
-    // this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
-    // another soil moisture will also work
-    //this->devices[ONE_I][FIVE_I] = new SoilMoisture(boots, THREE_I);
+    
     this->blood = new HeartBeat(System.deviceID());
     // end devices
     // set storage when we have a memory card reader
     storage = new SerialStorage(processor, &boots);
     // instantiate the processor
     this->processor = processor;
+    /**
+    * Our primary method of device configuration is via the particle
+    * cloud using the addDevice function. However, we can also configure
+    * our devices directly in the constructor by setting the deviceAggregateCounts array.
+    * Normally you will leave the first dimension at ONE_I.
+    * Between the curly braces {NUM}, Set the number of devices you need to initialize.
+    * The max is by default set to 7. If you want to collect multiple datasets, then set 
+    * another dimension. This behavior is not support through cloud configuration 
+    * (only a single dataset is available), but it can be set here manually.
+    */
+    // deviceAggregateCounts[ONE_I] =  {ONE}; //{FOUR}; // set the number of devices here
+    // the numerical N_I values a indexs from 0, 1, 2 ... n
+    // unless others datasets are needed. Most values will only needs the
+    // ONE_I for the first dimension.
+    // this->devices[ONE_I][ONE_I] = new Battery();
+    // all weather
+    // this->devices[ONE_I][ONE_I] = new AllWeather(&boots, ONE_I);
+    // battery
+    // this->devices[ONE_I][TWO_I] = new Battery();
+    // soil moisture
+    // this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
+    // // water level
+    // this->devices[ONE_I][FOUR_I] = new WlDevice(&boots, TWO_I);
+    // rain gauge
+    // this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
+   
 }
 
 //////////////////////////////
@@ -88,15 +95,20 @@ int DeviceManager::setSendInverval(String read)
  */
 void DeviceManager::init()
 {
+    // apply delay to see the devices bootstrapping
+    // in the serial console
+    // delay(10000);
     processor->connect();
     boots.init();
     waitForTrue(&DeviceManager::isStrapped, this, 10000);
+    // if there are already default devices, let's process 
+    // their init before we run the dynamic configuration
+    iterateDevices(&DeviceManager::initCallback, this);
     strapDevices();
     setParamsCount();
     setCloudFunction();
     clearArray();
     setCloudFunctions();
-    iterateDevices(&DeviceManager::initCallback, this);
 }
 
 /**
@@ -756,6 +768,7 @@ int DeviceManager::clearAllDevices(String value)
     clearArray();
     setReadCount(0);
     EEPROM.clear();
+    boots.clearDeviceConfigArray();
     boots.resumePublication();
     return 1;
 }
@@ -845,8 +858,6 @@ int DeviceManager::addDevice(String value)
     }
 
     int valid = applyDevice(config.addDevice(value, &boots), value, true);
-    Serial.print("BEACH BOOMO ");
-    Serial.println(valid);
     if (valid == 0)
     {
         return DEFVICE_FAILED_TO_INSTANTIATE;
@@ -870,15 +881,19 @@ int DeviceManager::addDevice(String value)
 */
 void DeviceManager::copyDevicesFromIndex(int index)
 {
+    delete devices[ONE_I][index];
     devices[ONE_I][index] = new Device();
     devicesString[index] = "";
 
     for (size_t i = index + 1; i < deviceAggregateCounts[ONE_I]; i++)
     {
-        Serial.print(devicesString[i]);
-        Serial.println("WORKING THE FICE" + devices[ONE_I][i]->name());
+        // kill this object
+        delete devices[ONE_I][i - 1];
+        // set the one prior
         devices[ONE_I][i - 1] = devices[ONE_I][i];
-        devices[ONE_I][i] = new Device();
+        // devices[ONE_I][i] = new Device();
+        // and kill this one too.
+        delete devices[ONE_I][i];
         String name = devicesString[i];
         devicesString[i] = "";
         if (!name.equals(""))
@@ -964,16 +979,17 @@ int DeviceManager::showDevices(String value)
 */
 void DeviceManager::strapDevices()
 {
-    delay(5000);
     boots.strapDevices(devicesString);
     for (uint8_t i = 0; i < MAX_DEVICES; i++)
     {
         String device = devicesString[i];
+        Serial.println("_____________________________________________\n");
         Utils::log("BOOTSTRAPPING_DEVICE", device);
         if (!device.equals(""))
         {
             applyDevice(config.addDevice(device, &boots), device, true);
         }
+        Serial.println("_____________________________________________\n");
     }
 }
 

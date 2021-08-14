@@ -74,6 +74,7 @@ private:
     DeviceMetaStruct deviceMeta;
     DeviceStruct devices[MAX_DEVICES];
     DeviceStruct getDeviceByName(String name,  uint16_t size);
+    void saveDeviceMetaDetails();
     uint16_t getNextDeviceAddress();
     uint16_t deviceInitAddress();
     void processRegistration();
@@ -114,7 +115,7 @@ private:
     // Device Meta Storage
     const uint16_t DEVICE_META_ADDRESS = BEACH_ADDRESS  + sizeof(BeachStruct) + 8;
     // Stores count details
-    const uint16_t DEVICE_CONFIG_STORAGE_META_ADDRESS = sizeof(DeviceMetaStruct) + 8;
+    const uint16_t DEVICE_CONFIG_STORAGE_META_ADDRESS = DEVICE_META_ADDRESS + sizeof(DeviceMetaStruct) + 8;
     // Device Type Storage
     const uint16_t DEVICE_HOLD_ADDRESS = DEVICE_CONFIG_STORAGE_META_ADDRESS  + (sizeof(DeviceStruct) * MAX_DEVICES)  +  (MAX_DEVICES + 2) + 8;
     // Now the storage for the specific devices
@@ -128,8 +129,9 @@ public:
     bool isStrapped();
     void init();
     bool doesNotExceedsMaxAddressSize(uint16_t address);
-    void strapDevices(String devices[]);
+    void strapDevices(String * devices);
     void storeDevice(String device, int index);
+    void clearDeviceConfigArray();
     void haultPublication();
     void resumePublication();
     double getCalibration();
@@ -151,7 +153,7 @@ public:
     unsigned int getReadTime();
     unsigned int getPublishTime();
     void startSerial();
-
+    
     String fetchSerial(String identity);
     uint16_t registerAddress(String name, uint16_t size);
     static size_t epromSize();

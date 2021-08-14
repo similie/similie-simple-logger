@@ -10,7 +10,21 @@ The below image provides the basic visual representation for the architectural o
 
 ## Device Config
 
-You can configure the software in the device-manager constructor `/src/resources/devices/device-manager.cpp`. The following provides an example configuration with one AllWeather device, a SoilMoisture device, and the default Battery device.
+If needing just a single set of devices that compose a single dataset, all configuration can be done through the particle cloud. Find the `addDevice` function and place your device's string value into input console. The format for the device is in the folling form `device:[identity]:[pin]`. The identity and pin are only required for some devices and the pin is optional for others. We arbitrarily set a max device limit of 7, but this can be change under `bootstrap.h` by altering the `MAX_DEVICES` macro. The follow provides a list of available devices. If new devices are added, there should be a corresponding representation under `configurator.h`.
+
+```
+all_weather:0 // pin 10 for the 32u4.
+all_weather:1 // pin 11 for the 32u4.
+soil_moisture:0 // pin 10 for the 32u4.
+soil_moisture:1 // pin 11 for the 32u4.
+// if both a soil moisture and an all_weather are deployed, they should should have differnt identities
+rain_gauge
+gps
+battery // this reads the particle's fuel gauge api
+sonic_sensor:0:10 // Both the pin and identity are optional unless deploying multiple sensors on the save device
+```
+
+In addition to the cloud configurator, you can configure the device suite in the device-manager constructor `/src/resources/devices/device-manager.cpp`. The advantage of using this method is that you can create multiple datasets with your devices. The following provides an example configuration with one AllWeather device, a SoilMoisture device, and the default Battery device.
 
 ```
 DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)

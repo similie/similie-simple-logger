@@ -26,7 +26,6 @@ DeviceManager manager(&processor);
 // setup() runs once, when the device is first turned on.
 void setup()
 {
-  // EEPROM.clear();
   manager.init();
 }
 
