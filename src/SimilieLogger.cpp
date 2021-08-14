@@ -11,9 +11,10 @@
  * Date: 2 of December, the year all hell broke loose.
  */
 
+
 void setup();
 void loop();
-#line 8 "/home/guernica0131/Sites/similie-simple-logger/src/SimilieLogger.ino"
+#line 9 "/home/guernica0131/Sites/similie-simple-logger/src/SimilieLogger.ino"
 SYSTEM_THREAD(ENABLED);
 //SYSTEM_MODE(MANUAL);
 #include "resources/devices/device-manager.h"

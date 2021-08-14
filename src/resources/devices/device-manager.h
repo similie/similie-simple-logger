@@ -71,6 +71,7 @@ private:
     unsigned int ROTATION = 0;
     u8_t paramsCount = 0;
     const u8_t POP_COUNT_VALUE = 5;
+    void resetDeviceIndex(size_t index);
     void storePayload(String payload, String topic);
     void nullifyPayload(const char *key);
     void shuffleLoad(String payloadString);

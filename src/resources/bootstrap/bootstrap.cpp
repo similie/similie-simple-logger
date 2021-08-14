@@ -112,7 +112,7 @@ void Bootstrap::storeDevice(String device, int index)
     }
     Utils::machineNameDirect(device, confg.device);
     uint16_t address = deviceConfigAdresses[index];
-    Utils::log("STORING_DEVICE_CONFIGURATION", String("Device %o Address %o Version %o Index %d").format(device, address, confg.version, index));
+    Utils::log("STORING_DEVICE_CONFIGURATION", "Device " + device + String::format(" Address %u Version %u Index %u", address, confg.version, index));
     EEPROM.put(address, confg);
 }
 

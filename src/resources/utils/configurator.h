@@ -25,7 +25,7 @@
 class Configurator
 {
 private:
-    String devicesAvaliable[CURRENT_DEVICES_COUNT] = {"all_weather", "soil_moisture", "rain_gauge", "gps_device", "battery", "sonic_sensor"};
+    String devicesAvaliable[CURRENT_DEVICES_COUNT] = {"all_weather", "soil_moisture", "rain_gauge", "gps", "battery", "sonic_sensor"};
     enum  {
         all_weather,
         soil_moisture,

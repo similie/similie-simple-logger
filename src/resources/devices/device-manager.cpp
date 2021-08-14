@@ -26,7 +26,7 @@ DeviceManager::DeviceManager(Processor *processor)
     {
         SerialStorage::clearDeviceStorage();
     }
-    
+
     this->blood = new HeartBeat(System.deviceID());
     // end devices
     // set storage when we have a memory card reader
@@ -58,7 +58,6 @@ DeviceManager::DeviceManager(Processor *processor)
     // this->devices[ONE_I][FOUR_I] = new WlDevice(&boots, TWO_I);
     // rain gauge
     // this->devices[ONE_I][FIVE_I] = new RainGauge(boots);
-   
 }
 
 //////////////////////////////
@@ -101,7 +100,7 @@ void DeviceManager::init()
     processor->connect();
     boots.init();
     waitForTrue(&DeviceManager::isStrapped, this, 10000);
-    // if there are already default devices, let's process 
+    // if there are already default devices, let's process
     // their init before we run the dynamic configuration
     iterateDevices(&DeviceManager::initCallback, this);
     strapDevices();
@@ -761,6 +760,10 @@ void DeviceManager::clearDeviceString()
 */
 int DeviceManager::clearAllDevices(String value)
 {
+    if (!value.equals("DELETE"))
+    {
+        return -1;
+    }
     Utils::log("DEVICE_CLEARING_EVENT_WAS_CALLED", "clearing all data and values");
     boots.haultPublication();
     deviceAggregateCounts[ONE_I] = 0;
@@ -870,6 +873,26 @@ int DeviceManager::addDevice(String value)
 /**
  * @private 
  * 
+ * resetDeviceIndex
+ * 
+ * Clears a device at a specific index
+ * 
+ * @param int index
+ * 
+ * @return void
+ * 
+*/
+void DeviceManager::resetDeviceIndex(size_t index)
+{
+    delete devices[ONE_I][index];
+    devices[ONE_I][index] = new Device();
+    devicesString[index] = "";
+    boots.storeDevice("", index);
+}
+
+/**
+ * @private 
+ * 
  * copyDevicesFromIndex
  * 
  * Moves the device list from the current index to next index
@@ -881,9 +904,11 @@ int DeviceManager::addDevice(String value)
 */
 void DeviceManager::copyDevicesFromIndex(int index)
 {
-    delete devices[ONE_I][index];
-    devices[ONE_I][index] = new Device();
-    devicesString[index] = "";
+    // we are at the last index
+    if ((size_t)index >= deviceAggregateCounts[ONE_I] - 1)
+    {
+        return resetDeviceIndex(index);
+    }
 
     for (size_t i = index + 1; i < deviceAggregateCounts[ONE_I]; i++)
     {
@@ -891,20 +916,18 @@ void DeviceManager::copyDevicesFromIndex(int index)
         delete devices[ONE_I][i - 1];
         // set the one prior
         devices[ONE_I][i - 1] = devices[ONE_I][i];
-        // devices[ONE_I][i] = new Device();
         // and kill this one too.
-        delete devices[ONE_I][i];
+        // delete devices[ONE_I][i];
+        devices[ONE_I][i] = new Device();
         String name = devicesString[i];
-        devicesString[i] = "";
         if (!name.equals(""))
         {
             devicesString[i - 1] = name;
             boots.storeDevice(name, i - 1);
         }
-        else
-        {
-            boots.storeDevice("", i);
-        }
+        devicesString[i] = "";
+        // we are going to remove this reference
+        boots.storeDevice("", i);
     }
 }
 
@@ -927,8 +950,10 @@ int DeviceManager::removeDevice(String value)
     if (valid > -1)
     {
         boots.haultPublication();
+        setReadCount(0);
         copyDevicesFromIndex(valid);
         deviceAggregateCounts[ONE_I]--;
+        clearArray();
         boots.resumePublication();
     }
     return valid;
