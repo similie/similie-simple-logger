@@ -22,7 +22,7 @@ soil_moisture:1 // pin 11 for the 32u4.
 rain_gauge
 gps // not currently operational
 battery // this reads the Particle's fuel gauge
-sonic_sensor:0:10 // unless deploying multiple sensors, both the pin and identity are optional
+sonic_sensor:0:8 // unless deploying multiple sensors, both the pin and identity are optional
 
 ```
 
