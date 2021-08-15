@@ -1,10 +1,9 @@
 /*
  * Project similie-logger
  * Description: A never fail basic runtime for our particle borons
- * Author: Some BadMotherFuckers
- * Date: 2 of December, the year all hell broke loose.
+ * Author: Similie
+ * Date: Started 2 of December, the year all hell broke loose.
  */
-
 
 SYSTEM_THREAD(ENABLED);
 //SYSTEM_MODE(MANUAL);

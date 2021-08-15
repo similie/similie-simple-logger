@@ -1,5 +1,5 @@
 .DS_Store
 target
 .vscode
-src/BoronBuildTest.cpp
 *.bin
+src/SimilieLogger.cpp

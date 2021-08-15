@@ -280,13 +280,6 @@ DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
     }
     // now build it
     uint16_t next = getNextDeviceAddress();
-    /*
-           uint8_t version;
-    uint16_t size;
-    unsigned long name;
-    // const char * name;
-    uint16_t address;
-    */
     Utils::log("THIS_IS_THE_NEXT_DEVICE_ADRESS_FOR " + name, String(next));
     DeviceStruct device = { 1, size, dName, next};
     this->addNewDeviceToStructure(device);
@@ -299,7 +292,6 @@ DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
 * saveDeviceMetaDetails
 *
 * Saves the device meta structure
-*
 *
 * @return void
 */
@@ -315,7 +307,6 @@ void Bootstrap::saveDeviceMetaDetails()
 * clearDeviceConfigArray
 *
 * adds an unregistered device to the meta structure
-*
 *
 * @return void
 */
