@@ -34,7 +34,7 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
     // instantiate the processor
     this->processor = processor;
     // turn on or off system logging
-    utils.setDebug(debug);
+    Utils::setDebug(debug);
     
     /**
     * Our primary method of device configuration is via the particle
