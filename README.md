@@ -35,13 +35,14 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 {
     ...
 
-    deviceAggregateCounts[ONE_I] = {THREE};// set the number of devices here
+    deviceAggregateCounts[ONE_I] = {THREE}; // set the number of devices here
     // the numerical N_I values a indexs from 0, 1, 2 ... n
     // unless others needed. Most values will only needs the
-    // ONE_I for the first dimension.
-    this->devices[ONE_I][one_i] = new AllWeather(boots, ONE_I);
-    this->devices[ONE_I][two_i] = new Battery();
-    this->devices[ONE_I][three_i] = new SoilMoisture(boots, TWO_I);
+    // ONE_I (or 0) for the first array dimension. By incrementing to the
+    // next index it will create a separate "payload" parameter or another dataset
+    this->devices[ONE_I][ONE_I] = new AllWeather(boots, ONE_I);
+    this->devices[ONE_I][TWO_I] = new SoilMoisture(boots, TWO_I);
+    this->devices[ONE_I][THREE_I] = new Battery();
 
     ...
 }
@@ -67,4 +68,4 @@ When you're ready to compile your project, make sure you have the correct Partic
 
 GNU GENERAL PUBLIC LICENSE V3
 
-Supported by Similie and made with LOVE in Timor-Leste
+Supported by Similie and made with ![LOVE](https://cdn.similie.org/assets/similie/heart.png) in Timor-Leste
