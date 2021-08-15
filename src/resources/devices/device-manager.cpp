@@ -851,10 +851,20 @@ size_t DeviceManager::countDeviceType(String deviceName)
     return count;
 }
 
+/**
+ * @private 
+ * 
+ * violatesDeviceRules
+ * 
+ * Checks the device string to see if it can process a request
+ * to add the additional device
+ * 
+ * @return bool
+ * 
+*/
 bool DeviceManager::violatesDeviceRules(String value)
 {
     bool violation = true;
-    // Serial.print("Beached 1 ");Serial.println(value);
     // if it already contains the device.
     if (Utils::containsValue(devicesString, MAX_DEVICES, value) > -1)
     {
@@ -867,7 +877,6 @@ bool DeviceManager::violatesDeviceRules(String value)
     String deviceName = configurationStore[DEVICE_NAME_INDEX];
     // if we have no device of this type, fail it
     int deviceIndex = config.getEnumIndex(deviceName);
-    //Serial.print("Beached 2 ");Serial.print(deviceIndex);Serial.print(" ");Serial.println(deviceIndex);
     if (deviceIndex == -1)
     {
         return violation;
@@ -876,7 +885,7 @@ bool DeviceManager::violatesDeviceRules(String value)
     * We count the number and make sure there aren't too many
     */
     size_t occurrences = countDeviceType(deviceName);
-    //Serial.print("Beached 3 ");Serial.println(occurrences);
+    
     if (config.violatesOccurances(deviceName, occurrences))
     {
         return violation;
