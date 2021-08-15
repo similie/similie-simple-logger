@@ -20,7 +20,7 @@ DeviceManager::~DeviceManager()
 DeviceManager::DeviceManager(Processor *processor)
 {
     // To clear EEPROM. Comment this line
-    // once flashed you should reflash to avoid dataloss
+    // once flashed you should reflash to avoid data loss
     // FRESH_START = true;
     if (FRESH_START)
     {
@@ -885,7 +885,7 @@ bool DeviceManager::violatesDeviceRules(String value)
     * We count the number and make sure there aren't too many
     */
     size_t occurrences = countDeviceType(deviceName);
-    
+
     if (config.violatesOccurances(deviceName, occurrences))
     {
         return violation;
@@ -893,6 +893,7 @@ bool DeviceManager::violatesDeviceRules(String value)
 
     return !violation;
 }
+
 /**
  * @private 
  * 
