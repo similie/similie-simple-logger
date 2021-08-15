@@ -2,4 +2,5 @@
 target
 .vscode
 *.bin
+lib/*
 src/SimilieLogger.cpp
