@@ -89,6 +89,9 @@ private:
     String devicesString[MAX_DEVICES];
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
     void setCloudFunction();
+    String getTopic(bool maintenance);
+    String payloadWriter(u8_t  &maintenanceCount);
+    bool checkMaintenance(u8_t maintenanceCount);
     void copyDevicesFromIndex(int index);
     void loopCallback(Device * device);
     void setParamsCountCallback(Device * device);

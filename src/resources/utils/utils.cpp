@@ -441,10 +441,10 @@ int Utils::simCallback(int type, const char *buf, int len, char *value)
         // if (sscanf(buf, "\r\n+CCID: %[^\r]\r\n", value) == 1)
         /*nothing*/;
     }
-    // Log.info("GOT ME THIS TYPE %d", type);
-    // Log.info("GOT ME THIS BUF %s", buf);
-    // Log.info("GOT ME THIS LENGTH %d", len);
-    // Log.info("GOT ME THIS VALUE %s", value);
+    // Log.info("GOT THIS TYPE %d", type);
+    // Log.info("GOT THIS BUF %s", buf);
+    // Log.info("GOT THIS LENGTH %d", len);
+    // Log.info("GOT THIS VALUE %s", value);
     return WAIT;
 }
 
@@ -546,7 +546,7 @@ float Utils::getMax(float values[], size_t MAX)
 /**
  * @public 
  * 
- * getMax
+ * getMedian
  * 
  * Get the middle value or the value toward the zero index
  * this is not a NO_VALUE
@@ -634,10 +634,10 @@ bool Utils::invalidNumber(String value)
 * 
 * Helper fuction that inserts an element in asscending order into
 * the sorted array where we can our median value
-* @param int value - the value to be inserted 
-* @param int index - the index where to insert. 
-*     The other values will be pushed to the next index
-* @param int param - the enum value that represents the param
+* @param float value - the value to be inserted 
+* @param size_t index - the index where to insert;
+* @param float arr[] - the array to insert into     
+* @param size_t size - size of the array
 *
 * @return void;
 */
@@ -670,9 +670,9 @@ void Utils::shift(float value, size_t index, float arr[], size_t size)
 * Helper fuction that inserts an element in asscending order into
 * the sorted array where we can our median value
 * @param int value - the value to be inserted 
-* @param int index - the index where to insert. 
-*     The other values will be pushed to the next index
-* @param int param - the enum value that represents the param
+* @param size_t index - the index where to insert;
+* @param float arr[] - the array to insert into     
+* @param size_t size - size of the array
 *
 * @return void;
 */
@@ -704,8 +704,9 @@ void Utils::shift(int value, size_t index, int arr[], size_t size)
 *
 * Insert a value into a multidimentional array in sorted order
 *
-* @param int value - the value to be inserted 
+* @param float value - the value to be inserted 
 * @param int param - the enum value that represents the param
+* @param size_t size - the size of the array
 *
 * @return void;
 */
@@ -732,6 +733,7 @@ void Utils::insertValue(float value, float arr[], size_t size)
 *
 * @param int value - the value to be inserted 
 * @param int param - the enum value that represents the param
+* @param size_t size - the size of the array
 *
 * @return void;
 */

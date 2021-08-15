@@ -14,7 +14,7 @@ private:
 public:
     ~Utils();
     Utils();
-    void reboot();
+    static void reboot();
     static double parseCloudFunctionDouble(String value, String name);
     bool hasSerialIdentity(int identity);
     bool inValidMessageString(String message, int identity);

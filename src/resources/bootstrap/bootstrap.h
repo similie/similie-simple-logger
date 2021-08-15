@@ -21,7 +21,7 @@
 
 #define MAX_U16 65535
 #define MAX_EEPROM_ADDRESS 8197
-#define PRODUCTION false
+#define PRODUCTION false // set to true for field devices
 
 struct DeviceConfig {
     uint8_t version;

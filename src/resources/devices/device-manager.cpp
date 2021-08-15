@@ -235,7 +235,7 @@ void DeviceManager::process()
     if (rebootEvent)
     {
         delay(1000);
-        System.reset();
+        Utils::reboot();
     }
 }
 
@@ -461,6 +461,17 @@ void DeviceManager::popOfflineCollection()
     this->storage->popOfflineCollection(this->POP_COUNT_VALUE);
 }
 
+/**
+ * @private
+ * 
+ * packagePayload
+ * 
+ * Places the payload details in the header
+ * 
+ * @param JSONBufferWriter *writer
+ * 
+ * @return void
+ */
 void DeviceManager::packagePayload(JSONBufferWriter *writer)
 {
     writer->beginObject();
@@ -472,19 +483,53 @@ void DeviceManager::packagePayload(JSONBufferWriter *writer)
 /**
  * @private
  * 
- * publisher
+ * getTopic
  * 
- * Gathers all data and sends to the processor the returned content
- * @return void
+ * Returns the publication topic based on maintenance count
+ * 
+ * @param u8_t maintenanceCount
+ * 
+ * @return bool
  */
-void DeviceManager::publisher()
+bool DeviceManager::checkMaintenance(u8_t maintenanceCount)
 {
+    bool recommenededMainteanc = recommendedMaintenace(maintenanceCount);
+    bool inMaintenance = boots.hasMaintenance();
+    bool maintenance = recommenededMainteanc || inMaintenance;
+    return maintenance;
+}
 
+/**
+ * @private
+ * 
+ * getTopic
+ * 
+ * Returns the publication topic based on maintenance count
+ * 
+ * @param u8_t maintenanceCount
+ * 
+ * @return String
+ */
+String DeviceManager::getTopic(bool maintenance)
+{
+    return processor->getPublishTopic(maintenance);
+}
+
+/**
+ * @private
+ * 
+ * payloadWriter
+ * 
+ * Wraps the json buffer into a string
+ * 
+ * @return String
+ */
+String DeviceManager::payloadWriter(u8_t &maintenanceCount)
+{
     char buf[getBufferSize()];
     memset(buf, 0, sizeof(buf));
     JSONBufferWriter writer(buf, sizeof(buf) - 1);
     packagePayload(&writer);
-    u8_t maintenanceCount = 0;
     for (size_t i = 0; i < this->deviceCount; i++)
     {
         if (i != 0)
@@ -507,15 +552,25 @@ void DeviceManager::publisher()
         writer.endObject();
     }
     writer.endObject();
-    // we do this so if things get beached, it automatically hits a maintenance mode
-    bool recommenededMainteanc = recommendedMaintenace(maintenanceCount);
-    bool inMaintenance = boots.hasMaintenance();
-    bool maintenance = recommenededMainteanc || inMaintenance;
+    return String(buf);
+}
+
+/**
+ * @private
+ * 
+ * publisher
+ * 
+ * Gathers all data and sends to the processor the returned content
+ * @return void
+ */
+void DeviceManager::publisher()
+{
     attempt_count = 0;
     read_count = 0;
-    String result = String(buf);
-    clearArray();
-    String topic = processor->getPublishTopic(maintenance);
+    u8_t maintenanceCount = 0;
+    String result = payloadWriter(maintenanceCount);
+    bool maintenance = checkMaintenance(maintenanceCount);
+    String topic = getTopic(maintenance);
     bool success = false;
 
     if (waitFor(Utils::connected, 2000) && processor->connected())
@@ -523,7 +578,7 @@ void DeviceManager::publisher()
         success = processor->publish(topic, result);
     }
 
-    Utils::log("SENDING_EVENT_READY", String(success) + " " + String(maintenance));
+    Utils::log("SENDING_EVENT_READY " + topic, String(success));
 
     if (!maintenance && !success)
     {
@@ -534,6 +589,8 @@ void DeviceManager::publisher()
     {
         this->popOfflineCollection();
     }
+
+    clearArray();
 
     this->ROTATION++;
 }
@@ -1006,7 +1063,7 @@ void DeviceManager::strapDevices()
         if (!device.equals(""))
         {
             applyDevice(config.addDevice(device, &boots), device, true);
-        }               
+        }
         Utils::log("_____________________________________________", "\n");
     }
 }
