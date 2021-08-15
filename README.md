@@ -50,7 +50,7 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 
 #### External libraries
 
-We use CellularHelper for our HeartBeat class. It is a simple library that analyzes the SIM/Cellular details for the Boron-based builds. It should not be used if the solution runs with non-cellular capability. Additionally, we can use other libraries for our processors or devices if required. However, the default solution only requires CellularHelper to send periodic heartbeat details. The goal is to use libraries that can be cloud compiled and remotely flashed, so we try to limit our use of external dependencies, particularly those that violate this objective.
+We use CellularHelper for our HeartBeat class. It is a simple library that analyzes the SIM/Cellular details for the Boron-based builds. It should not be used if the solution runs with non-cellular capability. Additionally, we can use other libraries for our processors or devices if required. The goal is to use libraries that can be cloud compiled and remotely flashed, so we try to limit our use of external dependencies, particularly those that violate this objective.
 
 #### `project.properties` file:
 
