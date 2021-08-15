@@ -1010,6 +1010,16 @@ int DeviceManager::removeDevice(String value)
     return valid;
 }
 
+/**
+ * @private 
+ * 
+ * publishDeviceList
+ * 
+ * sends a list of devices via the processor 
+ *  
+ * @return bool
+ * 
+*/
 bool DeviceManager::publishDeviceList()
 {
     char buf[300];
