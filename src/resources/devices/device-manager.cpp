@@ -821,7 +821,7 @@ int DeviceManager::clearAllDevices(String value)
     clearDeviceString();
     clearArray();
     setReadCount(0);
-    EEPROM.clear();
+    SerialStorage::clearDeviceStorage();
     boots.clearDeviceConfigArray();
     boots.resumePublication();
     return 1;
