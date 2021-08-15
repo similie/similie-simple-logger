@@ -17,7 +17,7 @@ DeviceManager::~DeviceManager()
  *
  * @param Processor * processor - the process for sending data
  */
-DeviceManager::DeviceManager(Processor *processor)
+DeviceManager::DeviceManager(Processor *processor, bool debug)
 {
     // To clear EEPROM. Comment this line
     // once flashed you should reflash to avoid data loss
@@ -33,6 +33,9 @@ DeviceManager::DeviceManager(Processor *processor)
     storage = new SerialStorage(processor, &boots);
     // instantiate the processor
     this->processor = processor;
+    // turn on or off system logging
+    utils.setDebug(debug);
+    
     /**
     * Our primary method of device configuration is via the particle
     * cloud using the addDevice function. However, we can also configure

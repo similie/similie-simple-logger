@@ -33,9 +33,7 @@ private:
         gps_device,
         battery,
         sonic_sensor
-    };
-
-    
+    };    
     Device * pullDeviceType(String configurationStore[], Bootstrap * boots);
     bool applyDevice(Device * d);
     bool noIdentity(String configurationStore[], int index);

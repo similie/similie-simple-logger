@@ -10,12 +10,13 @@
 class Utils
 {
 private:
-
+    
 public:
     ~Utils();
     Utils();
     static void reboot();
     static double parseCloudFunctionDouble(String value, String name);
+    static void setDebug(bool debug);
     bool hasSerialIdentity(int identity);
     bool inValidMessageString(String message, int identity);
     static bool validConfigIdentity(uint8_t identity);

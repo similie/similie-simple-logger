@@ -1,5 +1,7 @@
 #include "utils.h"
 
+static bool debugValue = false; 
+
 /**
 * @deconstructor
 */
@@ -196,7 +198,7 @@ void Utils::log(String event, String message)
      * For devices we deploy, we can shutdown this logging attribute
      * Value is found under bootstrap.h
      */
-    if (PRODUCTION)
+    if (!debugValue)
     {
         return;
     }
@@ -809,4 +811,20 @@ void Utils::reboot()
 {
     Log.info("Reboot Event Requested");
     System.reset();
+}
+
+
+/**
+ * @public
+ * 
+ * setDebug
+ * 
+ * turns on and off system logging
+ * 
+ * @return void
+ * 
+ */
+void Utils::setDebug(bool debug)
+{   
+    debugValue = debug;
 }

@@ -122,7 +122,7 @@ private:
     void iterateDevices(void (DeviceManager::*iter) (Device * d) , DeviceManager *binding);
 public:
     ~DeviceManager();
-    DeviceManager(Processor *processor);
+    DeviceManager(Processor *processor, bool debug);
     void init();
     int setSendInverval(String read);
     void clearArray();
