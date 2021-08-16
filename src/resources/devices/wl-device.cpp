@@ -110,7 +110,7 @@ int WlDevice::setDigitalCloud(String read)
     char saved = WlDevice::isDigital(digital);
     WLStruct storage = WlDevice::getProm();
     storage.digital = saved;
-    WlDevice::setPin(digital);
+    setPin(digital);
 
     if (!Utils::validConfigIdentity(storage.version))
     {
@@ -223,7 +223,7 @@ bool WlDevice::isDigital(char value)
 */
 void WlDevice::setPin(bool digital)
 {
-    int pin = WlDevice::getPin();
+    int pin = getPin();
     if (digital)
     {
 
@@ -249,7 +249,7 @@ void WlDevice::configSetup()
     digital = WlDevice::isDigital(this->config.digital);
     const double calibration = this->config.calibration;
     currentCalibration = calibration;
-    WlDevice::setPin(digital);
+    setPin(digital);
 }
 
 /**
@@ -434,7 +434,7 @@ String WlDevice::name()
 void WlDevice::restoreDefaults()
 {
     digital = DIGITAL_DEFAULT;
-    WlDevice::setPin(digital);
+    setPin(digital);
     currentCalibration = digital ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
     this->config.calibration = currentCalibration;
     this->config.digital = digital;
