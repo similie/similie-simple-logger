@@ -673,7 +673,7 @@ void Utils::shift(float value, size_t index, float arr[], size_t size)
 * the sorted array where we can our median value
 * @param int value - the value to be inserted 
 * @param size_t index - the index where to insert;
-* @param float arr[] - the array to insert into     
+* @param int arr[] - the array to insert into     
 * @param size_t size - size of the array
 *
 * @return void;
@@ -688,6 +688,41 @@ void Utils::shift(int value, size_t index, int arr[], size_t size)
     while (index < size)
     {
         int temp = arr[index];
+        arr[index] = last;
+        index++;
+        if (index < size)
+        {
+            last = arr[index];
+            arr[index] = temp;
+            index++;
+        }
+    }
+}
+
+/**
+* @public
+*
+* shift 
+*
+* Helper fuction that inserts an element in asscending order into
+* the sorted array where we can our median value
+* @param long value - the value to be inserted 
+* @param size_t index - the index where to insert;
+* @param long arr[] - the array to insert into     
+* @param size_t size - size of the array
+*
+* @return void;
+*/
+void Utils::shift(long value, size_t index, long arr[], size_t size)
+{
+
+    long last = arr[index];
+    arr[index] = value;
+    index++;
+
+    while (index < size)
+    {
+        long temp = arr[index];
         arr[index] = last;
         index++;
         if (index < size)
@@ -725,6 +760,35 @@ void Utils::insertValue(float value, float arr[], size_t size)
     }
     shift(value, index, arr, size);
 }
+
+/**
+* @public
+* 
+* insertValue  
+*
+* Insert a value into a multidimentional array in sorted order
+*
+*
+* @param int value - the value to be inserted 
+* @param int param - the enum value that represents the param
+* @param size_t size - the size of the array
+*
+* @return void;
+*/
+void Utils::insertValue(long value, long arr[], size_t size)
+{
+    size_t index = 0;
+
+    long aggr = arr[index];
+
+    while (value >= aggr && aggr != NO_VALUE && index < size)
+    {
+        index++;
+        aggr = arr[index];
+    }
+    shift(value, index, arr, size);
+}
+
 /**
 * @public
 * 
@@ -752,6 +816,35 @@ void Utils::insertValue(int value, int arr[], size_t size)
     }
     shift(value, index, arr, size);
 }
+
+
+/**
+ * @public 
+ * 
+ * getMedian
+ * 
+ * Get the middle value or the value toward the zero index
+ * this is not a NO_VALUE
+ * 
+ * @param long readparam - the expected max value
+ * @param long arr[] - the array of values
+ * 
+ * @return long
+ * 
+ */
+long Utils::getMedian(long readparam, long arr[])
+{
+    double center = (double)readparam / 2.0;
+    int index = ceil(center);
+    long value = NO_VALUE;
+    while (value == NO_VALUE && index >= 0)
+    {
+        value = arr[index];
+        index--;
+    }
+    return value;
+}
+
 
 /**
  * @public 

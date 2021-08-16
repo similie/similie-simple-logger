@@ -30,9 +30,10 @@ struct WLStruct {
 class WlDevice : public Device
 {
 private:
-    int readPin = 0; 
+    int readPin = -1; 
     bool digital = DIGITAL_DEFAULT;
     int getPin();
+    long getReadValue();
     uint16_t saveAddressForWL = 0;
     double currentCalibration = (DIGITAL_DEFAULT) ? DEF_DISTANCE_READ_DIG_CALIBRATION : DEF_DISTANCE_READ_AN_CALIBRATION;
     void configSetup();

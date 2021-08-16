@@ -54,13 +54,13 @@ WlDevice::WlDevice(Bootstrap *boots, int sendIdentity, int readPin)
  */
 int WlDevice::getPin()
 {
-    if (this->readPin != 0)
+    if (this->readPin != -1)
     {
         return this->readPin;
     }
     else if (digital)
     {
-        return DIG_PIN;
+        return (int)DIG_PIN;
     }
     else
     {
@@ -108,9 +108,10 @@ int WlDevice::setDigitalCloud(String read)
     }
     digital = (bool)val;
     char saved = WlDevice::isDigital(digital);
-    WLStruct storage = getProm();
+    WLStruct storage = WlDevice::getProm();
     storage.digital = saved;
     WlDevice::setPin(digital);
+
     if (!Utils::validConfigIdentity(storage.version))
     {
         storage.calibration = currentCalibration;
@@ -222,7 +223,7 @@ bool WlDevice::isDigital(char value)
 */
 void WlDevice::setPin(bool digital)
 {
-    int pin = getPin();
+    int pin = WlDevice::getPin();
     if (digital)
     {
 
@@ -316,6 +317,20 @@ String WlDevice::uniqueName()
     return this->name();
 }
 
+long WlDevice::getReadValue()
+{
+    long read = 0;
+    if (digital)
+    {
+        read = pulseIn(DIG_PIN, HIGH);
+    }
+    else
+    {
+        read = analogRead(AN_PIN);
+    }
+    return read;
+}
+
 /**
 * @private 
 *
@@ -330,7 +345,7 @@ int WlDevice::readWL()
     long timeout = 1000;
     size_t doCount = 5;
     long lastTime = millis();
-    int reads[doCount];
+    long reads[doCount];
 
     for (size_t i = 0; i < doCount; i++)
     {
@@ -340,7 +355,7 @@ int WlDevice::readWL()
     for (size_t i = 0; i < doCount; i++)
     {
         long currentTime = millis();
-        long read = 0;
+        long read = getReadValue();
 
         utils.insertValue(read, reads, doCount);
         // break off it it is taking too long
