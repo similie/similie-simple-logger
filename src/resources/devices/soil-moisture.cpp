@@ -14,7 +14,7 @@
 
 /**
  * Deconstructor
- */ 
+ */
 SoilMoisture::~SoilMoisture()
 {
 }
@@ -23,7 +23,7 @@ SoilMoisture::~SoilMoisture()
  * Constructor
  * 
  * @param Bootstrap * boots - the bootstrap object
- */ 
+ */
 SoilMoisture::SoilMoisture(Bootstrap *boots)
 {
     this->boots = boots;
@@ -35,7 +35,7 @@ SoilMoisture::SoilMoisture(Bootstrap *boots)
  * @param Bootstrap * boots - the bootstrap object
  * @param int identity - the device ID that makes it unique in
  *      a multidevice environment
- */ 
+ */
 SoilMoisture::SoilMoisture(Bootstrap *boots, int identity)
 {
     this->boots = boots;
@@ -52,24 +52,45 @@ SoilMoisture::SoilMoisture(Bootstrap *boots, int identity)
  * @param String read - payload from the cloud
  * 
  * @return int
- */ 
+ */
 int SoilMoisture::setMoistureCalibration(String read)
 {
-  double val = Utils::parseCloudFunctionDouble(read, name());
-  if (val == 0)
-  {
-    return 0;
-  }
-
-  if (saveAddressForMoisture != -1) {
-    VWCStruct store = {1, val};
-    EEPROM.put(saveAddressForMoisture, store);
-  }
-  
-  multiple  = val;
-  return 1;
+    double val = Utils::parseCloudFunctionDouble(read, this->uniqueName());
+    if (saveAddressForMoisture != -1)
+    {
+        VWCStruct store = {1, mineral_soil, val};
+        EEPROM.put(saveAddressForMoisture, store);
+    }
+    multiple = val ? true : false;   //  multiple = val;
+    return 1;
 }
 
+/**
+ * @private
+ * 
+ * setMoistureCalibration
+ * 
+ * Cloud function for setting the device calibration
+ * 
+ * @param String read - payload from the cloud
+ * 
+ * @return int
+ */
+int SoilMoisture::setMineralSoilCalibration(String read)
+{
+    int val = atoi(read);
+    if (val < 0 || val > 1)
+    {
+        return 0;
+    }
+    if (saveAddressForMoisture != -1)
+    {
+        VWCStruct store = {1, val, multiple};
+        EEPROM.put(saveAddressForMoisture, store);
+    }
+    mineral_soil = val ? true : false;   //  multiple = val;
+    return 1;
+}
 
 
 /**
@@ -80,9 +101,25 @@ int SoilMoisture::setMoistureCalibration(String read)
  * Returns the device name
  * 
  * @return String
- */ 
-String SoilMoisture::name() {
+ */
+String SoilMoisture::name()
+{
     return this->deviceName;
+}
+
+float SoilMoisture::applySoilMoistureEquation(float value)
+{
+    const double MINERAL_SOIL_MULTIPLE =  multiple;// 3.879e-4; // pow(3.879, -4); //  0.0003879;
+    const double SOILESS_MEDIA_MULTIPLE[] = {0.0000000006771, 0.000005105, 0.01302, 10.848}; // {6.771e-10, 5.105e-6, 1.302e-2, 10.848}; // 0.00000000006771;
+    if (mineral_soil)
+    {
+        return roundf(((MINERAL_SOIL_MULTIPLE * value) - 0.6956) * 100);
+    }
+    else
+    {
+        double eq = ((SOILESS_MEDIA_MULTIPLE[0] * pow(value, 3.0)) - (SOILESS_MEDIA_MULTIPLE[1] * pow(value, 2.0)) + (SOILESS_MEDIA_MULTIPLE[2] * value)) - SOILESS_MEDIA_MULTIPLE[3];
+        return roundf(eq * 100) ;
+    }
 }
 
 /**
@@ -93,10 +130,10 @@ String SoilMoisture::name() {
  * Returns the selected value with the configured multiplyer
  * 
  * @return float
- */ 
-float SoilMoisture::multiplyValue(float value) 
+ */
+float SoilMoisture::multiplyValue(float value)
 {
-   return ((value == NO_VALUE) ? NO_VALUE : value * multiple);
+    return ((value == NO_VALUE) ? NO_VALUE : applySoilMoistureEquation(value));
 }
 
 /**
@@ -116,10 +153,10 @@ float SoilMoisture::extractValue(float values[], size_t key, size_t max)
 {
     switch (key)
     {
-        case vwc:
-            return multiplyValue(utils.getMedian(values, max));
-        default:
-            return utils.getMedian(values, max);
+    case vwc:
+        return multiplyValue(utils.getMedian(values, max));
+    default:
+        return utils.getMedian(values, max);
     }
 }
 
@@ -154,17 +191,19 @@ float SoilMoisture::extractValue(float values[], size_t key)
  *
  * @return String
  */
-String SoilMoisture::paramName(size_t index) {
+String SoilMoisture::paramName(size_t index)
+{
     String param = valueMap[index];
     if (param.equals(NULL) || param.equals(" ") || param.equals(""))
     {
-      param = "_FAILURE_";
-    } else if (this->hasSerialIdentity()) {
-      param += "_" + String(sendIdentity);
-    } 
-    return param;   
+        param = "_FAILURE_";
+    }
+    else if (this->hasSerialIdentity())
+    {
+        param += "_" + String(sendIdentity);
+    }
+    return param;
 }
-
 
 /**
  * @private
@@ -183,7 +222,7 @@ bool SoilMoisture::readReady()
         return SerialStorage::notSendingOfflineData();
     }
     unsigned int size = boots->getReadTime() / 1000;
-    size_t skip = utils.skipMultiple(size, boots->getMaxVal() , READ_THRESHOLD);
+    size_t skip = utils.skipMultiple(size, boots->getMaxVal(), READ_THRESHOLD);
     return readAttempt >= skip;
 }
 
@@ -200,7 +239,7 @@ bool SoilMoisture::readReady()
 size_t SoilMoisture::readSize()
 {
     unsigned int size = boots->getReadTime() / 1000;
-    size_t skip = utils.skipMultiple(size, boots->getMaxVal() , READ_THRESHOLD);
+    size_t skip = utils.skipMultiple(size, boots->getMaxVal(), READ_THRESHOLD);
     size_t expand = floor(boots->getMaxVal() / skip);
     return expand;
 }
@@ -272,7 +311,6 @@ String SoilMoisture::fetchReading()
     return "";
 }
 
-
 /**
  * @private
  * 
@@ -325,7 +363,7 @@ void SoilMoisture::parseSerial(String ourReading)
     }
 
     ourReading = replaceSerialResponceItem(ourReading);
-    
+
     readCompile = true;
     utils.parseSerial(ourReading, PARAM_LENGTH, boots->getMaxVal(), VALUE_HOLD);
     readCompile = false;
@@ -340,13 +378,13 @@ void SoilMoisture::parseSerial(String ourReading)
  *
  * @return String
  */
-String SoilMoisture::uniqueName() 
+String SoilMoisture::uniqueName()
 {
- if (this->hasSerialIdentity())
-  {
-    return this->name() + String(this->sendIdentity);
-  }
-  return this->name();
+    if (this->hasSerialIdentity())
+    {
+        return this->name() + String(this->sendIdentity);
+    }
+    return this->name();
 }
 
 /**
@@ -358,14 +396,19 @@ String SoilMoisture::uniqueName()
  *
  * @return void
  */
-void SoilMoisture::pullEpromData() 
+void SoilMoisture::pullEpromData()
 {
-  VWCStruct pulled;
-  EEPROM.get(saveAddressForMoisture, pulled);
-  if (pulled.version == 1 && !isnan(pulled.multiple)) {
-      multiple = pulled.multiple;
-  }
-  Utils::log("SOIL_MOISTURE_BOOTSTRAP_MULTIPLIER", String(multiple));
+    VWCStruct pulled;
+    EEPROM.get(saveAddressForMoisture, pulled);
+    if (pulled.version == 1 && !isnan(pulled.multiple))
+    {
+        multiple = pulled.multiple;
+    }
+    if (pulled.version == 1 && !isnan(pulled.minerals))
+    {
+        mineral_soil = pulled.minerals ? true : false;
+    }
+    Utils::log("SOIL_MOISTURE_BOOTSTRAP_MULTIPLIER", String(mineral_soil));
 }
 
 /**
@@ -377,7 +420,8 @@ void SoilMoisture::pullEpromData()
  *
  * @return void
  */
-void SoilMoisture::setDeviceAddress() {
+void SoilMoisture::setDeviceAddress()
+{
     saveAddressForMoisture = boots->registerAddress(this->uniqueName(), sizeof(VWCStruct));
     Utils::log("SOIL_MOISTURE_BOOTSTRAP_ADDRESS", String(saveAddressForMoisture));
 }
@@ -393,8 +437,11 @@ void SoilMoisture::setDeviceAddress() {
  */
 void SoilMoisture::setFunctions()
 {
+    
     Particle.function("set" + this->uniqueName(), &SoilMoisture::setMoistureCalibration, this);
-    Particle.variable(this->uniqueName(), multiple); 
+    Particle.function("setMinteral" + this->uniqueName(), &SoilMoisture::setMineralSoilCalibration, this);
+    Particle.variable(this->uniqueName(), multiple);
+    Particle.variable("mineral" + this->uniqueName(), mineral_soil);
 }
 
 /**
@@ -518,8 +565,6 @@ void SoilMoisture::loop()
     }
 }
 
-
-
 /**
  * @public
  * 
@@ -561,10 +606,11 @@ void SoilMoisture::publish(JSONBufferWriter &writer, u8_t attempt_count)
     {
         String param = paramName(i);
         float paramValue = extractValue(VALUE_HOLD[i], i, MAX);
-        if (isnan(paramValue)) {
+        if (isnan(paramValue))
+        {
             paramValue = NO_VALUE;
         }
-        
+
         if (paramValue == NO_VALUE)
         {
             maintenanceTick++;
@@ -581,10 +627,10 @@ void SoilMoisture::publish(JSONBufferWriter &writer, u8_t attempt_count)
  * Restores the default configuration
  * 
  * @return void
- */ 
-void SoilMoisture::restoreDefaults() 
+ */
+void SoilMoisture::restoreDefaults()
 {
-    multiple = SOIL_MOISTURE_DEFAULT;
-    VWCStruct store = {1, multiple};
+    mineral_soil = MINERAL_SOIL_DEFAULT;
+    VWCStruct store = {1, mineral_soil};
     EEPROM.put(saveAddressForMoisture, store);
 }

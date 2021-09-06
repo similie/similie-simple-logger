@@ -1,4 +1,5 @@
-#define SOIL_MOISTURE_DEFAULT 0.03
+#define SOIL_MOISTURE_DEFAULT 0.0003879
+#define MINERAL_SOIL_DEFAULT true
 
 #include "Particle.h"
 #include "string.h"
@@ -18,6 +19,7 @@
 struct VWCStruct
 {
     uint8_t version;
+    int minerals;
     double multiple;
 };
 
@@ -41,12 +43,14 @@ private:
     double multiple = SOIL_MOISTURE_DEFAULT;
     float multiplyValue(float value);
     int setMoistureCalibration(String read);
+    int setMineralSoilCalibration(String read);
     void setDeviceAddress();
     void pullEpromData();
     void setFunctions();
     void parseSerial(String ourReading);
     bool readyRead = false;
     bool readCompile = false;
+    bool mineral_soil = MINERAL_SOIL_DEFAULT;
     bool readReady();
     size_t readSize();
     u8_t maintenanceTick = 0;
@@ -65,6 +69,7 @@ private:
     int sendIdentity = -1;
     String paramName(size_t index);
     String fetchReading();
+    float applySoilMoistureEquation(float value);
 public:
     ~SoilMoisture();
     SoilMoisture(Bootstrap *boots);

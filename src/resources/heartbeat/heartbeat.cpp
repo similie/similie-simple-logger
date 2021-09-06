@@ -34,6 +34,8 @@ void HeartBeat::setSystemDeets(JSONBufferWriter &writer)
     writer.name("freemem").value(freemem);
     int uptime = System.uptime();
     writer.name("uptime").value(uptime);
+    String version = System.version().c_str();
+    writer.name("version").value(version);
     writer.endObject();
 }
 void HeartBeat::setPowerlDeets(JSONBufferWriter &writer)
