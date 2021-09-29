@@ -7,8 +7,10 @@
 #include "resources/utils/utils.h"
 
 #define DEFAULT_TIP_SIZE 0.2
-#define RAIN_GAUGE_PIN D7 // Blue when using Port1
+
+// #define RAIN_GAUGE_PIN D7 // Blue when using Port1
 // #define RAIN_GAUGE_PIN A1 // Stripe Blue when using Port1
+#define RAIN_GAUGE_PIN D3 // Blue when using Port3
 
 #ifndef rain_gauge_h
 #define rain_gauge_h
