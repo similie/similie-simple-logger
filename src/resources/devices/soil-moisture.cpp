@@ -543,7 +543,9 @@ void SoilMoisture::read()
     }
     readAttempt = 0;
     String content = getReadContent();
+    // Utils::log("SERIAL_SEND_EVENT", content);
     Serial1.println(content);
+    delay(100);
     Serial1.flush();
 }
 

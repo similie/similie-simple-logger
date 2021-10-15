@@ -268,6 +268,7 @@ void AllWeather::read()
     readAttempt = 0;
     String content = getReadContent();
     Serial1.println(content);
+    delay(100);
     Serial1.flush();
 }
 

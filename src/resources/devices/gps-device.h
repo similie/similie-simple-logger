@@ -12,6 +12,7 @@ class GpsDevice : public Device
 private:
     Bootstrap *boots;
     String deviceName = "GPSDevice";
+    void parseSerial(String ourReading);
 public:
     ~GpsDevice();
     GpsDevice();

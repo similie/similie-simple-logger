@@ -50,7 +50,8 @@ void printMemory()
 {
     uint32_t freemem = System.freeMemory();
     int delta = (int)freememLast - (int)freemem;
-    Utils::log("MEMORY CHANGE", String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
+    Serial.println(String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
+    // Utils::log("MEMORY CHANGE", String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
     freememLast = freemem;
 }
 // timer setup. This are the heartbeat of the system. Triggers system events
@@ -58,7 +59,7 @@ Timer publishtimer(Bootstrap::ONE_MINUTE, releasePublishRead);
 Timer readtimer(Bootstrap::ONE_MINUTE, releaseRead);
 Timer heartBeatTimer(Bootstrap::HEARTBEAT_TIMER, releaseHeartbeat);
 Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true);
-// Timer memoryPrinter(10000, printMemory);
+Timer memoryPrinter(10000, printMemory);
 
 /**
 * @constructor Bootstrap
@@ -82,7 +83,7 @@ void Bootstrap::init()
     this->setMetaAddresses();
     this->pullRegistration();
     this->batteryController();
-    // memoryPrinter.start();
+    memoryPrinter.start();
     // Cellular.setCredentials("internet");
     Time.zone(TIMEZONE);
     Particle.syncTime();
@@ -107,7 +108,8 @@ void Bootstrap::init()
 void Bootstrap::storeDevice(String device, int index)
 {
     DeviceConfig confg = {1};
-    if (device.equals("")) {
+    if (device.equals(""))
+    {
         confg = {255};
     }
     Utils::machineNameDirect(device, confg.device);
@@ -125,17 +127,21 @@ void Bootstrap::storeDevice(String device, int index)
 * @param String * decvices[]  
 * @return void
 */
-void Bootstrap::strapDevices(String * devices)
+void Bootstrap::strapDevices(String *devices)
 {
-    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
-       uint16_t address = deviceConfigAdresses[i];
-       DeviceConfig confg;
-       EEPROM.get(address, confg);
-       if (Utils::validConfigIdentity(confg.version)) {
-          devices[i] = Utils::machineToReadableName(confg.device);
-       } else {
-          devices[i] = "";
-       }
+    for (uint8_t i = 0; i < MAX_DEVICES; i++)
+    {
+        uint16_t address = deviceConfigAdresses[i];
+        DeviceConfig confg;
+        EEPROM.get(address, confg);
+        if (Utils::validConfigIdentity(confg.version))
+        {
+            devices[i] = Utils::machineToReadableName(confg.device);
+        }
+        else
+        {
+            devices[i] = "";
+        }
     }
 }
 
@@ -148,13 +154,13 @@ void Bootstrap::strapDevices(String * devices)
 */
 int Bootstrap::setMaintenanceMode(String read)
 {
-  int val = (int)atoi(read);
-  if (val < 0 || val > 1)
-  {
-    return -1;
-  }
-  setMaintenance((bool)val);
-  return val;
+    int val = (int)atoi(read);
+    if (val < 0 || val > 1)
+    {
+        return -1;
+    }
+    setMaintenance((bool)val);
+    return val;
 }
 
 /**
@@ -163,7 +169,8 @@ int Bootstrap::setMaintenanceMode(String read)
 * setup for cloud functions
 * @return void
 */
-void Bootstrap::setFunctions() {
+void Bootstrap::setFunctions()
+{
     Particle.function("setMaintenanceMode", &Bootstrap::setMaintenanceMode, this);
 }
 
@@ -184,9 +191,9 @@ bool Bootstrap::hasSerial()
 * the total size of eprom memory
 * @return size_t - total memory
 */
-size_t Bootstrap::epromSize() 
+size_t Bootstrap::epromSize()
 {
-    return EEPROM.length()-1;
+    return EEPROM.length() - 1;
 }
 
 /**
@@ -195,7 +202,7 @@ size_t Bootstrap::epromSize()
 * this is the address to start storing device eprom data
 * @return uint16_t - first address after the bootstrap required space
 */
-uint16_t Bootstrap::deviceInitAddress() 
+uint16_t Bootstrap::deviceInitAddress()
 {
     return this->DEVICE_SPECIFIC_CONFIG_ADDRESS;
 }
@@ -218,22 +225,22 @@ bool Bootstrap::doesNotExceedsMaxAddressSize(uint16_t address)
 * Pulls all devices registered in EEPROM
 * @return void 
 */
-void Bootstrap::collectDevices() 
+void Bootstrap::collectDevices()
 {
     Utils::log("COLLECTING_REGISTERED_DEVICES", String(deviceMeta.count));
-    for (uint8_t i = 0; i < MAX_DEVICES && i < this->deviceMeta.count; i++) {
+    for (uint8_t i = 0; i < MAX_DEVICES && i < this->deviceMeta.count; i++)
+    {
         /*
         * Device meta address only contains the details for the device where it actually 
         * stores the address pool details
         */
         uint16_t address = deviceMetaAdresses[i];
-        Utils::log("DEVICE_REGISTRATION_ADDRESSES" , "VALUE:: " + String(address));
+        Utils::log("DEVICE_REGISTRATION_ADDRESSES", "VALUE:: " + String(address));
         // DeviceStruct device;
         EEPROM.get(address, devices[i]);
-        String deviceDetails =  String(devices[i].version) + " " + String(devices[i].size) + " " + String(devices[i].name) + " " + String(devices[i].address);
-        Utils::log("DEVICE_STORE_PULLED" , deviceDetails);
+        String deviceDetails = String(devices[i].version) + " " + String(devices[i].size) + " " + String(devices[i].name) + " " + String(devices[i].address);
+        Utils::log("DEVICE_STORE_PULLED", deviceDetails);
     }
-
 }
 
 /**
@@ -246,10 +253,12 @@ int Bootstrap::maxAddressIndex()
 {
     int maxAddressIndex = -1;
     uint16_t maxAddress = deviceInitAddress();
-    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+    for (uint8_t i = 0; i < MAX_DEVICES; i++)
+    {
         uint16_t address = devices[i].address;
         Utils::log("ADDRESS_SEARCH_EVENT", String::format("Address, %hu Current Max, %u", address, maxAddress));
-        if (this->doesNotExceedsMaxAddressSize(address)) {
+        if (this->doesNotExceedsMaxAddressSize(address))
+        {
             maxAddress = address;
             maxAddressIndex = i;
         }
@@ -265,23 +274,25 @@ int Bootstrap::maxAddressIndex()
 * @param uint16_t size - the size of data being requested
 * @return DeviceStruct - a device for registration 
 */
-DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
+DeviceStruct Bootstrap::getDeviceByName(String name, uint16_t size)
 {
     unsigned long dName = Utils::machineName(name, true);
     // delay(10000);
     // const char * dName = name.c_str();
-    for (size_t i = 0; i < MAX_DEVICES && i < this->deviceMeta.count; i++) {
-      DeviceStruct device = this->devices[i];
-      //Log.info("SEARCHING FOR REGISTERED DEVICE %lu %lu", dName, device.name);
-      Utils::log("SEARCHING_FOR_REGISTERED_DEVICE", String(dName) + " " + String(device.name) + " " + String(dName == device.name));
-      if (dName == device.name) {
-          return device;
-      }
+    for (size_t i = 0; i < MAX_DEVICES && i < this->deviceMeta.count; i++)
+    {
+        DeviceStruct device = this->devices[i];
+        //Log.info("SEARCHING FOR REGISTERED DEVICE %lu %lu", dName, device.name);
+        Utils::log("SEARCHING_FOR_REGISTERED_DEVICE", String(dName) + " " + String(device.name) + " " + String(dName == device.name));
+        if (dName == device.name)
+        {
+            return device;
+        }
     }
     // now build it
     uint16_t next = getNextDeviceAddress();
     Utils::log("THIS_IS_THE_NEXT_DEVICE_ADRESS_FOR " + name, String(next));
-    DeviceStruct device = { 1, size, dName, next};
+    DeviceStruct device = {1, size, dName, next};
     this->addNewDeviceToStructure(device);
     return device;
 }
@@ -297,9 +308,8 @@ DeviceStruct Bootstrap::getDeviceByName(String name,  uint16_t size)
 */
 void Bootstrap::saveDeviceMetaDetails()
 {
-  EEPROM.put(DEVICE_META_ADDRESS, this->deviceMeta);  
+    EEPROM.put(DEVICE_META_ADDRESS, this->deviceMeta);
 }
-
 
 /**
 * @private 
@@ -312,9 +322,10 @@ void Bootstrap::saveDeviceMetaDetails()
 */
 void Bootstrap::clearDeviceConfigArray()
 {
-    deviceMeta = {1,0};
+    deviceMeta = {1, 0};
     saveDeviceMetaDetails();
-    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+    for (uint8_t i = 0; i < MAX_DEVICES; i++)
+    {
         DeviceStruct d = {255, 0};
         devices[i] = d;
     }
@@ -328,13 +339,14 @@ void Bootstrap::clearDeviceConfigArray()
 * @param uint16_t size - the size of data being requested
 * @return uint16_t - the predictable address for the device 
 */
-uint16_t Bootstrap::registerAddress(String name, uint16_t size) 
+uint16_t Bootstrap::registerAddress(String name, uint16_t size)
 {
     // delay(10000);
     DeviceStruct device = getDeviceByName(name, size);
     String deviceDetails = String(device.version) + " " + String(device.size) + " " + String(device.name) + " " + String(device.address);
     Utils::log("REGISTERED_ADDRESS_DETAILS_FOR " + name, deviceDetails);
-    if (!Utils::validConfigIdentity(device.version)) {
+    if (!Utils::validConfigIdentity(device.version))
+    {
         // I need to know the number of devices
         uint16_t send = manualDeviceTracker;
         manualDeviceTracker = send + size + 8;
@@ -349,12 +361,15 @@ uint16_t Bootstrap::registerAddress(String name, uint16_t size)
 * gets the next address for device registration
 * @return uint16_t 
 */
-uint16_t Bootstrap::getNextDeviceAddress() {
+uint16_t Bootstrap::getNextDeviceAddress()
+{
     int mAddress = maxAddressIndex();
 
-    if (mAddress != -1) {
+    if (mAddress != -1)
+    {
         DeviceStruct lastDevice = devices[mAddress];
-        if (Utils::validConfigIdentity(lastDevice.version)) {
+        if (Utils::validConfigIdentity(lastDevice.version))
+        {
             return lastDevice.size + lastDevice.address + 8;
         }
     }
@@ -372,13 +387,15 @@ uint16_t Bootstrap::getNextDeviceAddress() {
 */
 void Bootstrap::processRegistration()
 {
-    Utils::log("EPROM_REGISTRATION", String(this->deviceMeta.count ) + " " + String(this->deviceMeta.version ));
-    if (!Utils::validConfigIdentity(this->deviceMeta.version)) {
+    Utils::log("EPROM_REGISTRATION", String(this->deviceMeta.count) + " " + String(this->deviceMeta.version));
+    if (!Utils::validConfigIdentity(this->deviceMeta.version))
+    {
         this->deviceMeta = {1, 0};
         saveDeviceMetaDetails();
-    } 
-     
-    if (this->deviceMeta.count > 0) {
+    }
+
+    if (this->deviceMeta.count > 0)
+    {
         collectDevices();
     }
 }
@@ -395,10 +412,11 @@ void Bootstrap::setMetaAddresses()
     // delay(3000);
     uint16_t size = sizeof(DeviceStruct);
     uint16_t sizeConf = sizeof(DeviceConfig);
-    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
-        deviceMetaAdresses[i] = DEVICE_CONFIG_STORAGE_META_ADDRESS + (size * i) + i; 
+    for (uint8_t i = 0; i < MAX_DEVICES; i++)
+    {
+        deviceMetaAdresses[i] = DEVICE_CONFIG_STORAGE_META_ADDRESS + (size * i) + i;
         deviceConfigAdresses[i] = DEVICE_HOLD_ADDRESS + (sizeConf * i) + i;
-        Utils::log("DEVICE_CONFIGURATION_ADDRESS, index " + String(i), "META ADDRESS " + String(deviceMetaAdresses[i]) + " DEVICE ADDRESS " + String(deviceConfigAdresses[i]) );
+        Utils::log("DEVICE_CONFIGURATION_ADDRESS, index " + String(i), "META ADDRESS " + String(deviceMetaAdresses[i]) + " DEVICE ADDRESS " + String(deviceConfigAdresses[i]));
     }
 }
 
@@ -408,11 +426,11 @@ void Bootstrap::setMetaAddresses()
 * wrapper function to get pull the device meta details into memory
 * @return void 
 */
-void Bootstrap::pullRegistration() 
+void Bootstrap::pullRegistration()
 {
-  // delay(1000);
-  EEPROM.get(DEVICE_META_ADDRESS, this->deviceMeta);
-  processRegistration();
+    // delay(1000);
+    EEPROM.get(DEVICE_META_ADDRESS, this->deviceMeta);
+    processRegistration();
 }
 
 /**
@@ -422,10 +440,11 @@ void Bootstrap::pullRegistration()
 * @param DeviceStruct device - the device for registration
 * @return void 
 */
-void Bootstrap::addNewDeviceToStructure(DeviceStruct device) 
+void Bootstrap::addNewDeviceToStructure(DeviceStruct device)
 {
-    if (device.address > this->epromSize()) {
-        Utils::log("ERROR_ADDING_DEVICE: Address_EXCEEDED" , String(device.address));
+    if (device.address > this->epromSize())
+    {
+        Utils::log("ERROR_ADDING_DEVICE: Address_EXCEEDED", String(device.address));
         return;
     }
     uint16_t address = deviceMetaAdresses[deviceMeta.count];
@@ -592,7 +611,6 @@ void Bootstrap::haultPublication()
         publishtimer.stop();
         publishtimer.reset();
     }
-
 }
 
 /**
@@ -824,7 +842,7 @@ void Bootstrap::batteryController()
 */
 void Bootstrap::timers()
 {
-   
+
     processSerial();
 
     if (strappingTimers)
@@ -859,15 +877,17 @@ void Bootstrap::timers()
  * Starts the Serial1 litener
  * 
 */
-void Bootstrap::serialInit() {
-   // SERIAL_COMMS_BAUD
-   if (!SERIAL_COMMS_BAUD) {
-       return;
-   }
+void Bootstrap::serialInit()
+{
+    // SERIAL_COMMS_BAUD
+    if (!SERIAL_COMMS_BAUD)
+    {
+        return;
+    }
 
-   Serial1.begin(SERIAL_COMMS_BAUD);
-   delay(100);
-   pingSerialComms();
+    Serial1.begin(SERIAL_COMMS_BAUD);
+    delay(100);
+    pingSerialComms();
 }
 
 /** 
@@ -876,7 +896,8 @@ void Bootstrap::serialInit() {
  * Reads content off the serial bus 
  * 
 */
-int Bootstrap::serialBuilder() {
+int Bootstrap::serialBuilder()
+{
     int avail = Serial1.available();
     for (int i = 0; i < avail; i++)
     {
@@ -902,10 +923,11 @@ int Bootstrap::serialBuilder() {
  * 
  * 
 */
-bool Bootstrap::checkHasId() {
+bool Bootstrap::checkHasId()
+{
     // Log.info(serialReadContent);
-    return serialReadContent.indexOf(" ") != -1 || 
-        serialReadContent.equals("pong");
+    return serialReadContent.indexOf(" ") != -1 ||
+           serialReadContent.startsWith("pong");
 }
 
 /** 
@@ -914,17 +936,19 @@ bool Bootstrap::checkHasId() {
  * Runs the serial Loop
  * 
 */
-void Bootstrap::processSerial() 
+void Bootstrap::processSerial()
 {
-    if (!SERIAL_COMMS_BAUD || !wantsSerial) {
-       return;
+    if (!SERIAL_COMMS_BAUD || !wantsSerial)
+    {
+        return;
     }
-    
-    if (serialBuilder() && checkHasId()) {
+
+    if (serialBuilder() && checkHasId())
+    {
         // we set this to true, because a serial device might have been
         // plugged in
         pingPong();
-        Utils::log("SERIAL_CONTENT_RECEIVED" , serialReadContent);
+        Utils::log("SERIAL_CONTENT_RECEIVED", serialReadContent);
         storeSerialContent();
     }
 }
@@ -939,7 +963,7 @@ void Bootstrap::processSerial()
  * @return void
  * 
 */
-void Bootstrap::startSerial() 
+void Bootstrap::startSerial()
 {
     wantsSerial = true;
 }
@@ -950,19 +974,21 @@ void Bootstrap::startSerial()
  *  Stores and verifies fully processed serial element
  * 
 */
-void Bootstrap::storeSerialContent() 
-{  
-    if (serialReadContent.equals("pong")) {
+void Bootstrap::storeSerialContent()
+{
+    if (serialReadContent.startsWith("pong"))
+    {
+        processorName = serialReadContent.substring(5);
         serialReadContent = "";
         return pingPong();
     }
-    if (serialStoreIndex < 0 || serialStoreIndex >= serial_buffer_length) {
+    if (serialStoreIndex < 0 || serialStoreIndex >= serial_buffer_length)
+    {
         serialStoreIndex = 0;
     }
     pushSerial(serialReadContent);
     serialReadContent = "";
     serialStoreIndex++;
-   
 }
 
 /** 
@@ -972,7 +998,7 @@ void Bootstrap::storeSerialContent()
  * @param String serial string to store
  * 
 */
-void Bootstrap::pushSerial(String serial) 
+void Bootstrap::pushSerial(String serial)
 {
     serial_buffer[serialStoreIndex] = serial;
 }
@@ -984,9 +1010,9 @@ void Bootstrap::pushSerial(String serial)
  * @param String serial ID
  * 
 */
-String Bootstrap::popSerial(size_t index) 
+String Bootstrap::popSerial(size_t index)
 {
-    String send = serial_buffer[index] ;
+    String send = serial_buffer[index];
     serial_buffer[index] = "";
     return send;
 }
@@ -1001,7 +1027,8 @@ String Bootstrap::popSerial(size_t index)
  * @return true if the idenity matches the string index
  * 
 */
-bool Bootstrap::isCorrectIdentity(String identity, size_t index) {
+bool Bootstrap::isCorrectIdentity(String identity, size_t index)
+{
     String check = serial_buffer[index];
     return !check.equals("") && check.startsWith(identity);
 }
@@ -1015,12 +1042,42 @@ bool Bootstrap::isCorrectIdentity(String identity, size_t index) {
  * @return size_t of the index is 
  * 
 */
-size_t Bootstrap::indexCounter(size_t startIndex) {
-    if (startIndex >= serial_buffer_length) {
-       return startIndex % serial_buffer_length;
-    } else {
-       return startIndex;
+size_t Bootstrap::indexCounter(size_t startIndex)
+{
+    if (startIndex >= serial_buffer_length)
+    {
+        return startIndex % serial_buffer_length;
     }
+    else
+    {
+        return startIndex;
+    }
+}
+
+/**
+ * @private 
+ * 
+ * getProcessorEnum 
+ * 
+ * @param String proc name
+ * 
+ * @return int 
+ * 
+ * */
+int Bootstrap::getProcessorEnum(String name)
+{
+    int index = -1;
+    for (size_t i = 0; i < sizeof(processorNames) / sizeof(String); i++)
+    {
+        String proc = processorNames[i];
+        if (name.equals(proc))
+        {
+            index = i;
+            break;
+        }
+    }
+
+    return index;
 }
 
 /**
@@ -1031,24 +1088,66 @@ size_t Bootstrap::indexCounter(size_t startIndex) {
  * @param String idenity of the device requesting at payload 
  * 
  * */
-String Bootstrap::fetchSerial(String identity) 
+String Bootstrap::fetchSerial(String identity)
 {
-    if (!wantsSerial) {
+    if (!wantsSerial)
+    {
         wantsSerial = true;
     }
     // we want to start in the index prior to the store index.
-    // it is most likely in the most there. 
+    // it is most likely in the most there.
     size_t startindex = serialStoreIndex - 1;
     size_t i = 0;
     size_t j = indexCounter(startindex);
-    while (i < serial_buffer_length) {
-        if (isCorrectIdentity(identity, j)) {
+    while (i < serial_buffer_length)
+    {
+        if (isCorrectIdentity(identity, j))
+        {
             return popSerial(j);
         }
         i++;
         j = indexCounter(startindex + i);
     }
     return "";
+}
+
+/**
+ * @public 
+ * 
+ * isCoProcessorMemoryConstrained 
+ * 
+ * Is it a low memory co-processor such as the 32u4
+ * 
+ * @return String
+ * 
+ * */
+bool Bootstrap::isCoProcessorMemoryConstrained()
+{
+    int procEnum = getProcessorEnum(processorName);
+    switch (procEnum)
+    {
+    case MO_SAMD_21G18:
+        return false;
+    case FW_32u4:
+        return true;
+    default:
+        return true;
+    };
+}
+
+/**
+ * @public 
+ * 
+ * getProcessorName 
+ * 
+ * I ping pong event will announce the processors name
+ * 
+ * @return String
+ * 
+ * */
+String Bootstrap::getProcessorName()
+{
+    return processorName;
 }
 
 /**
@@ -1060,7 +1159,8 @@ String Bootstrap::fetchSerial(String identity)
  * @return void
  * 
  * */
-void Bootstrap::pingPong() {
+void Bootstrap::pingPong()
+{
     hasSerialComms = true;
 }
 

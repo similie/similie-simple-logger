@@ -33,13 +33,22 @@ void GpsDevice::publish(JSONBufferWriter &writer, u8_t attempt_count)
   
 }
 
+void GpsDevice::parseSerial(String ourReading) {
+    Serial.println(ourReading);
+}
+
 void GpsDevice::read()
 {
-    
+    Serial1.println("$GPS_1");
 }
 
 void GpsDevice::loop()
 {
+    String completedSerialItem = boots->fetchSerial("$GPS_1");
+    if (!completedSerialItem.equals(""))
+    {
+        parseSerial(completedSerialItem);
+    }
 }
 
 void GpsDevice::clear()

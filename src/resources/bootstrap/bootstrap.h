@@ -17,7 +17,7 @@
 
 #define MAX_SEND_TIME 15
 #define SERIAL_BUFFER_LENGTH 5
-#define SERIAL_COMMS_BAUD 9600
+#define SERIAL_COMMS_BAUD  76800 //9600
 
 #define MAX_U16 65535
 #define MAX_EEPROM_ADDRESS 8197
@@ -56,12 +56,20 @@ class Bootstrap
 {
 private:
     bool wantsSerial = false;
+    enum {
+        MO_SAMD_21G18,
+        FW_32u4
+    };
+    String processorNames[2] = {"MO_SAMD_21G18", "FW_32u4"};
+    int getProcessorEnum(String name);
+
     bool hasSerialComms = false;
     void pullRegistration();
     void addNewDeviceToStructure(DeviceStruct device);
     bool bootstrapped = false;
     uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
     int publishedInterval = DEFAULT_PUB_INTERVAL;
+    String processorName = "";
     // unsigned long machineName(String name);
     void collectDevices();
     void setFunctions();
@@ -127,6 +135,8 @@ public:
     bool hasSerial();
     bool isStrapped();
     void init();
+    String getProcessorName();
+    bool isCoProcessorMemoryConstrained();
     bool doesNotExceedsMaxAddressSize(uint16_t address);
     void strapDevices(String * devices);
     void storeDevice(String device, int index);

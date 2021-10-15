@@ -8,7 +8,7 @@ static bool sendingOffline = false;
  * @param Processor * holdProcessor - the processor for sending a payload
  * @param Bootstrap * boots - the bootstrap object
  */
-SerialStorage::SerialStorage(Processor *holdProcessor,  Bootstrap *boots)
+SerialStorage::SerialStorage(Processor *holdProcessor, Bootstrap *boots)
 {
     this->holdProcessor = holdProcessor;
     this->boots = boots;
@@ -17,9 +17,8 @@ SerialStorage::SerialStorage(Processor *holdProcessor,  Bootstrap *boots)
 /** 
  * @deconstructor
 */
-SerialStorage::~SerialStorage() 
+SerialStorage::~SerialStorage()
 {
-
 }
 
 /** 
@@ -32,7 +31,7 @@ SerialStorage::~SerialStorage()
  * @return void
  * 
 */
-void SerialStorage::clearDeviceStorage() 
+void SerialStorage::clearDeviceStorage()
 {
     EEPROM.clear();
     Utils::log("EPROM_CLEARED", String(millis()));
@@ -48,7 +47,8 @@ void SerialStorage::clearDeviceStorage()
  * @return bool
  * 
 */
-bool SerialStorage::notSendingOfflineData() {
+bool SerialStorage::notSendingOfflineData()
+{
     return !sendingOffline;
 }
 
@@ -120,7 +120,8 @@ String SerialStorage::getPopStartIndex(String read)
 */
 void SerialStorage::popOfflineCollection(u8_t count)
 {
-    if (!boots->hasSerial()) {
+    if (!boots->hasSerial())
+    {
         return;
     }
 
@@ -153,15 +154,16 @@ bool SerialStorage::sendPopRead()
     size_t index = firstSpaceIndex(popString, 1);
     String SEND_TO = popString.substring(0, index - 1);
     String SEND = popString.substring(index);
-    Utils::log("SERIAL_POP_SEND" , SEND_TO + " " + SEND);
+    Utils::log("SERIAL_POP_SEND", SEND_TO + " " + SEND);
     bool published = this->holdProcessor->publish(SEND_TO, SEND);
+    Serial.print("WHAT THE BALLS ");Serial.println(published);
     return published;
 }
 
 /** 
  * @private 
  * 
- * sendPopRead
+ * processPop
  * 
  * Returned serial payloads come in chunks appended with "pop". 
  * This function collects the payload until it finds the end chuck
@@ -235,42 +237,54 @@ size_t SerialStorage::firstSpaceIndex(String value, u8_t index)
 */
 void SerialStorage::storePayload(String payload, String topic)
 {
-    if (!boots->hasSerial()) {
+    if (!boots->hasSerial())
+    {
         return;
     }
 
     sendingOffline = true;
+
+    bool constrained = boots->isCoProcessorMemoryConstrained();
+    Utils::log("PROCESSOR_" + boots->getProcessorName(), "constrained? " + String(constrained));
     // let's let everything clear from the buffer if there's
     // data being delivered
     Serial1.flush();
     delay(100);
     String send = topic + " " + payload + "\n";
+    // String send = topic + " " + payload;
     size_t length = send.length();
     // there is a lot of noise this function picks up on the co-processor. I think it is related
     // with tight memory limitations with the 32u4 chip.
-    u8_t MAX_CHUNCK = 50;
+    u8_t MAX_CHUNCK = 30;
     String push = "push ";
-    size_t i = 0;   
-    while (i < length)
-    { 
-        // print push to tag the payload as a storage event
-        Serial1.print(push);
-        for (size_t j = 0; j < MAX_CHUNCK && i < length; j++)
+    if (constrained)
+    {
+        size_t i = 0;
+        while (i < length)
         {
-            Serial1.write(send.charAt(i));
-            i++;
-        }
+            // print push to tag the payload as a storage event
+            Serial1.print(push);
+            for (size_t j = 0; j < MAX_CHUNCK && i < length; j++)
+            {
+                Serial1.write(send.charAt(i));
+                i++;
+            }
 
-        if (i < length) {
-            Serial1.write('\0');
-            delay(100);
+            if (i < length)
+            {
+                Serial1.write('\0');
+                delay(100);
+            }
         }
     }
-    // give the little logger time 
-    //  to wrap things up
+    else
+    {
+        Serial1.print(push + send);
+    }
+
     delay(50);
     Serial1.flush();
-    delay(50);
+    delay(100);
     sendingOffline = false;
 }
 
@@ -284,10 +298,14 @@ void SerialStorage::storePayload(String payload, String topic)
  * @return void
  * 
 */
-void SerialStorage::loop() 
+void SerialStorage::loop()
 {
     String pop = this->boots->fetchSerial("pop");
-    if (!pop.equals("")) {
+    if (!pop.equals(""))
+    {
         processPop(pop);
+        Serial.println(
+            "POP PRICESSED"
+        );
     }
 }
