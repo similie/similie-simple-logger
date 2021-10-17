@@ -50,8 +50,8 @@ void printMemory()
 {
     uint32_t freemem = System.freeMemory();
     int delta = (int)freememLast - (int)freemem;
-    Serial.println(String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
-    // Utils::log("MEMORY CHANGE", String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
+    // Serial.println(String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
+    Utils::log("MEMORY CHANGE", String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
     freememLast = freemem;
 }
 // timer setup. This are the heartbeat of the system. Triggers system events

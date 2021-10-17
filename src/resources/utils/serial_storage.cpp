@@ -66,21 +66,28 @@ bool SerialStorage::notSendingOfflineData()
 */
 void SerialStorage::payloadRestorator(String payload)
 {
-    u8_t newLine = payload.length();
-    for (u8_t i = 0; i < payload.length(); i++)
+    int newLine = -1;
+    for (size_t i = 0; i < payload.length(); i++)
     {
         if (payload.charAt(i) == '\n')
         {
             newLine = i;
         }
     }
-    size_t topicIndex = firstSpaceIndex(payload, 1);
 
-    String topic = payload.substring(0, topicIndex - 2);
-    String send = payload.substring(topicIndex, newLine);
-    Utils::log("PAYLOAD_RESTORATION_EVENT", send);
-    // Serial.println(send);
-    storePayload(send, topic);
+    if (newLine == INVALID) {
+     return;   
+    }
+    
+    Serial.print("RESTORING ");Serial.println(newLine);
+    short int topicIndex = firstSpaceIndex(payload, 1);
+
+    if (topicIndex != INVALID) {
+        String topic = payload.substring(0, topicIndex - 2);
+        String send = payload.substring(topicIndex, newLine);
+        Utils::log("PAYLOAD_RESTORATION_EVENT", send);
+        storePayload(send, topic);
+    }
 }
 
 /** 
@@ -99,8 +106,10 @@ String SerialStorage::getPopStartIndex(String read)
 {
     if (read.startsWith("pop"))
     {
-        size_t startIndex = firstSpaceIndex(read, 2);
-        return read.substring(startIndex);
+        short int startIndex = firstSpaceIndex(read, 2);
+        if (startIndex != INVALID) {
+             return read.substring(startIndex);
+        }
     }
 
     return read;
@@ -151,7 +160,10 @@ void SerialStorage::popOfflineCollection(u8_t count)
 */
 bool SerialStorage::sendPopRead()
 {
-    size_t index = firstSpaceIndex(popString, 1);
+    short int index = firstSpaceIndex(popString, 1);
+    if (index == INVALID) {
+        return false;
+    }
     String SEND_TO = popString.substring(0, index - 1);
     String SEND = popString.substring(index);
     Utils::log("SERIAL_POP_SEND", SEND_TO + " " + SEND);
@@ -199,11 +211,11 @@ void SerialStorage::processPop(String read)
  * @return size_t
  * 
 */
-size_t SerialStorage::firstSpaceIndex(String value, u8_t index)
+short int SerialStorage::firstSpaceIndex(String value, u8_t index)
 {
     size_t size = value.length();
     u8_t count = 0;
-    size_t sendIndex = -1;
+    short int sendIndex = -1;
     for (size_t i = 0; i < size; i++)
     {
         char holdValue = value.charAt(i);

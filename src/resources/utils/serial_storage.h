@@ -8,11 +8,12 @@
 class SerialStorage
 {
 private:
+    const short int INVALID = -1;
     void payloadRestorator(String payload);
     void processPop(String value);
     String getPopStartIndex(String read);
     bool sendPopRead();
-    size_t firstSpaceIndex(String value, u8_t index);
+    short int firstSpaceIndex(String value, u8_t index);
     Processor *holdProcessor;
     Bootstrap *boots;
     String popString = "";
