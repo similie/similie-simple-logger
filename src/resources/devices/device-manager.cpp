@@ -35,7 +35,7 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
     this->processor = processor;
     // turn on or off system logging
     Utils::setDebug(debug);
-    
+
     /**
     * Our primary method of device configuration is via the particle
     * cloud using the addDevice function. However, we can also configure
@@ -461,7 +461,7 @@ size_t DeviceManager::getBufferSize()
  */
 void DeviceManager::popOfflineCollection()
 {
-    this->storage->popOfflineCollection(this->POP_COUNT_VALUE);
+    this->storage->popOfflineCollection();
 }
 
 /**
