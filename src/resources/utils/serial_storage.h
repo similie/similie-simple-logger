@@ -26,6 +26,7 @@ private:
     const short int INVALID = -1;
     short int storePayloadToSend(popContent content);
     void checkPopSend();
+    int getNewLineIndex(String payload);
     void invalidatePopArray();
     short int findValidPopIndex();
     bool sendPop(popContent content);

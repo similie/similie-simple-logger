@@ -56,6 +56,32 @@ bool SerialStorage::notSendingOfflineData()
 /** 
  * @private 
  * 
+ * getNewLineIndex
+ * 
+ * gets the index of the last \n character
+ * 
+ * @param String payload 
+ * 
+ * @return int
+ * 
+*/
+int SerialStorage::getNewLineIndex(String payload)
+{
+    int newLine = INVALID;
+    // start at the end. It is more likely to find there
+    for (size_t i = payload.length(); i >= 0; i--)
+    {
+        if (payload.charAt(i) == '\n')
+        {
+            newLine = i;
+        }
+    }
+    return newLine;
+}
+
+/** 
+ * @private 
+ * 
  * payloadRestorator
  * 
  * Preps a payload fresh off the serial bus for being sent
@@ -67,24 +93,14 @@ bool SerialStorage::notSendingOfflineData()
 */
 popContent SerialStorage::payloadRestorator(String payload)
 {
-    int newLine = -1;
+    int newLine = getNewLineIndex(payload);
     popContent pop = {false};
-
-    for (size_t i = 0; i < payload.length(); i++)
-    {
-        if (payload.charAt(i) == '\n')
-        {
-            newLine = i;
-        }
-    }
 
     if (newLine == INVALID)
     {
         return pop;
     }
 
-    Serial.print("RESTORING ");
-    Serial.println(newLine);
     short int topicIndex = firstSpaceIndex(payload, 1);
 
     if (topicIndex != INVALID)
@@ -238,9 +254,9 @@ void SerialStorage::invalidatePopArray()
 {
     for (uint8_t i = 0; i < POP_COUNT_VALUE; i++)
     {
-        popContent pop = popStore[i];
-        pop.valid = false;
+        resetPopElement(i);
     }
+    hasPopContent = false;
 }
 
 /** 
@@ -364,10 +380,6 @@ void SerialStorage::processPop(String read)
     if (popString.endsWith("}"))
     {
         storePayloadToSend(payloadRestorator(popString));
-        // if (!sendPopRead())
-        // {
-        //     this->payloadRestorator(popString);
-        // }
         popString = "";
     }
 }
