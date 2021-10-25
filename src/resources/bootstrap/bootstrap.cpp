@@ -59,7 +59,7 @@ Timer publishtimer(Bootstrap::ONE_MINUTE, releasePublishRead);
 Timer readtimer(Bootstrap::ONE_MINUTE, releaseRead);
 Timer heartBeatTimer(Bootstrap::HEARTBEAT_TIMER, releaseHeartbeat);
 Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true);
-Timer memoryPrinter(10000, printMemory);
+// Timer memoryPrinter(10000, printMemory);
 
 /**
 * @constructor Bootstrap
@@ -83,7 +83,7 @@ void Bootstrap::init()
     this->setMetaAddresses();
     this->pullRegistration();
     this->batteryController();
-    memoryPrinter.start();
+    // memoryPrinter.start();
     // Cellular.setCredentials("internet");
     Time.zone(TIMEZONE);
     Particle.syncTime();

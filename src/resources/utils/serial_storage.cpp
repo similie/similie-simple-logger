@@ -69,11 +69,16 @@ int SerialStorage::getNewLineIndex(String payload)
 {
     int newLine = INVALID;
     // start at the end. It is more likely to find there
-    for (size_t i = payload.length(); i >= 0; i--)
+    // Serial.print("WHAT THE HELL ");Serial.println(payload.length());
+    for (int i = payload.length() - 1; i >= 0; i--)
     {
-        if (payload.charAt(i) == '\n')
+        // Serial.print("INDEX ");Serial.print(i); Serial.print(" ");
+        // Serial.println(payload.charAt(i));
+        if (payload.charAt(i) == '\n' || payload.charAt(i) == '}')
         {
-            newLine = i;
+            
+            newLine = payload.charAt(i) == '}' ? i + 1 :  i;
+            break;
         }
     }
     return newLine;
@@ -93,20 +98,22 @@ int SerialStorage::getNewLineIndex(String payload)
 */
 popContent SerialStorage::payloadRestorator(String payload)
 {
+    // Serial.println("GOING BALLS DEEP");
     int newLine = getNewLineIndex(payload);
     popContent pop = {false};
-
+    // Serial.print("WHATS MY LINE ");Serial.println(newLine);
     if (newLine == INVALID)
     {
         return pop;
     }
 
     short int topicIndex = firstSpaceIndex(payload, 1);
-
+    // Serial.print("WHATS MY TOPIC INDEX ");Serial.println(topicIndex);
     if (topicIndex != INVALID)
     {
-        String topic = payload.substring(0, topicIndex - 2);
+        String topic = payload.substring(0, topicIndex - 1);
         String send = payload.substring(topicIndex, newLine);
+        // Serial.print(topic);Serial.print(" ");Serial.println(send);
         pop.valid = true;
         pop.key = topic;
         pop.content = send;
@@ -162,10 +169,8 @@ bool SerialStorage::sendPop(popContent content)
 
 void SerialStorage::resetPopElement(short int index)
 {
-    popContent pop = popStore[index];
-    pop.valid = false;
-    pop.key = "";
-    pop.content = "";
+    popContent pop = {false, "", ""};
+    popStore[index] = pop;
 }
 
 /** 
@@ -198,7 +203,7 @@ void SerialStorage::checkPopSend()
     }
     popContent pop = popStore[index];
     bool sent = sendPop(pop);
-    Utils::log("SENDING_POP_ELEMENT", pop.key + " " + pop.content);
+    // Utils::log("SENDING_POP_ELEMENT", pop.key + " " + pop.content + " " + String(sent));
     if (sent)
     {
         sendIndex = index + 1;
@@ -275,6 +280,7 @@ short int SerialStorage::storePayloadToSend(popContent content)
 {
 
     short int index = -1;
+    // Serial.print("GHEE "); Serial.print(content.valid); Serial.print(" "); Serial.println(content.key);
 
     if (!content.valid)
     {
@@ -290,17 +296,16 @@ short int SerialStorage::storePayloadToSend(popContent content)
             startIndex = 0;
         }
         popContent pop = popStore[startIndex];
-        if (!pop.valid)
+        // Serial.print("HEHE "); Serial.print(startIndex); Serial.print(" ");Serial.println(pop.valid);
+        if (pop.valid != true)
         {
-            popStore[startIndex] = content;
             index = startIndex;
-            hasPopContent = true;
             break;
         }
         startIndex++;
         cycles++;
     }
-
+    // Serial.print("GOT THIS SHIT ");Serial.println(index);
     return index;
 }
 
@@ -377,9 +382,15 @@ void SerialStorage::popOfflineCollection()
 void SerialStorage::processPop(String read)
 {
     popString += getPopStartIndex(read);
+    // Serial.print("GOT SOME SERIAL ");Serial.println(read);
     if (popString.endsWith("}"))
     {
-        storePayloadToSend(payloadRestorator(popString));
+        popContent pop = payloadRestorator(popString);
+        short int index = storePayloadToSend(pop);
+        if (index != INVALID) {
+            popStore[index] = pop;
+            hasPopContent = true;
+        }
         popString = "";
     }
 }
@@ -502,8 +513,6 @@ void SerialStorage::loop()
     if (!pop.equals(""))
     {
         processPop(pop);
-        Serial.println(
-            "POP PRICESSED");
     }
 
     checkPopSend();
