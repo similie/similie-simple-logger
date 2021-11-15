@@ -61,7 +61,7 @@ int SoilMoisture::setMoistureCalibration(String read)
         VWCStruct store = {1, mineral_soil, val};
         EEPROM.put(saveAddressForMoisture, store);
     }
-    multiple = val ? true : false;   //  multiple = val;
+    multiple = val ? true : false; //  multiple = val;
     return 1;
 }
 
@@ -88,10 +88,9 @@ int SoilMoisture::setMineralSoilCalibration(String read)
         VWCStruct store = {1, val, multiple};
         EEPROM.put(saveAddressForMoisture, store);
     }
-    mineral_soil = val ? true : false;   //  multiple = val;
+    mineral_soil = val ? true : false; //  multiple = val;
     return 1;
 }
-
 
 /**
  * @public
@@ -109,7 +108,7 @@ String SoilMoisture::name()
 
 float SoilMoisture::applySoilMoistureEquation(float value)
 {
-    const double MINERAL_SOIL_MULTIPLE =  multiple;// 3.879e-4; // pow(3.879, -4); //  0.0003879;
+    const double MINERAL_SOIL_MULTIPLE = multiple;                                           // 3.879e-4; // pow(3.879, -4); //  0.0003879;
     const double SOILESS_MEDIA_MULTIPLE[] = {0.0000000006771, 0.000005105, 0.01302, 10.848}; // {6.771e-10, 5.105e-6, 1.302e-2, 10.848}; // 0.00000000006771;
     if (mineral_soil)
     {
@@ -118,7 +117,7 @@ float SoilMoisture::applySoilMoistureEquation(float value)
     else
     {
         double eq = ((SOILESS_MEDIA_MULTIPLE[0] * pow(value, 3.0)) - (SOILESS_MEDIA_MULTIPLE[1] * pow(value, 2.0)) + (SOILESS_MEDIA_MULTIPLE[2] * value)) - SOILESS_MEDIA_MULTIPLE[3];
-        return roundf(eq * 100) ;
+        return roundf(eq * 100);
     }
 }
 
@@ -437,7 +436,7 @@ void SoilMoisture::setDeviceAddress()
  */
 void SoilMoisture::setFunctions()
 {
-    
+
     Particle.function("set" + this->uniqueName(), &SoilMoisture::setMoistureCalibration, this);
     Particle.function("setMinteral" + this->uniqueName(), &SoilMoisture::setMineralSoilCalibration, this);
     Particle.variable(this->uniqueName(), multiple);
@@ -502,9 +501,9 @@ size_t SoilMoisture::buffSize()
  * 
  * How many parameters are required for this device
  *
- * @return u8_t
+ * @return uint8_t
  */
-u8_t SoilMoisture::paramCount()
+uint8_t SoilMoisture::paramCount()
 {
     return PARAM_LENGTH;
 }
@@ -516,11 +515,11 @@ u8_t SoilMoisture::paramCount()
  * 
  * Number of params with invalid data
  *
- * @return u8_t
+ * @return uint8_t
  */
-u8_t SoilMoisture::matenanceCount()
+uint8_t SoilMoisture::matenanceCount()
 {
-    u8_t maintenance = this->maintenanceTick;
+    uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;
     return maintenance;
 }
@@ -595,12 +594,12 @@ void SoilMoisture::clear()
  * Called when the device manager wants to publish the content
  * 
  * @param JSONBufferWriter  &writer - the json object class
- * @param u8_t attempt_count - the number of attempts when reading made
+ * @param uint8_t attempt_count - the number of attempts when reading made
  * when reading
  *
  * @return void
  */
-void SoilMoisture::publish(JSONBufferWriter &writer, u8_t attempt_count)
+void SoilMoisture::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
     print();
     size_t MAX = readSize();

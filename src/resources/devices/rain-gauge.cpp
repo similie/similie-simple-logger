@@ -21,7 +21,7 @@ RainGauge::RainGauge(Bootstrap *boots)
  * Returns the device name
  * @return String
  */
-String RainGauge::name() 
+String RainGauge::name()
 {
     return this->deviceName;
 }
@@ -37,11 +37,11 @@ String RainGauge::name()
  */
 void RainGauge::init()
 {
-   setPin();
-   cloudFunctions();
-   setInterrupt();
-   reqestAddress();
-   pullStoredConfig();
+    setPin();
+    cloudFunctions();
+    setInterrupt();
+    reqestAddress();
+    pullStoredConfig();
 }
 
 /**
@@ -68,11 +68,12 @@ void RainGauge::read()
  * 
  * @return void
  */
-void RainGauge::publish(JSONBufferWriter &writer, u8_t attempt_count)
+void RainGauge::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
     errorCount = 0;
     double value = counts * perTipMultiple;
-    if (isnan(value)) {
+    if (isnan(value))
+    {
         errorCount = 1;
         value = NO_VALUE;
     }
@@ -91,7 +92,8 @@ void RainGauge::publish(JSONBufferWriter &writer, u8_t attempt_count)
  */
 void RainGauge::loop()
 {
-    if (interruptTrpped) {
+    if (interruptTrpped)
+    {
         counts++;
         delay(200);
         interruptTrpped = false;
@@ -123,7 +125,7 @@ void RainGauge::clear()
  */
 void RainGauge::print()
 {
-   Utils::log("RAIN_GAUGE_COUNTS", String(counts));
+    Utils::log("RAIN_GAUGE_COUNTS", String(counts));
 }
 
 /**
@@ -147,9 +149,9 @@ size_t RainGauge::buffSize()
  * 
  * Returns the number of params returned
  * 
- * @return u8_t
+ * @return uint8_t
  */
-u8_t RainGauge::paramCount()
+uint8_t RainGauge::paramCount()
 {
     return 1;
 }
@@ -161,13 +163,12 @@ u8_t RainGauge::paramCount()
  * 
  * Is the device functional
  * 
- * @return u8_t
+ * @return uint8_t
  */
-u8_t RainGauge::matenanceCount()
+uint8_t RainGauge::matenanceCount()
 {
     return errorCount;
 }
-
 
 /**
  * @public
@@ -180,17 +181,16 @@ u8_t RainGauge::matenanceCount()
 void RainGauge::restoreDefaults()
 {
     perTipMultiple = DEFAULT_TIP_SIZE;
-    if (validAddress()) {
+    if (validAddress())
+    {
         config = {1, perTipMultiple};
         EEPROM.put(eepromAddress, config);
     }
 }
 
-
 ///////////////////////
 // Privates
 ///////////////////////
-
 
 /**
  * @private
@@ -201,7 +201,7 @@ void RainGauge::restoreDefaults()
  */
 bool RainGauge::validAddress()
 {
-   return boots->doesNotExceedsMaxAddressSize(eepromAddress);
+    return boots->doesNotExceedsMaxAddressSize(eepromAddress);
 }
 
 /**
@@ -223,12 +223,13 @@ int RainGauge::setTipMultiple(String value)
     {
         return 0;
     }
-    if (validAddress()) {
-       config = {1, val};
-       EEPROM.put(eepromAddress, config);
+    if (validAddress())
+    {
+        config = {1, val};
+        EEPROM.put(eepromAddress, config);
     }
-  
-    perTipMultiple  = val;
+
+    perTipMultiple = val;
     return 1;
 }
 /**
@@ -240,11 +241,11 @@ int RainGauge::setTipMultiple(String value)
  * 
  * @return void
  */
-void RainGauge::cloudFunctions() 
+void RainGauge::cloudFunctions()
 {
- Particle.function("setTipMultiple" , &RainGauge::setTipMultiple, this);
- Particle.variable(name() + "TipMultiple", perTipMultiple);
- Particle.variable(name() + "Count", counts);
+    Particle.function("setTipMultiple", &RainGauge::setTipMultiple, this);
+    Particle.variable(name() + "TipMultiple", perTipMultiple);
+    Particle.variable(name() + "Count", counts);
 }
 /**
  * @private
@@ -270,7 +271,7 @@ void RainGauge::countChange()
  */
 void RainGauge::setInterrupt()
 {
-   attachInterrupt(RAIN_GAUGE_PIN, &RainGauge::countChange, this, RISING);
+    attachInterrupt(RAIN_GAUGE_PIN, &RainGauge::countChange, this, RISING);
 }
 /**
  * @private
@@ -283,7 +284,7 @@ void RainGauge::setInterrupt()
  */
 void RainGauge::setPin()
 {
-   pinMode(RAIN_GAUGE_PIN, INPUT_PULLDOWN);
+    pinMode(RAIN_GAUGE_PIN, INPUT_PULLDOWN);
 }
 
 /**
@@ -298,7 +299,8 @@ void RainGauge::setPin()
 void RainGauge::setPerTipMultiple()
 {
     Utils::log("CONFIGURATION_PULLED_FOR " + name(), "value: " + String(config.version) + " " + String(config.calibration));
-    if (Utils::validConfigIdentity(config.version)) {
+    if (Utils::validConfigIdentity(config.version))
+    {
         perTipMultiple = config.calibration;
     }
 }
@@ -313,11 +315,12 @@ void RainGauge::setPerTipMultiple()
  */
 void RainGauge::pullStoredConfig()
 {
- Utils::log("ADDRESS_PULLED FOR " + name(), "value: " + String(eepromAddress));
- if (validAddress()) {
-     EEPROM.get(eepromAddress, config);
-     setPerTipMultiple();
- }
+    Utils::log("ADDRESS_PULLED FOR " + name(), "value: " + String(eepromAddress));
+    if (validAddress())
+    {
+        EEPROM.get(eepromAddress, config);
+        setPerTipMultiple();
+    }
 }
 /**
  * @private
@@ -330,8 +333,5 @@ void RainGauge::pullStoredConfig()
  */
 void RainGauge::reqestAddress()
 {
-  eepromAddress = boots->registerAddress(name(), sizeof(RainGaugeStruct));
+    eepromAddress = boots->registerAddress(name(), sizeof(RainGaugeStruct));
 }
-
-
-

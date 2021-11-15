@@ -46,18 +46,18 @@ const size_t DEVICE_AGGR_COUNT = SEVEN;
 
 class DeviceManager
 {
-private: 
+private:
     SerialStorage *storage;
     bool publishBusy = false;
     bool readBusy = false;
     bool rebootEvent = false;
     void process();
-    const char * AI_DEVICE_LIST_EVENT = "Ai/Get/Devices";
+    const char *AI_DEVICE_LIST_EVENT = "Ai/Get/Devices";
     unsigned int read_count = 0;
-    u8_t attempt_count = 0;
+    uint8_t attempt_count = 0;
     Configurator config;
     void strapDevices();
-    int applyDevice(Device * device, String deviceString, bool startup);
+    int applyDevice(Device *device, String deviceString, bool startup);
     // this value is the payload values size. We capture the other
     // values at initialization from the selected devices
     size_t DEFAULT_BUFFER_SIZE = 120;
@@ -69,8 +69,8 @@ private:
     Utils utils;
     HeartBeat *blood;
     unsigned int ROTATION = 0;
-    u8_t paramsCount = 0;
-    const u8_t POP_COUNT_VALUE = 5;
+    uint8_t paramsCount = 0;
+    const uint8_t POP_COUNT_VALUE = 5;
     void resetDeviceIndex(size_t index);
     void storePayload(String payload, String topic);
     void nullifyPayload(const char *key);
@@ -85,20 +85,20 @@ private:
     void heartbeat();
     void processTimers();
     size_t getBufferSize();
-    void packagePayload(JSONBufferWriter * writer);
+    void packagePayload(JSONBufferWriter *writer);
     String devicesString[MAX_DEVICES];
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
     void setCloudFunction();
     String getTopic(bool maintenance);
-    String payloadWriter(u8_t  &maintenanceCount);
-    bool checkMaintenance(u8_t maintenanceCount);
+    String payloadWriter(uint8_t &maintenanceCount);
+    bool checkMaintenance(uint8_t maintenanceCount);
     void copyDevicesFromIndex(int index);
-    void loopCallback(Device * device);
-    void setParamsCountCallback(Device * device);
-    void restoreDefaultsCallback(Device * device);
-    void initCallback(Device * device); 
-    void clearArrayCallback(Device * device);
-    void setReadCallback(Device * device);
+    void loopCallback(Device *device);
+    void setParamsCountCallback(Device *device);
+    void restoreDefaultsCallback(Device *device);
+    void initCallback(Device *device);
+    void clearArrayCallback(Device *device);
+    void setReadCallback(Device *device);
     void buildSendInverval(int interval);
     int restoreDefaults(String read);
     void processRestoreDefaults();
@@ -118,8 +118,9 @@ private:
     int clearAllDevices(String value);
 
     void setParamsCount();
-    bool waitForTrue(bool (DeviceManager::*func)(),  DeviceManager *binding, unsigned long time);
-    void iterateDevices(void (DeviceManager::*iter) (Device * d) , DeviceManager *binding);
+    bool waitForTrue(bool (DeviceManager::*func)(), DeviceManager *binding, unsigned long time);
+    void iterateDevices(void (DeviceManager::*iter)(Device *d), DeviceManager *binding);
+
 public:
     ~DeviceManager();
     DeviceManager(Processor *processor, bool debug);
@@ -128,7 +129,7 @@ public:
     void clearArray();
     void setReadCount(unsigned int read_count);
     void loop();
-    bool recommendedMaintenace(u8_t damangeCount);
+    bool recommendedMaintenace(uint8_t damangeCount);
 };
 
 #endif

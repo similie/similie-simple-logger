@@ -15,7 +15,8 @@
 #ifndef rain_gauge_h
 #define rain_gauge_h
 
-struct RainGaugeStruct {
+struct RainGaugeStruct
+{
     uint8_t version;
     double calibration;
 };
@@ -26,7 +27,7 @@ private:
     volatile bool interruptTrpped = false;
     uint16_t eepromAddress = 0;
     int counts = 0;
-    u8_t errorCount = 0;
+    uint8_t errorCount = 0;
     double perTipMultiple = DEFAULT_TIP_SIZE; // mm
     Bootstrap *boots;
     RainGaugeStruct config;
@@ -47,20 +48,21 @@ private:
     void countChange();
     void setInterrupt();
     void reqestAddress();
+
 public:
     ~RainGauge();
     RainGauge(Bootstrap *boots);
     String name();
     void read();
     void loop();
-    u8_t matenanceCount();
-    u8_t paramCount();
+    uint8_t matenanceCount();
+    uint8_t paramCount();
     void clear();
     void print();
     size_t buffSize();
     void init();
     void restoreDefaults();
-    void publish(JSONBufferWriter &writer, u8_t attempt_count);
+    void publish(JSONBufferWriter &writer, uint8_t attempt_count);
 };
 
 #endif

@@ -14,8 +14,6 @@
 #ifndef soil_moisture_h
 #define soil_moisture_h
 
-
-
 struct VWCStruct
 {
     uint8_t version;
@@ -53,7 +51,7 @@ private:
     bool mineral_soil = MINERAL_SOIL_DEFAULT;
     bool readReady();
     size_t readSize();
-    u8_t maintenanceTick = 0;
+    uint8_t maintenanceTick = 0;
     String ourReading = "";
     String getReadContent();
     String uniqueName();
@@ -70,6 +68,7 @@ private:
     String paramName(size_t index);
     String fetchReading();
     float applySoilMoistureEquation(float value);
+
 public:
     ~SoilMoisture();
     SoilMoisture(Bootstrap *boots);
@@ -80,11 +79,11 @@ public:
     void print();
     void init();
     String name();
-    u8_t matenanceCount();
-    u8_t paramCount();
+    uint8_t matenanceCount();
+    uint8_t paramCount();
     size_t buffSize();
     void restoreDefaults();
-    void publish(JSONBufferWriter &writer, u8_t attempt_count);
+    void publish(JSONBufferWriter &writer, uint8_t attempt_count);
     float extractValue(float values[], size_t key);
     float extractValue(float values[], size_t key, size_t max);
 };

@@ -30,7 +30,7 @@ Battery::Battery()
  * Returns the device name
  * @return String
  */
-String Battery::name()  
+String Battery::name()
 {
     return deviceName;
 }
@@ -57,7 +57,7 @@ void Battery::restoreDefaults()
  * 
  * @return void
  */
-void Battery::publish(JSONBufferWriter &writer, u8_t attempt_count)
+void Battery::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
     FuelGauge fuel;
     writer.name(percentname).value(round(System.batteryCharge()));
@@ -151,9 +151,9 @@ size_t Battery::buffSize()
  * 
  * Returns the number of params returned
  * 
- * @return u8_t
+ * @return uint8_t
  */
-u8_t Battery::paramCount()
+uint8_t Battery::paramCount()
 {
     return PARAM_LENGTH;
 }
@@ -165,9 +165,9 @@ u8_t Battery::paramCount()
  * 
  * Is the device functional
  * 
- * @return u8_t
+ * @return uint8_t
  */
-u8_t Battery::matenanceCount()
+uint8_t Battery::matenanceCount()
 {
     return 0;
 }

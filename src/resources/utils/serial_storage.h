@@ -4,7 +4,6 @@
 #ifndef serial_storage_h
 #define serial_storage_h
 
-
 class SerialStorage
 {
 private:
@@ -13,11 +12,10 @@ private:
     void processPop(String value);
     String getPopStartIndex(String read);
     bool sendPopRead();
-    short int firstSpaceIndex(String value, u8_t index);
+    short int firstSpaceIndex(String value, uint8_t index);
     Processor *holdProcessor;
     Bootstrap *boots;
     String popString = "";
-
 
 public:
     ~SerialStorage();
@@ -26,7 +24,7 @@ public:
     static bool notSendingOfflineData();
     void loop();
     void storePayload(String payload, String topic);
-    void popOfflineCollection(u8_t count);
+    void popOfflineCollection(uint8_t count);
 };
 
 #endif

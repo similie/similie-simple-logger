@@ -14,23 +14,22 @@
 #ifndef wl_device_h
 #define wl_device_h
 
-#define DIG_PIN D8  // stripe blue off port1
-#define AN_PIN A1 // stripe blue line off port0
+#define DIG_PIN D8 // stripe blue off port1
+#define AN_PIN A1  // stripe blue line off port0
 
 const size_t WL_PARAM_SIZE = 1;
 
-struct WLStruct {
+struct WLStruct
+{
     uint8_t version;
     double calibration;
     char digital;
 };
 
-
-
 class WlDevice : public Device
 {
 private:
-    int readPin = -1; 
+    int readPin = -1;
     bool digital = DIGITAL_DEFAULT;
     int getPin();
     long getReadValue();
@@ -56,7 +55,7 @@ private:
     String readParams[WL_PARAM_SIZE] = {"dist"}; // river level or hydrometric level
 
     Utils utils;
-    u8_t maintenanceTick = 0;
+    uint8_t maintenanceTick = 0;
     int readWL();
     const size_t PARAM_LENGTH = sizeof(readParams) / sizeof(String);
     int VALUE_HOLD[sizeof(readParams) / sizeof(String)][Bootstrap::OVERFLOW_VAL];
@@ -83,10 +82,10 @@ public:
     void clear();
     void print();
     void init();
-    u8_t matenanceCount();
-    u8_t paramCount();
+    uint8_t matenanceCount();
+    uint8_t paramCount();
     size_t buffSize();
-    void publish(JSONBufferWriter &writer, u8_t attempt_count);
+    void publish(JSONBufferWriter &writer, uint8_t attempt_count);
 };
 
 #endif

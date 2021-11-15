@@ -392,7 +392,7 @@ String WlDevice::getParamName(size_t index)
 *
 * @return void
 */
-void WlDevice::publish(JSONBufferWriter &writer, u8_t attempt_count)
+void WlDevice::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
     for (size_t i = 0; i < PARAM_LENGTH; i++)
     {
@@ -558,9 +558,9 @@ size_t WlDevice::buffSize()
 * 
 * How many parameters are there for this device
 *
-* @return u8_t
+* @return uint8_t
 */
-u8_t WlDevice::paramCount()
+uint8_t WlDevice::paramCount()
 {
     return PARAM_LENGTH;
 }
@@ -572,11 +572,11 @@ u8_t WlDevice::paramCount()
 * 
 * How many parameters are sending valid data
 *
-* @return u8_t
+* @return uint8_t
 */
-u8_t WlDevice::matenanceCount()
+uint8_t WlDevice::matenanceCount()
 {
-    u8_t maintenance = this->maintenanceTick;
+    uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;
     return maintenance;
 }

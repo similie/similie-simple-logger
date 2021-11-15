@@ -740,8 +740,8 @@ bool Bootstrap::isBeached()
 void Bootstrap::beach()
 {
 
-    u8_t fail = 0;
-    u8_t FAIL_POINT = 4;
+    uint8_t fail = 0;
+    uint8_t FAIL_POINT = 4;
 
     int value = 0;
     char response[64] = "";

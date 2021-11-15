@@ -47,7 +47,8 @@ AllWeather::AllWeather(Bootstrap *boots, int identity)
  * 
  * @return String
  */
-String AllWeather::name() {
+String AllWeather::name()
+{
     return this->deviceName;
 }
 
@@ -106,11 +107,11 @@ float AllWeather::extractValue(float values[], size_t key)
  * together all the data that has been collected and places it in the writer object
  *  
  * @param JSONBufferWriter &writer - the json writer object
- * @param u8_t attempt_count - the number or reads attempted
+ * @param uint8_t attempt_count - the number or reads attempted
  * 
  * @return void
  */
-void AllWeather::publish(JSONBufferWriter &writer, u8_t attempt_count)
+void AllWeather::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
     // print();
     size_t MAX = readSize();
@@ -127,7 +128,8 @@ void AllWeather::publish(JSONBufferWriter &writer, u8_t attempt_count)
             param = "_FAILURE_";
         }
         float paramValue = extractValue(VALUE_HOLD[i], i, MAX);
-        if (isnan(paramValue)) {
+        if (isnan(paramValue))
+        {
             paramValue = NO_VALUE;
         }
 
@@ -160,7 +162,7 @@ bool AllWeather::readReady()
      * so we limit our read attempts
      */
     unsigned int size = boots->getReadTime() / 1000;
-    size_t skip = utils.skipMultiple(size, boots->getMaxVal() , READ_THRESHOLD);
+    size_t skip = utils.skipMultiple(size, boots->getMaxVal(), READ_THRESHOLD);
     return readAttempt >= skip;
 }
 
@@ -176,7 +178,7 @@ bool AllWeather::readReady()
 size_t AllWeather::readSize()
 {
     unsigned int size = boots->getReadTime() / 1000;
-    size_t skip = utils.skipMultiple(size, boots->getMaxVal() , READ_THRESHOLD);
+    size_t skip = utils.skipMultiple(size, boots->getMaxVal(), READ_THRESHOLD);
     size_t expand = floor(boots->getMaxVal() / skip);
     return expand;
 }
@@ -208,7 +210,7 @@ String AllWeather::serialResponseIdentity()
  */
 String AllWeather::constrictSerialIdentity()
 {
-   return utils.requestDeviceId(this->sendIdentity, serialMsgStr);
+    return utils.requestDeviceId(this->sendIdentity, serialMsgStr);
 }
 
 /**
@@ -433,7 +435,7 @@ void AllWeather::restoreDefaults()
  */
 size_t AllWeather::buffSize()
 {
-    return 250;  // 600;
+    return 250; // 600;
 }
 
 /**
@@ -445,7 +447,7 @@ size_t AllWeather::buffSize()
  * 
  * @return size_t
  */
-u8_t AllWeather::paramCount()
+uint8_t AllWeather::paramCount()
 {
     return PARAM_LENGTH;
 }
@@ -458,11 +460,11 @@ u8_t AllWeather::paramCount()
  * How many sensors appear non operational. The system will use this to 
  * determin if device is unplugged or there are a few busted sensors.
  * 
- * @return u8_t
+ * @return uint8_t
  */
-u8_t AllWeather::matenanceCount()
+uint8_t AllWeather::matenanceCount()
 {
-    u8_t maintenance = this->maintenanceTick;
+    uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;
     return maintenance;
 }

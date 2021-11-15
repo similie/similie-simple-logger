@@ -16,7 +16,7 @@ void RgbController::control(bool control)
     RGB.control(control);
 }
 
-void RgbController::color(u8_t red, u8_t green, u8_t blue)
+void RgbController::color(uint8_t red, uint8_t green, uint8_t blue)
 {
     RGB.color(red, green, blue);
 }
@@ -25,7 +25,7 @@ void RgbController::rapidFlash()
 {
 
     bool on = false;
-    u8_t i = 0;
+    uint8_t i = 0;
     while (i < RAPID_FLASH_COUNT)
     {
         if (on)
@@ -45,7 +45,7 @@ void RgbController::rapidFlash()
     RGB.brightness(OFF);
 }
 
-void RgbController::setColor(u8_t color)
+void RgbController::setColor(uint8_t color)
 {
     control(true);
     switch (color)
@@ -62,7 +62,7 @@ void RgbController::setColor(u8_t color)
     }
 }
 
-void RgbController::delayBlink(size_t durration, u8_t color)
+void RgbController::delayBlink(size_t durration, uint8_t color)
 {
     control(true);
     bool on = true;
@@ -81,7 +81,7 @@ void RgbController::delayBlink(size_t durration, u8_t color)
 
     for (size_t i = 0; i < durration; i++)
     {
-        u8_t status = on ? MAX_BRIGHT : OFF;
+        uint8_t status = on ? MAX_BRIGHT : OFF;
         on = !on;
         RGB.brightness(status);
         delay(1000);

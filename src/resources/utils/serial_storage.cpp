@@ -75,14 +75,17 @@ void SerialStorage::payloadRestorator(String payload)
         }
     }
 
-    if (newLine == INVALID) {
-     return;   
+    if (newLine == INVALID)
+    {
+        return;
     }
-    
-    Serial.print("RESTORING ");Serial.println(newLine);
+
+    Serial.print("RESTORING ");
+    Serial.println(newLine);
     short int topicIndex = firstSpaceIndex(payload, 1);
 
-    if (topicIndex != INVALID) {
+    if (topicIndex != INVALID)
+    {
         String topic = payload.substring(0, topicIndex - 2);
         String send = payload.substring(topicIndex, newLine);
         Utils::log("PAYLOAD_RESTORATION_EVENT", send);
@@ -107,8 +110,9 @@ String SerialStorage::getPopStartIndex(String read)
     if (read.startsWith("pop"))
     {
         short int startIndex = firstSpaceIndex(read, 2);
-        if (startIndex != INVALID) {
-             return read.substring(startIndex);
+        if (startIndex != INVALID)
+        {
+            return read.substring(startIndex);
         }
     }
 
@@ -122,12 +126,12 @@ String SerialStorage::getPopStartIndex(String read)
  * 
  * sends a payload over seral for storage
  * 
- * @param u8_t count
+ * @param uint8_t count
  * 
  * @return void
  * 
 */
-void SerialStorage::popOfflineCollection(u8_t count)
+void SerialStorage::popOfflineCollection(uint8_t count)
 {
     if (!boots->hasSerial())
     {
@@ -153,7 +157,7 @@ void SerialStorage::popOfflineCollection(u8_t count)
  * 
  * Ai/Post {device: me, payload: {}}
  * 
- * @param u8_t count
+ * @param uint8_t count
  * 
  * @return void
  * 
@@ -161,14 +165,16 @@ void SerialStorage::popOfflineCollection(u8_t count)
 bool SerialStorage::sendPopRead()
 {
     short int index = firstSpaceIndex(popString, 1);
-    if (index == INVALID) {
+    if (index == INVALID)
+    {
         return false;
     }
     String SEND_TO = popString.substring(0, index - 1);
     String SEND = popString.substring(index);
     Utils::log("SERIAL_POP_SEND", SEND_TO + " " + SEND);
     bool published = this->holdProcessor->publish(SEND_TO, SEND);
-    Serial.print("WHAT THE BALLS ");Serial.println(published);
+    Serial.print("WHAT THE BALLS ");
+    Serial.println(published);
     return published;
 }
 
@@ -206,15 +212,15 @@ void SerialStorage::processPop(String read)
  * Sends back the index of the first space found with a given index
  * 
  * @param String value
- * @param u8_t index - it can be an occurance of a space
+ * @param uint8_t index - it can be an occurance of a space
  * 
  * @return size_t
  * 
 */
-short int SerialStorage::firstSpaceIndex(String value, u8_t index)
+short int SerialStorage::firstSpaceIndex(String value, uint8_t index)
 {
     size_t size = value.length();
-    u8_t count = 0;
+    uint8_t count = 0;
     short int sendIndex = -1;
     for (size_t i = 0; i < size; i++)
     {
@@ -267,7 +273,7 @@ void SerialStorage::storePayload(String payload, String topic)
     size_t length = send.length();
     // there is a lot of noise this function picks up on the co-processor. I think it is related
     // with tight memory limitations with the 32u4 chip.
-    u8_t MAX_CHUNCK = 30;
+    uint8_t MAX_CHUNCK = 30;
     String push = "push ";
     if (constrained)
     {
@@ -317,7 +323,6 @@ void SerialStorage::loop()
     {
         processPop(pop);
         Serial.println(
-            "POP PRICESSED"
-        );
+            "POP PRICESSED");
     }
 }

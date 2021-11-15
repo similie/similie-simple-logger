@@ -13,6 +13,7 @@ private:
     Bootstrap *boots;
     String deviceName = "GPSDevice";
     void parseSerial(String ourReading);
+
 public:
     ~GpsDevice();
     GpsDevice();
@@ -20,14 +21,14 @@ public:
     String name();
     void read();
     void loop();
-    u8_t matenanceCount();
-    u8_t paramCount();
+    uint8_t matenanceCount();
+    uint8_t paramCount();
     void clear();
     void print();
     size_t buffSize();
     void init();
     void restoreDefaults();
-    void publish(JSONBufferWriter &writer, u8_t attempt_count);
+    void publish(JSONBufferWriter &writer, uint8_t attempt_count);
 };
 
 #endif

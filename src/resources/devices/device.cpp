@@ -5,10 +5,7 @@
  * device object, even of they provide no operational function to the working of the object. Just 
  * leave the function blank as below.
  * 
- */ 
-
-
-
+ */
 
 /**
  * @deconstructor
@@ -40,7 +37,7 @@ Device::Device()
  * 
  * @return void
  */
-void Device::publish(JSONBufferWriter &writer, u8_t attempt_count)
+void Device::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
 }
 
@@ -54,7 +51,7 @@ void Device::publish(JSONBufferWriter &writer, u8_t attempt_count)
  * @return void
  */
 void Device::restoreDefaults()
-{  
+{
 }
 
 /**
@@ -65,7 +62,7 @@ void Device::restoreDefaults()
  * Returns the device name
  * @return String
  */
-String Device::name() 
+String Device::name()
 {
     return "";
 }
@@ -77,9 +74,9 @@ String Device::name()
  * 
  * Returns the number of params returned
  * 
- * @return u8_t
+ * @return uint8_t
  */
-u8_t Device::paramCount()
+uint8_t Device::paramCount()
 {
     return 0;
 }
@@ -91,9 +88,9 @@ u8_t Device::paramCount()
  * 
  * Is the device functional
  * 
- * @return u8_t
+ * @return uint8_t
  */
-u8_t Device::matenanceCount()
+uint8_t Device::matenanceCount()
 {
     return 0;
 }

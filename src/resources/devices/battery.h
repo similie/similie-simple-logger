@@ -13,8 +13,9 @@ private:
     Bootstrap *boots;
     const char *percentname = "bat";
     const char *voltsname = "b_v";
-    const u8_t PARAM_LENGTH = 2;
+    const uint8_t PARAM_LENGTH = 2;
     String deviceName = "Battery";
+
 public:
     ~Battery();
     Battery();
@@ -25,11 +26,11 @@ public:
     void print();
     void init();
     String name();
-    u8_t matenanceCount();
-    u8_t paramCount();
+    uint8_t matenanceCount();
+    uint8_t paramCount();
     size_t buffSize();
     void restoreDefaults();
-    void publish(JSONBufferWriter &writer, u8_t attempt_count);
+    void publish(JSONBufferWriter &writer, uint8_t attempt_count);
 };
 
 #endif

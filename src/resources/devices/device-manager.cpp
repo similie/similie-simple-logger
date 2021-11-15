@@ -35,7 +35,7 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
     this->processor = processor;
     // turn on or off system logging
     Utils::setDebug(debug);
-    
+
     /**
     * Our primary method of device configuration is via the particle
     * cloud using the addDevice function. However, we can also configure
@@ -137,7 +137,7 @@ void DeviceManager::setReadCount(unsigned int read_count)
  * to the cloud nor has sensor connected.
  * @return bool - true if we should go to maintenance mode
  */
-bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
+bool DeviceManager::recommendedMaintenace(uint8_t damangeCount)
 {
     long time = Time.now();
     const long THRESHOLD = 1600000000;
@@ -145,7 +145,7 @@ bool DeviceManager::recommendedMaintenace(u8_t damangeCount)
     {
         return true;
     }
-    u8_t doubleConnt = damangeCount * 2;
+    uint8_t doubleConnt = damangeCount * 2;
     return doubleConnt >= this->paramsCount;
 }
 
@@ -490,11 +490,11 @@ void DeviceManager::packagePayload(JSONBufferWriter *writer)
  * 
  * Returns the publication topic based on maintenance count
  * 
- * @param u8_t maintenanceCount
+ * @param uint8_t maintenanceCount
  * 
  * @return bool
  */
-bool DeviceManager::checkMaintenance(u8_t maintenanceCount)
+bool DeviceManager::checkMaintenance(uint8_t maintenanceCount)
 {
     bool recommenededMainteanc = recommendedMaintenace(maintenanceCount);
     bool inMaintenance = boots.hasMaintenance();
@@ -509,7 +509,7 @@ bool DeviceManager::checkMaintenance(u8_t maintenanceCount)
  * 
  * Returns the publication topic based on maintenance count
  * 
- * @param u8_t maintenanceCount
+ * @param uint8_t maintenanceCount
  * 
  * @return String
  */
@@ -527,7 +527,7 @@ String DeviceManager::getTopic(bool maintenance)
  * 
  * @return String
  */
-String DeviceManager::payloadWriter(u8_t &maintenanceCount)
+String DeviceManager::payloadWriter(uint8_t &maintenanceCount)
 {
     char buf[getBufferSize()];
     memset(buf, 0, sizeof(buf));
@@ -570,7 +570,7 @@ void DeviceManager::publisher()
 {
     attempt_count = 0;
     read_count = 0;
-    u8_t maintenanceCount = 0;
+    uint8_t maintenanceCount = 0;
     String result = payloadWriter(maintenanceCount);
     bool maintenance = checkMaintenance(maintenanceCount);
     String topic = getTopic(maintenance);
@@ -640,7 +640,7 @@ void DeviceManager::loopCallback(Device *device)
 */
 void DeviceManager::setParamsCountCallback(Device *device)
 {
-    u8_t count = device->paramCount();
+    uint8_t count = device->paramCount();
     this->paramsCount += count;
 }
 
