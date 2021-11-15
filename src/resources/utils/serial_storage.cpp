@@ -12,6 +12,7 @@ SerialStorage::SerialStorage(Processor *holdProcessor, Bootstrap *boots)
 {
     this->holdProcessor = holdProcessor;
     this->boots = boots;
+    invalidatePopArray();
 }
 
 /** 
@@ -55,42 +56,69 @@ bool SerialStorage::notSendingOfflineData()
 /** 
  * @private 
  * 
+ * getNewLineIndex
+ * 
+ * gets the index of the last \n character
+ * 
+ * @param String payload 
+ * 
+ * @return int
+ * 
+*/
+int SerialStorage::getNewLineIndex(String payload)
+{
+    int newLine = INVALID;
+    // start at the end. It is more likely to find there
+    // Serial.print("WHAT THE HELL ");Serial.println(payload.length());
+    for (int i = payload.length() - 1; i >= 0; i--)
+    {
+        // Serial.print("INDEX ");Serial.print(i); Serial.print(" ");
+        // Serial.println(payload.charAt(i));
+        if (payload.charAt(i) == '\n' || payload.charAt(i) == '}')
+        {
+
+            newLine = payload.charAt(i) == '}' ? i + 1 : i;
+            break;
+        }
+    }
+    return newLine;
+}
+
+/** 
+ * @private 
+ * 
  * payloadRestorator
  * 
  * Preps a payload fresh off the serial bus for being sent
  * 
  * @param String payload 
  * 
- * @return void
+ * @return popContent {struct}
  * 
 */
-void SerialStorage::payloadRestorator(String payload)
+popContent SerialStorage::payloadRestorator(String payload)
 {
-    int newLine = -1;
-    for (size_t i = 0; i < payload.length(); i++)
-    {
-        if (payload.charAt(i) == '\n')
-        {
-            newLine = i;
-        }
-    }
-
+    // Serial.println("GOING BALLS DEEP");
+    int newLine = getNewLineIndex(payload);
+    popContent pop = {false};
+    // Serial.print("WHATS MY LINE ");Serial.println(newLine);
     if (newLine == INVALID)
     {
-        return;
+        return pop;
     }
 
-    Serial.print("RESTORING ");
-    Serial.println(newLine);
     short int topicIndex = firstSpaceIndex(payload, 1);
-
+    // Serial.print("WHATS MY TOPIC INDEX ");Serial.println(topicIndex);
     if (topicIndex != INVALID)
     {
-        String topic = payload.substring(0, topicIndex - 2);
+        String topic = payload.substring(0, topicIndex - 1);
         String send = payload.substring(topicIndex, newLine);
-        Utils::log("PAYLOAD_RESTORATION_EVENT", send);
-        storePayload(send, topic);
+        // Serial.print(topic);Serial.print(" ");Serial.println(send);
+        pop.valid = true;
+        pop.key = topic;
+        pop.content = send;
     }
+    return pop;
 }
 
 /** 
@@ -119,6 +147,168 @@ String SerialStorage::getPopStartIndex(String read)
     return read;
 }
 
+bool SerialStorage::sendPop(popContent content)
+{
+    String SEND_TO = content.key;
+    String SEND = content.content;
+    Utils::log("SERIAL_POP_SEND", SEND_TO + " " + SEND);
+    bool published = this->holdProcessor->publish(SEND_TO, SEND);
+    return published;
+}
+
+/** 
+ * @private 
+ * 
+ * resetPopElement
+ * 
+ * Sets a pop item to null at a specific index
+ * 
+ * @param short int index
+ * 
+*/
+
+void SerialStorage::resetPopElement(short int index)
+{
+    popContent pop = {false, "", ""};
+    popStore[index] = pop;
+}
+
+/** 
+ * @private 
+ * 
+ * checkPopSend
+ * 
+ * Checks to see if there are any valid send items
+ * 
+*/
+void SerialStorage::checkPopSend()
+{
+    unsigned long now = millis();
+    if (now - lastSend < sendWait)
+    {
+        return;
+    }
+    lastSend = now;
+
+    if (!hasPopContent)
+    {
+        return;
+    }
+
+    short int index = findValidPopIndex();
+    if (index == -1)
+    {
+        hasPopContent = false;
+        return;
+    }
+    popContent pop = popStore[index];
+    bool sent = sendPop(pop);
+    // Utils::log("SENDING_POP_ELEMENT", pop.key + " " + pop.content + " " + String(sent));
+    if (sent)
+    {
+        sendIndex = index + 1;
+    }
+    else
+    {
+        storePayload(pop.content, pop.key);
+    }
+
+    resetPopElement(index);
+}
+
+/** 
+ * @private 
+ * 
+ * invalidatePopArray
+ * 
+ * Invalidates all active pop elements
+ * 
+*/
+short int SerialStorage::findValidPopIndex()
+{
+    short int index = -1;
+    uint8_t cycles = 0;
+    uint8_t startIndex = sendIndex;
+    while (cycles < POP_COUNT_VALUE)
+    {
+        if (startIndex >= POP_COUNT_VALUE)
+        {
+            startIndex = 0;
+        }
+        popContent pop = popStore[startIndex];
+        if (pop.valid)
+        {
+            index = startIndex;
+            break;
+        }
+        startIndex++;
+        cycles++;
+    }
+    return index;
+}
+
+/** 
+ * @private 
+ * 
+ * invalidatePopArray
+ * 
+ * Invalidates all active pop elements
+ * 
+*/
+void SerialStorage::invalidatePopArray()
+{
+    for (uint8_t i = 0; i < POP_COUNT_VALUE; i++)
+    {
+        resetPopElement(i);
+    }
+    hasPopContent = false;
+}
+
+/** 
+ * @private 
+ * 
+ * storePayloadToSend
+ * 
+ * Adds the popContent to the send array
+ * 
+ * @param popContent {struct} 
+ * 
+ * @return bool
+ * 
+*/
+short int SerialStorage::storePayloadToSend(popContent content)
+{
+
+    short int index = -1;
+    // Serial.print("GHEE "); Serial.print(content.valid); Serial.print(" "); Serial.println(content.key);
+
+    if (!content.valid)
+    {
+        return index;
+    }
+
+    uint8_t cycles = 0;
+    uint8_t startIndex = sendIndex;
+    while (cycles < POP_COUNT_VALUE)
+    {
+        if (startIndex >= POP_COUNT_VALUE)
+        {
+            startIndex = 0;
+        }
+        popContent pop = popStore[startIndex];
+        // Serial.print("HEHE "); Serial.print(startIndex); Serial.print(" ");Serial.println(pop.valid);
+        if (pop.valid != true)
+        {
+            index = startIndex;
+            break;
+        }
+        startIndex++;
+        cycles++;
+    }
+    // Serial.print("GOT THIS SHIT ");Serial.println(index);
+    return index;
+}
+
 /** 
  * @public 
  * 
@@ -131,7 +321,7 @@ String SerialStorage::getPopStartIndex(String read)
  * @return void
  * 
 */
-void SerialStorage::popOfflineCollection(uint8_t count)
+void SerialStorage::popOfflineCollection()
 {
     if (!boots->hasSerial())
     {
@@ -140,43 +330,41 @@ void SerialStorage::popOfflineCollection(uint8_t count)
 
     sendingOffline = true;
     delay(100);
-    String send = "pop " + String(count);
+    String send = "pop " + String(POP_COUNT_VALUE);
     Serial1.println(send);
     Serial1.flush();
     delay(100);
     sendingOffline = false;
 }
 
-/** 
- * @private 
- * 
- * sendPopRead
- * 
- * Sends a collected payload over the processor.
- * A payload requires the to be space seperated by event payload.
- * 
- * Ai/Post {device: me, payload: {}}
- * 
- * @param uint8_t count
- * 
- * @return void
- * 
-*/
-bool SerialStorage::sendPopRead()
-{
-    short int index = firstSpaceIndex(popString, 1);
-    if (index == INVALID)
-    {
-        return false;
-    }
-    String SEND_TO = popString.substring(0, index - 1);
-    String SEND = popString.substring(index);
-    Utils::log("SERIAL_POP_SEND", SEND_TO + " " + SEND);
-    bool published = this->holdProcessor->publish(SEND_TO, SEND);
-    Serial.print("WHAT THE BALLS ");
-    Serial.println(published);
-    return published;
-}
+// /**
+//  * @private
+//  *
+//  * sendPopRead
+//  *
+//  * Sends a collected payload over the processor.
+//  * A payload requires the to be space seperated by event payload.
+//  *
+//  * Ai/Post {device: me, payload: {}}
+//  *
+//  * @return void
+//  *
+// */
+// bool SerialStorage::sendPopRead()
+// {
+//     short int index = firstSpaceIndex(popString, 1);
+//     if (index == INVALID)
+//     {
+//         return false;
+//     }
+//     // String SEND_TO = popString.substring(0, index - 1);
+//     // String SEND = popString.substring(index);
+//     // Utils::log("SERIAL_POP_SEND", SEND_TO + " " + SEND);
+//     // bool published = this->holdProcessor->publish(SEND_TO, SEND);
+//     // Serial.print("WHAT THE BALLS ");
+//     // Serial.println(published);
+//     // return published;
+// }
 
 /** 
  * @private 
@@ -194,11 +382,15 @@ bool SerialStorage::sendPopRead()
 void SerialStorage::processPop(String read)
 {
     popString += getPopStartIndex(read);
+    // Serial.print("GOT SOME SERIAL ");Serial.println(read);
     if (popString.endsWith("}"))
     {
-        if (!sendPopRead())
+        popContent pop = payloadRestorator(popString);
+        short int index = storePayloadToSend(pop);
+        if (index != INVALID)
         {
-            this->payloadRestorator(popString);
+            popStore[index] = pop;
+            hasPopContent = true;
         }
         popString = "";
     }
@@ -322,7 +514,7 @@ void SerialStorage::loop()
     if (!pop.equals(""))
     {
         processPop(pop);
-        Serial.println(
-            "POP PRICESSED");
     }
+
+    checkPopSend();
 }

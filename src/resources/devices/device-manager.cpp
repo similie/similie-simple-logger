@@ -461,7 +461,7 @@ size_t DeviceManager::getBufferSize()
  */
 void DeviceManager::popOfflineCollection()
 {
-    this->storage->popOfflineCollection(this->POP_COUNT_VALUE);
+    this->storage->popOfflineCollection();
 }
 
 /**
