@@ -10,7 +10,7 @@ private:
     const bool HAS_HEARTBEAT = true;
     /**
      * We send to different events to load balanance
-     */ 
+     */
     // const char *SEND_EVENT_NAME = "Al/Post/Red";
     // const char *SEND_EVENT_NAME = "Al/Post/White";
     const char *SEND_EVENT_NAME = "Al/Post/Blue";

@@ -4,19 +4,18 @@
  * Deconstructor
  * 
  * */
- Configurator::~Configurator()
- {
-
- }
+Configurator::~Configurator()
+{
+}
 /**
  * Constructor
  * 
  * */
- Configurator::Configurator()
- {
- }
+Configurator::Configurator()
+{
+}
 
- /**
+/**
  * @public
  * 
  * noIdentity
@@ -35,16 +34,17 @@ bool Configurator::noIdentity(String configurationStore[], int index)
     String identity = configurationStore[DEVICE_IDENTITY_INDEX];
     bool noIdentity = identity.equals("");
     // these are device that don't need a config param
-    if (noIdentity && (index == rain_gauge || index == gps_device || index == battery )) {
+    if (noIdentity && (index == rain_gauge || index == gps_device || index == battery))
+    {
         noIdentity = false;
-    } else {
+    }
+    else
+    {
         int number = parseIdentity(identity);
         noIdentity = isnan(number);
     }
     return noIdentity;
 }
-
-
 
 /**
  * @public
@@ -60,27 +60,29 @@ bool Configurator::noIdentity(String configurationStore[], int index)
  * 
  * 
  */
- bool Configurator::violatesOccurances(String value, int occrances)
- {
+bool Configurator::violatesOccurances(String value, int occrances)
+{
     int index = getEnumIndex(value);
-    switch(index) 
+    switch (index)
     {
-        case all_weather:
-            return occrances > 1;
-        case soil_moisture:
-            return occrances > 2;
-        case rain_gauge:
-            return occrances > 1;
-        case gps_device:
-            return occrances > 1;
-        case battery:
-            return occrances > 1;
-        case sonic_sensor:
-            return false;
-        default:
-            return false;
+    case all_weather:
+        return occrances > 1;
+    case soil_moisture:
+        return occrances > 2;
+    case rain_gauge:
+        return occrances > 1;
+    case gps_device:
+        return occrances > 1;
+    case battery:
+        return occrances > 1;
+    case sonic_sensor:
+        return false;
+    case flow_meter:
+        return false;
+    default:
+        return false;
     }
- }
+}
 
 /**
  * @public
@@ -100,23 +102,28 @@ void Configurator::loadConfigurationStorage(String payload, String configuration
 {
     size_t j = 0;
     uint8_t i = 0;
-    String value = ""; 
-    while (j < payload.length() && i < size) {
+    String value = "";
+    while (j < payload.length() && i < size)
+    {
         char c = payload.charAt(j);
-        if (c == ':') {
+        if (c == ':')
+        {
             configurationStore[i] = value;
             value = "";
             i++;
-        } else {
+        }
+        else
+        {
             value += String(c);
         }
-        
+
         j++;
     }
-    if (i < size) {
+    if (i < size)
+    {
         configurationStore[i] = value;
     }
-    Utils::log("CONFIGURATION_DEFINITION FOR " , payload);
+    Utils::log("CONFIGURATION_DEFINITION FOR ", payload);
 }
 
 /**
@@ -133,7 +140,7 @@ void Configurator::loadConfigurationStorage(String payload, String configuration
  */
 int Configurator::getEnumIndex(String value)
 {
-  return Utils::containsValue(devicesAvaliable, CURRENT_DEVICES_COUNT, value);
+    return Utils::containsValue(devicesAvaliable, CURRENT_DEVICES_COUNT, value);
 }
 
 /**
@@ -149,14 +156,13 @@ int Configurator::getEnumIndex(String value)
  * @return Device *
  * 
  */
-Device * Configurator::addDevice(String payload, Bootstrap * boots)
+Device *Configurator::addDevice(String payload, Bootstrap *boots)
 {
     Utils::log("ADDING_DEVICE", payload);
     String configurationStore[CONFIG_STORAGE_MAX];
     loadConfigurationStorage(payload, configurationStore, CONFIG_STORAGE_MAX);
     return pullDeviceType(configurationStore, boots);
 }
-
 
 /**
  * @private
@@ -188,36 +194,56 @@ int Configurator::parseIdentity(String value)
  * @return Device *
  * 
  */
-Device * Configurator::pullDeviceType(String configurationStore[], Bootstrap * boots)
+Device *Configurator::pullDeviceType(String configurationStore[], Bootstrap *boots)
 {
     int index = getEnumIndex(configurationStore[DEVICE_NAME_INDEX]);
 
-    if (index == -1 || noIdentity(configurationStore, index)) {
+    if (index == -1 || noIdentity(configurationStore, index))
+    {
         return NULL;
     }
 
-    switch(index) 
+    switch (index)
     {
-        case all_weather:
-            return new AllWeather(boots, 
-                parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
-        case soil_moisture:
-            return new SoilMoisture(boots, 
-                parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]) );
-        case rain_gauge:
-            return new RainGauge(boots);
-        case gps_device:
-            return new GpsDevice();
-        case battery:
-            return new Battery();
-        case sonic_sensor:
-            if (!configurationStore[DEVICE_PIN_INDEX].equals("")) {
-                return new WlDevice(boots, 
-                    parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]) , 
-                    parseIdentity(configurationStore[DEVICE_PIN_INDEX]));
-            }
-            return new WlDevice(boots, parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]) );
-        default:
-            return NULL;
+    case all_weather:
+        return new AllWeather(boots,
+                              parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
+    case soil_moisture:
+        return new SoilMoisture(boots,
+                                parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
+    case rain_gauge:
+        return new RainGauge(boots);
+    case gps_device:
+        return new GpsDevice();
+    case battery:
+        return new Battery();
+    case sonic_sensor:
+        if (!configurationStore[DEVICE_PIN_INDEX].equals(""))
+        {
+            return new WlDevice(boots,
+                                parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]),
+                                parseIdentity(configurationStore[DEVICE_PIN_INDEX]));
+        }
+        else if (configurationStore[DEVICE_IDENTITY_INDEX].equals(""))
+        {
+            return new WlDevice(boots,
+                                parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
+        }
+        return new WlDevice(boots);
+    case flow_meter:
+        if (!configurationStore[DEVICE_PIN_INDEX].equals(""))
+        {
+            return new FlowMeter(boots,
+                                 parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]),
+                                 parseIdentity(configurationStore[DEVICE_PIN_INDEX]));
+        }
+        else if (configurationStore[DEVICE_IDENTITY_INDEX].equals(""))
+        {
+            return new FlowMeter(boots,
+                                 parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
+        }
+        return new FlowMeter(boots);
+    default:
+        return NULL;
     }
 }
