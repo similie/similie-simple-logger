@@ -62,8 +62,9 @@ private:
     bool readCompile = false;
     bool readReady();
     size_t readSize();
-    String deviceName  = "AllWeather";
-    u8_t maintenanceTick = 0;
+
+    String deviceName = "AllWeather";
+    u_int8_t maintenanceTick = 0;
     String ourReading = "";
     String getReadContent();
     bool hasSerialIdentity();
@@ -77,6 +78,7 @@ private:
     size_t readAttempt = 0;
     int sendIdentity = -1;
     String fetchReading();
+
 public:
     ~AllWeather();
     AllWeather(Bootstrap *boots);
@@ -88,11 +90,11 @@ public:
     void init();
     String name();
     void nullifyPayload(const char *key);
-    u8_t matenanceCount();
-    u8_t paramCount();
+    u_int8_t matenanceCount();
+    u_int8_t paramCount();
     size_t buffSize();
     void restoreDefaults();
-    void publish(JSONBufferWriter &writer, u8_t attempt_count);
+    void publish(JSONBufferWriter &writer, u_int8_t attempt_count);
     float extractValue(float values[], size_t key);
     float extractValue(float values[], size_t key, size_t max);
 };

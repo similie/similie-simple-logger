@@ -3,4 +3,5 @@ target
 .vscode
 *.bin
 lib/*
+!lib/Adafruit-VC0706-Serial-Camera
 src/SimilieLogger.cpp

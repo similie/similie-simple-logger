@@ -8,10 +8,11 @@
 #include "resources/devices/gps-device.h"
 #include "resources/devices/battery.h"
 #include "resources/devices/flow-meter.h"
+#include "resources/devices/video-capture.h"
 #include "utils.h"
 
 #define CONFIG_STORAGE_MAX 5
-#define CURRENT_DEVICES_COUNT 7
+#define CURRENT_DEVICES_COUNT 8
 
 #define DEVICE_NAME_INDEX 0
 #define DEVICE_IDENTITY_INDEX 1
@@ -25,7 +26,7 @@
 class Configurator
 {
 private:
-    String devicesAvaliable[CURRENT_DEVICES_COUNT] = {"all_weather", "soil_moisture", "rain_gauge", "gps", "battery", "sonic_sensor", "flow_meter"};
+    String devicesAvaliable[CURRENT_DEVICES_COUNT] = {"all_weather", "soil_moisture", "rain_gauge", "gps", "battery", "sonic_sensor", "flow_meter", "video_capture"};
     enum
     {
         all_weather,
@@ -35,6 +36,7 @@ private:
         battery,
         sonic_sensor,
         flow_meter,
+        video_capture
     };
     Device *pullDeviceType(String configurationStore[], Bootstrap *boots);
     bool applyDevice(Device *d);

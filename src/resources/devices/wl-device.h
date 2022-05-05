@@ -6,7 +6,7 @@
 #include "resources/utils/utils.h"
 #include "math.h"
 
-#define DIGITAL_DEFAULT false
+#define DIGITAL_DEFAULT true
 
 #define DEF_DISTANCE_READ_DIG_CALIBRATION 0.01724137931
 #define DEF_DISTANCE_READ_AN_CALIBRATION 0.335
@@ -14,7 +14,7 @@
 #ifndef wl_device_h
 #define wl_device_h
 
-#define DIG_PIN D8 // stripe blue off port1
+#define DIG_PIN D3 //  blue off port3
 #define AN_PIN A1  // stripe blue line off port0
 
 const size_t WL_PARAM_SIZE = 1;
@@ -50,8 +50,8 @@ private:
     Bootstrap *boots;
     String deviceName = "wl";
     int sendIdentity = -1;
-    //String readParams[WL_PARAM_SIZE] = {"wl_pw", "hydrometric_level"};
-    // String readParams[WL_PARAM_SIZE] = {"wl_pw"}; // water tank  or wl
+    // String readParams[WL_PARAM_SIZE] = {"wl_pw", "hydrometric_level"};
+    //  String readParams[WL_PARAM_SIZE] = {"wl_pw"}; // water tank  or wl
     String readParams[WL_PARAM_SIZE] = {"dist"}; // river level or hydrometric level
 
     Utils utils;
@@ -64,7 +64,7 @@ private:
     {
         // wl_pw
         hydrometric_level
-        //wl_cm
+        // wl_cm
     };
 
 public:

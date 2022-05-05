@@ -1,10 +1,10 @@
 #include "utils.h"
 
-static bool debugValue = false; 
+static bool debugValue = false;
 
 /**
-* @deconstructor
-*/
+ * @deconstructor
+ */
 Utils::~Utils()
 {
 }
@@ -17,18 +17,40 @@ Utils::Utils()
 }
 
 /**
- * @public 
- * 
- * parseCloudFunctionDouble
- * 
+ * @public
+ *
+ * parseCloudFunctionInteger
+ *
  * Parses a string into a double. Used for parse cloud functions
  * that are a string into the double value
- * 
+ *
  * @param String value - the cloud value
  * @param String name - the name of the device requesting
- * 
+ *
+ * @return int
+ *
+ */
+int Utils::parseCloudFunctionInteger(String value, String name)
+{
+    const char *stringCal = value.c_str();
+    double val = ::atoi(stringCal);
+    Utils::log("SETTING_CALIBRATION_" + name, "value: " + String(stringCal));
+    return val;
+}
+
+/**
+ * @public
+ *
+ * parseCloudFunctionDouble
+ *
+ * Parses a string into a double. Used for parse cloud functions
+ * that are a string into the double value
+ *
+ * @param String value - the cloud value
+ * @param String name - the name of the device requesting
+ *
  * @return double
- * 
+ *
  */
 double Utils::parseCloudFunctionDouble(String value, String name)
 {
@@ -39,18 +61,18 @@ double Utils::parseCloudFunctionDouble(String value, String name)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * requestDeviceId
- * 
+ *
  * Returns a concatenated String that contains the request identity, and
  * command intended over the serial bus
- * 
+ *
  * @param int identity - devices specific identity
  * @param String name - the command being sent over the serial bus
- * 
+ *
  * @return String
- * 
+ *
  */
 String Utils::requestDeviceId(int identity, String cmd)
 {
@@ -58,17 +80,17 @@ String Utils::requestDeviceId(int identity, String cmd)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * receiveDeviceId
- * 
+ *
  * Applies the request identity for pulled data off a serialbus
  * for devices with assinged an identity.
- * 
+ *
  * @param int identity - devices specific identity
- * 
- * @return String 
- * 
+ *
+ * @return String
+ *
  */
 String Utils::receiveDeviceId(int identity)
 {
@@ -76,17 +98,17 @@ String Utils::receiveDeviceId(int identity)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * serialMesssageHasError
- * 
+ *
  * Checks to see if there is an error on the serial bus for a specific device
- * 
+ *
  * @param String message - the message off the serial bus
  * @param int identity - devices specific identity
- * 
+ *
  * @return String
- * 
+ *
  */
 bool Utils::serialMesssageHasError(String message, int identity)
 {
@@ -101,16 +123,16 @@ bool Utils::serialMesssageHasError(String message, int identity)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * hasSerialIdentity
- * 
+ *
  * Checks an ID to see if has been registered with a value greater than -1 (default)
  *
  * @param int identity - devices specific identity
- * 
+ *
  * @return bool
- * 
+ *
  */
 bool Utils::hasSerialIdentity(int identity)
 {
@@ -118,17 +140,17 @@ bool Utils::hasSerialIdentity(int identity)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * inValidMessageString
- * 
+ *
  * Checks to see if a serial payload is valid for storage
  *
  * @param String message - the message off the serial bus
  * @param int identity - devices specific identity
- * 
+ *
  * @return bool
- * 
+ *
  */
 bool Utils::inValidMessageString(String message, int identity)
 {
@@ -138,14 +160,14 @@ bool Utils::inValidMessageString(String message, int identity)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * getTimePadding
- * 
+ *
  * Prefixes milliseconds with zero values for 10 bytes. Used in logging
- * 
+ *
  * @return String - the milliseconds since boot padded with zeros
- * 
+ *
  */
 String getTimePadding()
 {
@@ -161,14 +183,14 @@ String getTimePadding()
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * validConfigIdentity
- * 
+ *
  * All stored config should have a param version set to 1
- * 
- * @return uint8_t identity - the version value of the config 
- * 
+ *
+ * @return uint8_t identity - the version value of the config
+ *
  */
 bool Utils::validConfigIdentity(uint8_t identity)
 {
@@ -176,20 +198,20 @@ bool Utils::validConfigIdentity(uint8_t identity)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * log
- * 
+ *
  * Logs messages to the console
- * 
+ *
  * @todo Use a template variant to accept parameters other
  * than a String value
- * 
+ *
  * @param String event - the context for the logging
  * @param String message - the actual message
- * 
+ *
  * @return void
- * 
+ *
  */
 // template<typename T>
 void Utils::log(String event, String message)
@@ -209,21 +231,21 @@ void Utils::log(String event, String message)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * log
- * 
+ *
  * Wrapper to log with error code
- * 
+ *
  * @todo Use a template variant to accept parameters other
  * than a String value
- * 
+ *
  * @param String event - the context for the logging
  * @param String message - the actual message
  * @param int errorCode - any code you want to slip in
- * 
+ *
  * @return int
- * 
+ *
  */
 int Utils::log(String event, String message, int errorCode)
 {
@@ -232,15 +254,15 @@ int Utils::log(String event, String message, int errorCode)
 }
 
 /**
-* @private public
-*
-* machineName
-*
-* converts a string to an long for searachble
-* EEPROM storage
-* @param String name - the device name
-* @return unsigned long 
-*/
+ * @private public
+ *
+ * machineName
+ *
+ * converts a string to an long for searachble
+ * EEPROM storage
+ * @param String name - the device name
+ * @return unsigned long
+ */
 unsigned long Utils::machineName(String name, bool unique)
 {
     unsigned long manchineName = 0;
@@ -254,33 +276,33 @@ unsigned long Utils::machineName(String name, bool unique)
 }
 
 /**
-* @private public
-*
-* machineNameDirect
-*
-* converts a string to an long for searachble
-* EEPROM storage
-* @param String name - the device name
-* @param byte * restore
-*
-* @return unsigned long 
-*/
-void Utils::machineNameDirect(String name, byte * save)
+ * @private public
+ *
+ * machineNameDirect
+ *
+ * converts a string to an long for searachble
+ * EEPROM storage
+ * @param String name - the device name
+ * @param byte * restore
+ *
+ * @return unsigned long
+ */
+void Utils::machineNameDirect(String name, byte *save)
 {
     name.getBytes(save, name.length() + 1);
 }
 
 /**
-* @private public
-*
-* machineToReadableName
-* 
-* Reverts manchine name values back to a string 
-* 
-* @param byte * restore
-* @return String 
-*/
-String Utils::machineToReadableName(byte * restore)
+ * @private public
+ *
+ * machineToReadableName
+ *
+ * Reverts manchine name values back to a string
+ *
+ * @param byte * restore
+ * @return String
+ */
+String Utils::machineToReadableName(byte *restore)
 {
     String send = "";
 
@@ -289,7 +311,7 @@ String Utils::machineToReadableName(byte * restore)
     while (b != 0 && i < DEVICE_BYTE_BUFFER_SIZE)
     {
         b = restore[i];
-        
+
         char c = (char)b;
         send += String(c);
         i++;
@@ -299,18 +321,18 @@ String Utils::machineToReadableName(byte * restore)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * containsValue
- * 
+ *
  * Does the array contain a specifig string value
- * 
+ *
  * @param String arr[] - the array
  * @param size_t size - array size
  * @param String value - the value to search
- * 
+ *
  * @return bool
- * 
+ *
  */
 int Utils::containsValue(String arr[], size_t size, String value)
 {
@@ -328,19 +350,19 @@ int Utils::containsValue(String arr[], size_t size, String value)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * parseSerial
- * 
+ *
  * Parses serial strings sent over the serial bus for Meter SDI-12 devices
- * 
+ *
  * @param String ourReading - the serial details
  * @param size_t paramLength - the number of parameters to parse
  * @param size_t max - the max value for the valuehold array
  * @param float value_hold[][Bootstrap::OVERFLOW_VAL] - a multi-dimentional array holding the values
- * 
+ *
  * @return void
- * 
+ *
  */
 void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float value_hold[][Bootstrap::OVERFLOW_VAL])
 {
@@ -389,19 +411,19 @@ void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * skipMultiple
- * 
+ *
  * Some devices don't want or cant process a read on every interval. This sets values
  * where a read is acceptable
- * 
+ *
  * @param unsigned int size - the size requested from a 15 interval
  * @param size_t maxVal - the max interval, normally 15
  * @param unsigned int threshold - max to do in a given interval
- * 
- * @return size_t 
- * 
+ *
+ * @return size_t
+ *
  */
 size_t Utils::skipMultiple(unsigned int size, size_t maxVal, unsigned int threshold)
 {
@@ -420,21 +442,21 @@ size_t Utils::skipMultiple(unsigned int size, size_t maxVal, unsigned int thresh
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * simCallback
- * 
- * Callback function used during beach mode to talk to the sym. 
- * 
+ *
+ * Callback function used during beach mode to talk to the sym.
+ *
  * @todo add functionality
- * 
+ *
  * @param int type
  * @param const char *buf
  * @param int len
  * @param char *value
- * 
- * @return size_t 
- * 
+ *
+ * @return size_t
+ *
  */
 int Utils::simCallback(int type, const char *buf, int len, char *value)
 {
@@ -451,15 +473,15 @@ int Utils::simCallback(int type, const char *buf, int len, char *value)
 }
 
 /**
- * @public 
- * 
- * connected
- * 
- * Wraps system functions to check of the system is online
- * 
+ * @public
  *
- * @return bool 
- * 
+ * connected
+ *
+ * Wraps system functions to check of the system is online
+ *
+ *
+ * @return bool
+ *
  */
 bool Utils::connected()
 {
@@ -467,17 +489,17 @@ bool Utils::connected()
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * getSum
- * 
+ *
  * Sums all values in a float array
- * 
+ *
  * @param float values[] - the values to sum
  * @param size_t MAX - the size of the array to scan
  *
- * @return float 
- * 
+ * @return float
+ *
  */
 float Utils::getSum(float values[], size_t MAX)
 {
@@ -515,17 +537,17 @@ float Utils::getSum(float values[], size_t MAX)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * getMax
- * 
+ *
  * Gets the max value of an array
- * 
+ *
  * @param float values[] - the values to sum
  * @param size_t MAX - the size of the array to scan
  *
- * @return float 
- * 
+ * @return float
+ *
  */
 float Utils::getMax(float values[], size_t MAX)
 {
@@ -546,18 +568,18 @@ float Utils::getMax(float values[], size_t MAX)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * getMedian
- * 
+ *
  * Get the middle value or the value toward the zero index
  * this is not a NO_VALUE
- * 
+ *
  * @param float values[] - the values to sum
  * @param size_t MAX - the size of the array to scan
  *
- * @return float 
- * 
+ * @return float
+ *
  */
 float Utils::getMedian(float arr[], size_t max)
 {
@@ -573,17 +595,17 @@ float Utils::getMedian(float arr[], size_t max)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * containsChar
- * 
+ *
  * Does the String contain a specific character
- * 
+ *
  * @param char c - the character
  * @param String readFrom - the read string
  *
- * @return bool 
- * 
+ * @return bool
+ *
  */
 bool Utils::containsChar(char c, String readFrom)
 {
@@ -601,20 +623,20 @@ bool Utils::containsChar(char c, String readFrom)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * invalidNumber
- * 
+ *
  * Is the string an invalid number representation
- * 
+ *
  * @param String value - the read string
  *
- * @return bool 
- * 
+ * @return bool
+ *
  */
 bool Utils::invalidNumber(String value)
 {
-    //value.charAt(j)
+    // value.charAt(j)
     bool invalid = false;
     for (uint16_t i = 0; i < value.length(); i++)
     {
@@ -630,19 +652,19 @@ bool Utils::invalidNumber(String value)
 }
 
 /**
-* @public
-* 
-* shift
-* 
-* Helper fuction that inserts an element in asscending order into
-* the sorted array where we can our median value
-* @param float value - the value to be inserted 
-* @param size_t index - the index where to insert;
-* @param float arr[] - the array to insert into     
-* @param size_t size - size of the array
-*
-* @return void;
-*/
+ * @public
+ *
+ * shift
+ *
+ * Helper fuction that inserts an element in asscending order into
+ * the sorted array where we can our median value
+ * @param float value - the value to be inserted
+ * @param size_t index - the index where to insert;
+ * @param float arr[] - the array to insert into
+ * @param size_t size - size of the array
+ *
+ * @return void;
+ */
 void Utils::shift(float value, size_t index, float arr[], size_t size)
 {
 
@@ -665,19 +687,19 @@ void Utils::shift(float value, size_t index, float arr[], size_t size)
 }
 
 /**
-* @public
-*
-* shift 
-*
-* Helper fuction that inserts an element in asscending order into
-* the sorted array where we can our median value
-* @param int value - the value to be inserted 
-* @param size_t index - the index where to insert;
-* @param int arr[] - the array to insert into     
-* @param size_t size - size of the array
-*
-* @return void;
-*/
+ * @public
+ *
+ * shift
+ *
+ * Helper fuction that inserts an element in asscending order into
+ * the sorted array where we can our median value
+ * @param int value - the value to be inserted
+ * @param size_t index - the index where to insert;
+ * @param int arr[] - the array to insert into
+ * @param size_t size - size of the array
+ *
+ * @return void;
+ */
 void Utils::shift(int value, size_t index, int arr[], size_t size)
 {
 
@@ -700,19 +722,19 @@ void Utils::shift(int value, size_t index, int arr[], size_t size)
 }
 
 /**
-* @public
-*
-* shift 
-*
-* Helper fuction that inserts an element in asscending order into
-* the sorted array where we can our median value
-* @param long value - the value to be inserted 
-* @param size_t index - the index where to insert;
-* @param long arr[] - the array to insert into     
-* @param size_t size - size of the array
-*
-* @return void;
-*/
+ * @public
+ *
+ * shift
+ *
+ * Helper fuction that inserts an element in asscending order into
+ * the sorted array where we can our median value
+ * @param long value - the value to be inserted
+ * @param size_t index - the index where to insert;
+ * @param long arr[] - the array to insert into
+ * @param size_t size - size of the array
+ *
+ * @return void;
+ */
 void Utils::shift(long value, size_t index, long arr[], size_t size)
 {
 
@@ -735,18 +757,18 @@ void Utils::shift(long value, size_t index, long arr[], size_t size)
 }
 
 /**
-* @public
-*
-* insertValue 
-*
-* Insert a value into a multidimentional array in sorted order
-*
-* @param float value - the value to be inserted 
-* @param int param - the enum value that represents the param
-* @param size_t size - the size of the array
-*
-* @return void;
-*/
+ * @public
+ *
+ * insertValue
+ *
+ * Insert a value into a multidimentional array in sorted order
+ *
+ * @param float value - the value to be inserted
+ * @param int param - the enum value that represents the param
+ * @param size_t size - the size of the array
+ *
+ * @return void;
+ */
 void Utils::insertValue(float value, float arr[], size_t size)
 {
     size_t index = 0;
@@ -762,19 +784,19 @@ void Utils::insertValue(float value, float arr[], size_t size)
 }
 
 /**
-* @public
-* 
-* insertValue  
-*
-* Insert a value into a multidimentional array in sorted order
-*
-*
-* @param int value - the value to be inserted 
-* @param int param - the enum value that represents the param
-* @param size_t size - the size of the array
-*
-* @return void;
-*/
+ * @public
+ *
+ * insertValue
+ *
+ * Insert a value into a multidimentional array in sorted order
+ *
+ *
+ * @param int value - the value to be inserted
+ * @param int param - the enum value that represents the param
+ * @param size_t size - the size of the array
+ *
+ * @return void;
+ */
 void Utils::insertValue(long value, long arr[], size_t size)
 {
     size_t index = 0;
@@ -790,19 +812,19 @@ void Utils::insertValue(long value, long arr[], size_t size)
 }
 
 /**
-* @public
-* 
-* insertValue  
-*
-* Insert a value into a multidimentional array in sorted order
-*
-*
-* @param int value - the value to be inserted 
-* @param int param - the enum value that represents the param
-* @param size_t size - the size of the array
-*
-* @return void;
-*/
+ * @public
+ *
+ * insertValue
+ *
+ * Insert a value into a multidimentional array in sorted order
+ *
+ *
+ * @param int value - the value to be inserted
+ * @param int param - the enum value that represents the param
+ * @param size_t size - the size of the array
+ *
+ * @return void;
+ */
 void Utils::insertValue(int value, int arr[], size_t size)
 {
     size_t index = 0;
@@ -817,20 +839,19 @@ void Utils::insertValue(int value, int arr[], size_t size)
     shift(value, index, arr, size);
 }
 
-
 /**
- * @public 
- * 
+ * @public
+ *
  * getMedian
- * 
+ *
  * Get the middle value or the value toward the zero index
  * this is not a NO_VALUE
- * 
+ *
  * @param long readparam - the expected max value
  * @param long arr[] - the array of values
- * 
+ *
  * @return long
- * 
+ *
  */
 long Utils::getMedian(long readparam, long arr[])
 {
@@ -845,20 +866,19 @@ long Utils::getMedian(long readparam, long arr[])
     return value;
 }
 
-
 /**
- * @public 
- * 
+ * @public
+ *
  * getMedian
- * 
+ *
  * Get the middle value or the value toward the zero index
  * this is not a NO_VALUE
- * 
+ *
  * @param int readparam - the expected max value
  * @param int arr[] - the array of values
- * 
+ *
  * @return int
- * 
+ *
  */
 int Utils::getMedian(int readparam, int arr[])
 {
@@ -875,15 +895,15 @@ int Utils::getMedian(int readparam, int arr[])
 
 /**
  * @public
- * 
- * stringConvert 
- * 
+ *
+ * stringConvert
+ *
  * converts string to a char *
  *
- * @param: String value - to be converted 
- * 
- * @return const * char 
- * 
+ * @param: String value - to be converted
+ *
+ * @return const * char
+ *
  */
 const char *Utils::stringConvert(String value)
 {
@@ -892,13 +912,13 @@ const char *Utils::stringConvert(String value)
 
 /**
  * @public
- * 
- * reboot 
- * 
+ *
+ * reboot
+ *
  * Wrapper to reboot the system
- * 
+ *
  * @return void
- * 
+ *
  */
 void Utils::reboot()
 {
@@ -906,18 +926,17 @@ void Utils::reboot()
     System.reset();
 }
 
-
 /**
  * @public
- * 
+ *
  * setDebug
- * 
+ *
  * turns on and off system logging
- * 
+ *
  * @return void
- * 
+ *
  */
 void Utils::setDebug(bool debug)
-{   
+{
     debugValue = debug;
 }

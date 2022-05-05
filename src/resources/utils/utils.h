@@ -6,16 +6,15 @@
 #ifndef Utils_h
 #define Utils_h
 
-
 class Utils
 {
 private:
-    
 public:
     ~Utils();
     Utils();
     static void reboot();
     static double parseCloudFunctionDouble(String value, String name);
+    static int parseCloudFunctionInteger(String value, String name);
     static void setDebug(bool debug);
     bool hasSerialIdentity(int identity);
     bool inValidMessageString(String message, int identity);
@@ -23,7 +22,7 @@ public:
     String requestDeviceId(int identity, String cmd);
     bool serialMesssageHasError(String message, int identity);
     String receiveDeviceId(int identity);
-    void parseSerial(String ourReading, size_t paramLength, size_t max, float  value_hold[][Bootstrap::OVERFLOW_VAL]);
+    void parseSerial(String ourReading, size_t paramLength, size_t max, float value_hold[][Bootstrap::OVERFLOW_VAL]);
     bool invalidNumber(String value);
     bool containsChar(char c, String readFrom);
     const char *stringConvert(String value);
@@ -39,14 +38,14 @@ public:
     float getMedian(float arr[], size_t max);
     long getMedian(long readparam, long arr[]);
     static bool connected();
-    static void machineNameDirect(String name, byte * save);
-    static String machineToReadableName(byte * restore);
+    static void machineNameDirect(String name, byte *save);
+    static String machineToReadableName(byte *restore);
     static unsigned long machineName(String name, bool unique);
     static int containsValue(String arr[], size_t size, String value);
     // template<typename T>
     static void log(String event, String message);
     static int log(String event, String message, int errorCode);
-    size_t skipMultiple(unsigned int size, size_t maxVal , unsigned int threshold);
+    size_t skipMultiple(unsigned int size, size_t maxVal, unsigned int threshold);
     static int simCallback(int type, const char *buf, int len, char *value);
 };
 

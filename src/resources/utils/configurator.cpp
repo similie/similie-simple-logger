@@ -2,14 +2,14 @@
 
 /**
  * Deconstructor
- * 
+ *
  * */
 Configurator::~Configurator()
 {
 }
 /**
  * Constructor
- * 
+ *
  * */
 Configurator::Configurator()
 {
@@ -17,17 +17,17 @@ Configurator::Configurator()
 
 /**
  * @public
- * 
+ *
  * noIdentity
- * 
+ *
  * Checks to see if the payload comes without an identity of if that is
  * required
- * 
+ *
  * @param String configurationStore
  * @param int index - the enum index
- * 
+ *
  * @return Device *
- * 
+ *
  */
 bool Configurator::noIdentity(String configurationStore[], int index)
 {
@@ -48,17 +48,17 @@ bool Configurator::noIdentity(String configurationStore[], int index)
 
 /**
  * @public
- * 
+ *
  * violagesOccurances
- * 
+ *
  * We only want a certain number of specific devices attached
- * 
+ *
  * @param String value
  * @param int occurances
- * 
+ *
  * @return bool - does it violate
- * 
- * 
+ *
+ *
  */
 bool Configurator::violatesOccurances(String value, int occrances)
 {
@@ -79,6 +79,8 @@ bool Configurator::violatesOccurances(String value, int occrances)
         return false;
     case flow_meter:
         return false;
+    case video_capture:
+        return occrances > 1;
     default:
         return false;
     }
@@ -86,17 +88,17 @@ bool Configurator::violatesOccurances(String value, int occrances)
 
 /**
  * @public
- * 
+ *
  * loadConfigurationStorage
- * 
+ *
  * Pulls device from the String representation
- * 
+ *
  * @param String payload
  * @param String configurationStore
- * 
+ *
  * @return Device *
- * 
- * 
+ *
+ *
  */
 void Configurator::loadConfigurationStorage(String payload, String configurationStore[], size_t size)
 {
@@ -128,15 +130,15 @@ void Configurator::loadConfigurationStorage(String payload, String configuration
 
 /**
  * @public
- * 
+ *
  * getEnumIndex
- * 
+ *
  * Gets the index of the device enum
- * 
+ *
  * @param String value
- * 
+ *
  * @return int - index of the enum
- * 
+ *
  */
 int Configurator::getEnumIndex(String value)
 {
@@ -145,16 +147,16 @@ int Configurator::getEnumIndex(String value)
 
 /**
  * @public
- * 
+ *
  * addDevice
- * 
+ *
  * Gets the device from configuration string
- * 
+ *
  * @param String payload
  * @param Bootstrap * boots
- * 
+ *
  * @return Device *
- * 
+ *
  */
 Device *Configurator::addDevice(String payload, Bootstrap *boots)
 {
@@ -166,15 +168,15 @@ Device *Configurator::addDevice(String payload, Bootstrap *boots)
 
 /**
  * @private
- * 
+ *
  * parseIdentity
- * 
+ *
  * Gets the integer value from the string
- * 
+ *
  * @param String payload
- * 
+ *
  * @return int
- * 
+ *
  */
 int Configurator::parseIdentity(String value)
 {
@@ -183,16 +185,16 @@ int Configurator::parseIdentity(String value)
 
 /**
  * @private
- * 
+ *
  * pullDeviceType
- * 
+ *
  * Pulls device from the String representation by iterating the device enum
- * 
+ *
  * @param String configurationStore[]
  * @param Bootstrap * boots
- * 
+ *
  * @return Device *
- * 
+ *
  */
 Device *Configurator::pullDeviceType(String configurationStore[], Bootstrap *boots)
 {
@@ -243,6 +245,8 @@ Device *Configurator::pullDeviceType(String configurationStore[], Bootstrap *boo
                                  parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
         }
         return new FlowMeter(boots);
+    case video_capture:
+        return new VideoCapture(boots);
     default:
         return NULL;
     }
