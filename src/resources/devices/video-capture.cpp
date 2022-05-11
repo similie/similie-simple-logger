@@ -156,7 +156,7 @@ void VideoCapture::print()
 
 void VideoCapture::cloudFunctions()
 {
-    Particle.function("setSendOffset", &VideoCapture::setOffsetMultiple, this);
+    Particle.function(name() + "SetSendOffset", &VideoCapture::setOffsetMultiple, this);
     Particle.variable(name() + "SendOffset", offset);
 }
 
@@ -199,19 +199,22 @@ bool VideoCapture::setupCamera()
 {
     cam.begin();
     cam.setImageSize(VC0706_640x480);
+    bool ready = false;
     // Print out the camera version information (optional)
     version = cam.getVersion();
     if (version == 0)
     {
         Utils::log("CAMERA_ACTIVATION_FALURE" + name(), "Failed to get version");
-        cameraReady = false;
+        //  cameraReady = false;
     }
     else
     {
         Utils::log("CAMERA_ACTIVATION" + name(), String(version));
-        cameraReady = true;
+        // cameraReady = true;
+        ready = true;
     }
-    return cameraReady;
+    return ready;
+    // return cameraReady;
 }
 
 bool VideoCapture::isConnected()
@@ -243,22 +246,29 @@ bool VideoCapture::shotStartUp()
 bool VideoCapture::takeShot()
 {
 
-    if (!cameraReady)
+    on();
+
+    if (!setupCamera())
     {
-        if (!setupCamera())
-        {
-            return false;
-        }
+        return off();
     }
+
+    // if (!cameraReady)
+    // {
+    //     if (!setupCamera())
+    //     {
+    //         return off();
+    //     }
+    // }
 
     if (!shotStartUp())
     {
-        return false;
+        return off();
     }
 
     if (!snapPhoto())
     {
-        return false;
+        return off();
     }
 
     if (!transmitImageData())
@@ -268,7 +278,21 @@ bool VideoCapture::takeShot()
     disconnect();
     reset();
 
+    off();
+
     return true;
+}
+
+bool VideoCapture::on()
+{
+    relay.on();
+    delay(1000);
+    return true;
+}
+
+bool VideoCapture::off()
+{
+    return relay.off();
 }
 
 bool VideoCapture::snapPhoto()

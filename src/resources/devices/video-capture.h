@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <Adafruit_VC0706.h>
 #include "device.h"
+#include "relay.h"
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/processors/Processor.h"
 
@@ -22,6 +23,7 @@ class VideoCapture : public Device
 private:
     VideoCaptureStruct config;
     uint16_t eepromAddress = 0;
+    Relay relay = Relay(D7);
     Adafruit_VC0706 cam = Adafruit_VC0706(&Serial1);
     TCPClient client;
     Bootstrap *boots;
@@ -56,6 +58,8 @@ private:
     bool transmitImageData();
     bool readySend();
     void reset();
+    bool on();
+    bool off();
 
 public:
     ~VideoCapture();
