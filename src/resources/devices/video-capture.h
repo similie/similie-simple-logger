@@ -35,7 +35,7 @@ private:
     u_int8_t offsetCount = 0;
     void cloudFunctions();
     void pullStoredConfig();
-    void reqestAddress();
+    void requestAddress();
     bool validAddress();
     void setOffsetValue();
     int setOffsetMultiple(String value);

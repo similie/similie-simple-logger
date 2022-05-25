@@ -172,8 +172,9 @@ void VideoCapture::cloudFunctions()
 void VideoCapture::init()
 {
     cloudFunctions();
-    reqestAddress();
+    requestAddress();
     pullStoredConfig();
+    relay.init();
 }
 /**
  * @public
@@ -199,22 +200,20 @@ bool VideoCapture::setupCamera()
 {
     cam.begin();
     cam.setImageSize(VC0706_640x480);
-    bool ready = false;
     // Print out the camera version information (optional)
+    delay(200);
     version = cam.getVersion();
     if (version == 0)
     {
-        Utils::log("CAMERA_ACTIVATION_FALURE" + name(), "Failed to get version");
-        //  cameraReady = false;
+        Utils::log("CAMERA_ACTIVATION_FALURE " + name(), "Failed to get version");
+        cameraReady = false;
     }
     else
     {
-        Utils::log("CAMERA_ACTIVATION" + name(), String(version));
-        // cameraReady = true;
-        ready = true;
+        Utils::log("CAMERA_ACTIVATION " + name(), String(version));
+        cameraReady = true;
     }
-    return ready;
-    // return cameraReady;
+    return cameraReady;
 }
 
 bool VideoCapture::isConnected()
@@ -246,20 +245,10 @@ bool VideoCapture::shotStartUp()
 bool VideoCapture::takeShot()
 {
 
-    on();
-
-    if (!setupCamera())
+    if (!on())
     {
         return off();
     }
-
-    // if (!cameraReady)
-    // {
-    //     if (!setupCamera())
-    //     {
-    //         return off();
-    //     }
-    // }
 
     if (!shotStartUp())
     {
@@ -273,21 +262,22 @@ bool VideoCapture::takeShot()
 
     if (!transmitImageData())
     {
-        return false;
+        return off();
     }
+
     disconnect();
     reset();
 
-    off();
-
-    return true;
+    return !off();
 }
 
 bool VideoCapture::on()
 {
     relay.on();
+
     delay(1000);
-    return true;
+
+    return setupCamera();
 }
 
 bool VideoCapture::off()
@@ -471,13 +461,13 @@ void VideoCapture::pullStoredConfig()
 /**
  * @private
  *
- * reqestAddress
+ * requestAddress
  *
  * Gets the EEPROM Address
  *
  * @return void
  */
-void VideoCapture::reqestAddress()
+void VideoCapture::requestAddress()
 {
     eepromAddress = boots->registerAddress(name(), sizeof(VideoCaptureStruct));
 }

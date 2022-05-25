@@ -7,14 +7,11 @@
 #include "math.h"
 
 #define DIGITAL_DEFAULT true
-
 #define DEF_DISTANCE_READ_DIG_CALIBRATION 0.01724137931
 #define DEF_DISTANCE_READ_AN_CALIBRATION 0.335
-
 #ifndef wl_device_h
 #define wl_device_h
-
-#define DIG_PIN D3 //  blue off port3
+#define DIG_PIN D6 // D3  blue off port3
 #define AN_PIN A1  // stripe blue line off port0
 
 const size_t WL_PARAM_SIZE = 1;
@@ -24,6 +21,7 @@ struct WLStruct
     uint8_t version;
     double calibration;
     char digital;
+    // int pin;
 };
 
 class WlDevice : public Device
