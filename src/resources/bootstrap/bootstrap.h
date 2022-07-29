@@ -1,5 +1,6 @@
 #include "Particle.h"
 #include "string.h"
+#include "resources/utils/sleeper.h"
 
 #define DEVICE_BYTE_BUFFER_SIZE 48
 #ifndef bootstrap_h
@@ -17,22 +18,25 @@
 
 #define MAX_SEND_TIME 15
 #define SERIAL_BUFFER_LENGTH 5
-#define SERIAL_COMMS_BAUD  76800 //9600
+#define SERIAL_COMMS_BAUD 76800 // 9600
 
 #define MAX_U16 65535
 #define MAX_EEPROM_ADDRESS 8197
 
-struct DeviceConfig {
+struct DeviceConfig
+{
     uint8_t version;
     byte device[DEVICE_BYTE_BUFFER_SIZE];
 };
 
-struct DeviceMetaStruct {
+struct DeviceMetaStruct
+{
     uint8_t version;
     uint8_t count;
 };
 
-struct DeviceStruct {
+struct DeviceStruct
+{
     uint8_t version;
     uint16_t size;
     unsigned long name;
@@ -44,6 +48,7 @@ struct EpromStruct
 {
     uint8_t version;
     uint8_t pub;
+    double sleep;
 };
 
 struct BeachStruct
@@ -56,7 +61,8 @@ class Bootstrap
 {
 private:
     bool wantsSerial = false;
-    enum {
+    enum
+    {
         MO_SAMD_21G18,
         FW_32u4
     };
@@ -68,19 +74,23 @@ private:
     void addNewDeviceToStructure(DeviceStruct device);
     bool bootstrapped = false;
     uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
+    double batterySleepThresholdValue = 0;
     int publishedInterval = DEFAULT_PUB_INTERVAL;
     String processorName = "";
     // unsigned long machineName(String name);
     void collectDevices();
     void setFunctions();
     int setMaintenanceMode(String read);
-     // we can use 255 to know the index is invalid as 0 is a valid index
+    int setBatterySleepThreshold(String read);
+    void sendBatteryValueToConfig(double val);
+    // we can use 255 to know the index is invalid as 0 is a valid index
     void pingSerialComms();
     void pingPong();
-    int maxAddressIndex();   
+    int maxAddressIndex();
+    Sleeper sleep;
     DeviceMetaStruct deviceMeta;
     DeviceStruct devices[MAX_DEVICES];
-    DeviceStruct getDeviceByName(String name,  uint16_t size);
+    DeviceStruct getDeviceByName(String name, uint16_t size);
     void saveDeviceMetaDetails();
     uint16_t getNextDeviceAddress();
     uint16_t deviceInitAddress();
@@ -98,7 +108,7 @@ private:
     const unsigned int BEACH_LISTEN_TIME = 240 * MILISECOND;
     uint8_t beachCount();
     const uint8_t BEACHED_THRSHOLD = 5;
-    
+
     bool strappingTimers = false;
     size_t serial_buffer_length = SERIAL_BUFFER_LENGTH;
     String serial_buffer[SERIAL_BUFFER_LENGTH];
@@ -107,7 +117,7 @@ private:
     bool checkHasId();
     void serialInit();
     size_t indexCounter(size_t startIndex);
-    bool isCorrectIdentity(String identity, size_t index) ;
+    bool isCorrectIdentity(String identity, size_t index);
     void storeSerialContent();
     int serialBuilder();
     void processSerial();
@@ -118,17 +128,18 @@ private:
     uint16_t deviceMetaAdresses[MAX_DEVICES];
     uint16_t deviceConfigAdresses[MAX_DEVICES];
     // BEACH Storage
-    static const uint16_t BEACH_ADDRESS = sizeof(EpromStruct) + 8;  
+    static const uint16_t BEACH_ADDRESS = sizeof(EpromStruct) + 8;
     // Device Meta Storage
-    const uint16_t DEVICE_META_ADDRESS = BEACH_ADDRESS  + sizeof(BeachStruct) + 8;
+    const uint16_t DEVICE_META_ADDRESS = BEACH_ADDRESS + sizeof(BeachStruct) + 8;
     // Stores count details
     const uint16_t DEVICE_CONFIG_STORAGE_META_ADDRESS = DEVICE_META_ADDRESS + sizeof(DeviceMetaStruct) + 8;
     // Device Type Storage
-    const uint16_t DEVICE_HOLD_ADDRESS = DEVICE_CONFIG_STORAGE_META_ADDRESS  + (sizeof(DeviceStruct) * MAX_DEVICES)  +  (MAX_DEVICES + 2) + 8;
+    const uint16_t DEVICE_HOLD_ADDRESS = DEVICE_CONFIG_STORAGE_META_ADDRESS + (sizeof(DeviceStruct) * MAX_DEVICES) + (MAX_DEVICES + 2) + 8;
     // Now the storage for the specific devices
-    const uint16_t DEVICE_SPECIFIC_CONFIG_ADDRESS = DEVICE_HOLD_ADDRESS + ((sizeof(DeviceConfig) + 4) * MAX_DEVICES)  +  (MAX_DEVICES + 2); 
+    const uint16_t DEVICE_SPECIFIC_CONFIG_ADDRESS = DEVICE_HOLD_ADDRESS + ((sizeof(DeviceConfig) + 4) * MAX_DEVICES) + (MAX_DEVICES + 2);
     // in case we have to manually issue an address on first come first serve.
-    uint16_t manualDeviceTracker = DEVICE_SPECIFIC_CONFIG_ADDRESS;  
+    uint16_t manualDeviceTracker = DEVICE_SPECIFIC_CONFIG_ADDRESS;
+
 public:
     ~Bootstrap();
     void timers();
@@ -138,7 +149,7 @@ public:
     String getProcessorName();
     bool isCoProcessorMemoryConstrained();
     bool doesNotExceedsMaxAddressSize(uint16_t address);
-    void strapDevices(String * devices);
+    void strapDevices(String *devices);
     void storeDevice(String device, int index);
     void clearDeviceConfigArray();
     void haultPublication();
@@ -151,6 +162,7 @@ public:
     void setCalibration(double val);
     void setDigital(bool digital);
     void buildSendInterval(int interval);
+    void buildSleepThreshold(double sleepThreshold);
     void setMaintenance(bool maintain);
     bool hasMaintenance();
     bool publishTimerFunc();
@@ -162,7 +174,7 @@ public:
     unsigned int getReadTime();
     unsigned int getPublishTime();
     void startSerial();
-    
+
     String fetchSerial(String identity);
     uint16_t registerAddress(String name, uint16_t size);
     static size_t epromSize();

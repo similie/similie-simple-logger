@@ -62,13 +62,15 @@
     @brief Class for communicating with VC0706 cameras
 */
 /**************************************************************************/
-class Adafruit_VC0706 {
+class Adafruit_VC0706
+{
 public:
 #if defined(__AVR__) || defined(ESP8266)
   Adafruit_VC0706(SoftwareSerial *ser); // Constructor when using SoftwareSerial
 #endif
   Adafruit_VC0706(HardwareSerial *ser); // Constructor when using HardwareSerial
   boolean begin(uint32_t baud = 38400);
+  boolean end();
   boolean reset(void);
   boolean TVon(void);
   boolean TVoff(void);

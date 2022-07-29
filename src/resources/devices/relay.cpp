@@ -32,15 +32,25 @@ Relay::Relay(int pin)
     init();
 }
 
+/**
+ * @constructor
+ */
+Relay::Relay(int pin, bool invert)
+{
+    this->pin = pin;
+    this->invert = invert;
+    init();
+}
+
 bool Relay::on()
 {
-    digitalWrite(pin, HIGH);
+    digitalWrite(pin, POW_ON);
     return true;
 }
 
 bool Relay::off()
 {
-    digitalWrite(pin, LOW);
+    digitalWrite(pin, POW_OFF);
     return false;
 }
 
@@ -163,6 +173,12 @@ void Relay::print()
 {
 }
 
+void Relay::buildOutputs()
+{
+    POW_ON = invert ? LOW : HIGH;
+    POW_OFF = invert ? HIGH : LOW;
+}
+
 /**
  * @public
  *
@@ -174,8 +190,9 @@ void Relay::print()
  */
 void Relay::init()
 {
+    buildOutputs();
     pinMode(pin, OUTPUT);
-    digitalWrite(pin, LOW);
+    digitalWrite(pin, POW_OFF);
 }
 /**
  * @public

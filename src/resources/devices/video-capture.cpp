@@ -196,13 +196,32 @@ bool VideoCapture::readySend()
     return offsetCount % (u_int8_t)offset == 0;
 }
 
-bool VideoCapture::setupCamera()
+char *VideoCapture::getVersion()
 {
     cam.begin();
+    delay(200);
+
+    for (u_int8_t i = 0; i < VERSION_CHECK; i++)
+    {
+        char *checkedVersion = cam.getVersion();
+        Serial.print("CHECKING VERSION AND SHIT");
+        Serial.println(checkedVersion);
+        if (checkedVersion != 0)
+        {
+            return checkedVersion;
+        }
+        delay(200);
+    }
+    return 0;
+}
+
+bool VideoCapture::setupCamera()
+{
+    // delay(5000);
     cam.setImageSize(VC0706_640x480);
     // Print out the camera version information (optional)
     delay(200);
-    version = cam.getVersion();
+    version = getVersion(); // cam.getVersion();
     if (version == 0)
     {
         Utils::log("CAMERA_ACTIVATION_FALURE " + name(), "Failed to get version");
@@ -274,14 +293,15 @@ bool VideoCapture::takeShot()
 bool VideoCapture::on()
 {
     relay.on();
-
     delay(1000);
-
+    cam.begin();
+    delay(200);
     return setupCamera();
 }
 
 bool VideoCapture::off()
 {
+    cam.end();
     return relay.off();
 }
 

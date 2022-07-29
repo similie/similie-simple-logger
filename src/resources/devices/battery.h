@@ -15,6 +15,7 @@ private:
     const char *voltsname = "b_v";
     const uint8_t PARAM_LENGTH = 2;
     String deviceName = "Battery";
+    FuelGauge fuel;
 
 public:
     ~Battery();
@@ -30,6 +31,9 @@ public:
     uint8_t paramCount();
     size_t buffSize();
     void restoreDefaults();
+    float getVCell();
+    float getNormalizedSoC();
+    inline float batteryCharge();
     void publish(JSONBufferWriter &writer, uint8_t attempt_count);
 };
 

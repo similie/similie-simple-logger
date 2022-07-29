@@ -13,12 +13,17 @@ class Relay : Device
 private:
     Bootstrap *boots;
     int pin = DEFAULT_RELAY_PIN;
+    bool invert = false;
+    u8_t POW_ON = invert ? LOW : HIGH;
+    u8_t POW_OFF = invert ? HIGH : LOW;
+    void buildOutputs();
 
 public:
     ~Relay();
     Relay();
     Relay(Bootstrap *boots);
     Relay(int pin);
+    Relay(int pin, bool invert);
     String name();
     void read();
     void loop();
