@@ -201,7 +201,9 @@ bool Sleeper::needsSleep()
  */
 bool Sleeper::goodNight()
 {
-    waitForTrue(&Sleeper::cryForHelp, this, 1000);
+    waitForTrue(&Sleeper::cryForHelp, this, 10000);
+    // doens't seem to consistently send of we don't apply the delay
+    delay(2000);
     Utils::log("SLEEP_THRESHOLD_VOLTAGE_VIOLATED", "VALUE:: " + String(threshold));
     System.sleep(sleepConfig());
     return true;
@@ -286,20 +288,23 @@ bool Sleeper::waitForTrue(bool (Sleeper::*func)(), Sleeper *binding, unsigned lo
 
 String Sleeper::getHelpMessage()
 {
-    char buf[100];
+    char buf[150];
     memset(buf, 0, sizeof(buf));
     JSONBufferWriter writer(buf, sizeof(buf) - 1);
     writer.beginObject();
     writer.name("device").value(System.deviceID());
     writer.name("threshold").value(threshold);
     writer.name("volts").value(getVCell());
+    writer.name("date").value(Time.timeStr());
+    writer.name("for").value(getDuration() / HOUR_BASE);
     writer.endObject();
     return String(buf);
 }
 /**
  * @public
  *
- * publish
+ * cryForHelp
+ * @todo: get the processor instance so that way we can
  *
  * Sends the payload over the network
  *
