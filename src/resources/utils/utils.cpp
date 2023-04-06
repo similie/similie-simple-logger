@@ -349,6 +349,62 @@ int Utils::containsValue(String arr[], size_t size, String value)
     return has;
 }
 
+int Utils::getIndexOf(String key, String arr[], size_t paramLength)
+{
+    for (size_t i = 0; i < paramLength; i++)
+    {
+        if (arr[i].equals(key))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void Utils::parseSplitReadSerial(String ourReading, size_t paramLength, size_t max, String nameMap[], float value_hold[][Bootstrap::OVERFLOW_VAL])
+{
+    size_t j = 1;
+    String param = "";
+    for (size_t i = 0; i < ourReading.length(); i++)
+    {
+        j = i;
+        char c = ourReading.charAt(i);
+        if (c == ',')
+        {
+            continue;
+        }
+        else if (c == '=')
+        {
+            j++;
+            String buff = "";
+            char d = ourReading.charAt(j);
+            while (d != ',' && d != '\n' && d != '\0')
+            {
+                buff += String(d);
+                j++;
+                d = ourReading.charAt(j);
+            }
+
+            if (this->invalidNumber(buff))
+            {
+                buff = "9999";
+            }
+            i = j;
+            float value = buff.toInt();
+            int index = Utils::getIndexOf(param, nameMap, paramLength);
+            param = "";
+            if (index > -1)
+            {
+                this->insertValue(value, value_hold[index], max);
+            }
+        }
+        else
+        {
+            param += String(c);
+        }
+    }
+}
+
 /**
  * @public
  *

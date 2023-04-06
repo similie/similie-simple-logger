@@ -23,6 +23,7 @@ public:
     bool serialMesssageHasError(String message, int identity);
     String receiveDeviceId(int identity);
     void parseSerial(String ourReading, size_t paramLength, size_t max, float value_hold[][Bootstrap::OVERFLOW_VAL]);
+    void parseSplitReadSerial(String ourReading, size_t paramLength, size_t max, String nameMap[], float value_hold[][Bootstrap::OVERFLOW_VAL]);
     bool invalidNumber(String value);
     bool containsChar(char c, String readFrom);
     const char *stringConvert(String value);
@@ -42,6 +43,7 @@ public:
     static String machineToReadableName(byte *restore);
     static unsigned long machineName(String name, bool unique);
     static int containsValue(String arr[], size_t size, String value);
+    static int getIndexOf(String, String arr[], size_t);
     // template<typename T>
     static void log(String event, String message);
     static int log(String event, String message, int errorCode);

@@ -1,20 +1,19 @@
-#include "all-weather.h"
+#include "rika-airquality.h"
 /**
  * @description
  *
- * Works the Atmos 41 all-in-one weather sensor from Meter.
- * https://www.metergroup.com/environment/products/atmos-41-weather-station/
+ * Works with Rika air quality sensors
+ * https://www.rikasensor.com/
  *
- * Since particle does not support SDI-12, we use a 32u4/SAMD co-processor.
+ * We use a 32u4/SAMD co-processor.
  * https://www.adafruit.com/product/2796
- * The source code we use can be found: https://github.com/similie/sdi12-allweather-interface
  *
  */
 
 /**
  * deconstructor
  */
-AllWeather::~AllWeather()
+RikaAirQuality::~RikaAirQuality()
 {
 }
 
@@ -22,20 +21,9 @@ AllWeather::~AllWeather()
  * default constructor
  * @param Bootstrap boots - bootstrap object
  */
-AllWeather::AllWeather(Bootstrap *boots)
+RikaAirQuality::RikaAirQuality(Bootstrap *boots)
 {
     this->boots = boots;
-}
-
-/**
- * constructor
- * @param Bootstrap boots - bootstrap object
- * @param int identity - numerical value used to idenify the device
- */
-AllWeather::AllWeather(Bootstrap *boots, int identity)
-{
-    this->boots = boots;
-    this->sendIdentity = identity;
 }
 
 /**
@@ -47,7 +35,7 @@ AllWeather::AllWeather(Bootstrap *boots, int identity)
  *
  * @return String
  */
-String AllWeather::name()
+String RikaAirQuality::name()
 {
     return this->deviceName;
 }
@@ -65,18 +53,16 @@ String AllWeather::name()
  *
  * @return float
  */
-float AllWeather::extractValue(float values[], size_t key, size_t max)
+float RikaAirQuality::extractValue(float values[], size_t key, size_t max)
 {
+
     switch (key)
     {
-    case gust_wind_speed:
-    case strike_distance:
-        return utils.getMax(values, max);
-    case precipitation:
-    case strikes:
-        return utils.getSum(values, max);
-    default:
+    case pm2_5:
+    case pm10:
         return utils.getMedian(values, max);
+    default:
+        return utils.getMedian(values, max) / 10;
     }
 }
 
@@ -92,7 +78,7 @@ float AllWeather::extractValue(float values[], size_t key, size_t max)
  *
  * @return float
  */
-float AllWeather::extractValue(float values[], size_t key)
+float RikaAirQuality::extractValue(float values[], size_t key)
 {
     size_t MAX = readSize();
     return extractValue(values, key, MAX);
@@ -111,16 +97,12 @@ float AllWeather::extractValue(float values[], size_t key)
  *
  * @return void
  */
-void AllWeather::publish(JSONBufferWriter &writer, uint8_t attempt_count)
+void RikaAirQuality::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
     // print();
     size_t MAX = readSize();
-    for (size_t i = 0; i < AllWeather::PARAM_LENGTH; i++)
+    for (size_t i = 0; i < RikaAirQuality::PARAM_LENGTH; i++)
     {
-        if (i == null_val)
-        {
-            continue;
-        }
         String param = valueMap[i];
         // set the param as having failed
         if (param.equals(NULL) || param.equals(" ") || param.equals(""))
@@ -151,7 +133,7 @@ void AllWeather::publish(JSONBufferWriter &writer, uint8_t attempt_count)
  *
  * @return bool
  */
-bool AllWeather::readReady()
+bool RikaAirQuality::readReady()
 {
     if (!waitFor(SerialStorage::notSendingOfflineData, 1000))
     {
@@ -175,7 +157,7 @@ bool AllWeather::readReady()
  *
  * @return size_t
  */
-size_t AllWeather::readSize()
+size_t RikaAirQuality::readSize()
 {
     unsigned int size = boots->getReadTime() / 1000;
     size_t skip = utils.skipMultiple(size, boots->getMaxVal(), READ_THRESHOLD);
@@ -193,43 +175,23 @@ size_t AllWeather::readSize()
  *
  * @return String
  */
-String AllWeather::serialResponseIdentity()
+String RikaAirQuality::serialResponseIdentity()
 {
-    return utils.receiveDeviceId(this->sendIdentity);
-}
-
-/**
- * @public
- *
- * constrictSerialIdentity
- *
- * Returns a request identity based on a given send identity along with
- * the serial command the system is requiring for seralized requests.
- *
- * @return String
- */
-String AllWeather::constrictSerialIdentity()
-{
-    return utils.requestDeviceId(this->sendIdentity, serialMsgStr);
+    return this->REQUEST_TAG;
 }
 
 /**
  * @private
  *
- * constrictSerialIdentity
+ * getReadContent
  *
  * Returns a request string for serial requests
  *
  * @return String
  */
-String AllWeather::getReadContent()
+String RikaAirQuality::getReadContent()
 {
-    if (this->hasSerialIdentity())
-    {
-        return constrictSerialIdentity();
-    }
-
-    return serialMsgStr;
+    return serialResponseIdentity();
 }
 
 /**
@@ -242,7 +204,7 @@ String AllWeather::getReadContent()
  *
  * @return String
  */
-String AllWeather::fetchReading()
+String RikaAirQuality::fetchReading()
 {
     if (!readCompile)
     {
@@ -260,7 +222,7 @@ String AllWeather::fetchReading()
  *
  * @return void
  */
-void AllWeather::read()
+void RikaAirQuality::read()
 {
     readAttempt++;
     if (!readReady())
@@ -283,7 +245,7 @@ void AllWeather::read()
  *
  * @return void
  */
-void AllWeather::loop()
+void RikaAirQuality::loop()
 {
     String completedSerialItem = boots->fetchSerial(this->serialResponseIdentity());
     if (!completedSerialItem.equals(""))
@@ -301,30 +263,15 @@ void AllWeather::loop()
  *
  * @return void
  */
-void AllWeather::clear()
+void RikaAirQuality::clear()
 {
-    for (size_t i = 0; i < AllWeather::PARAM_LENGTH; i++)
+    for (size_t i = 0; i < RikaAirQuality::PARAM_LENGTH; i++)
     {
         for (size_t j = 0; j < boots->getMaxVal(); j++)
         {
             VALUE_HOLD[i][j] = NO_VALUE;
         }
     }
-}
-
-/**
- * @private
- *
- * clear
- *
- * Has a specific serial numerical identity. An ID of -1 indicates
- * There is no ID specified in the constructor.
- *
- * @return bool
- */
-bool AllWeather::hasSerialIdentity()
-{
-    return utils.hasSerialIdentity(this->sendIdentity);
 }
 
 /**
@@ -338,12 +285,8 @@ bool AllWeather::hasSerialIdentity()
  *
  * @return bool
  */
-String AllWeather::replaceSerialResponceItem(String message)
+String RikaAirQuality::replaceSerialResponceItem(String message)
 {
-    if (!this->hasSerialIdentity())
-    {
-        return message;
-    }
     String replaced = message.replace(this->serialResponseIdentity() + " ", "");
     return replaced;
 }
@@ -360,16 +303,18 @@ String AllWeather::replaceSerialResponceItem(String message)
  *
  * @return bool
  */
-void AllWeather::parseSerial(String ourReading)
+void RikaAirQuality::parseSerial(String ourReading)
 {
-    if (utils.inValidMessageString(ourReading, this->sendIdentity))
+
+    if (ourReading.startsWith(serialResponseIdentity()))
     {
-        return Utils::log("ALL_WEATHER_MESSAGE", "Invalid Message String");
+        return Utils::log("RIKA_AIR_QUALITY", "Invalid Message String");
     }
 
     ourReading = replaceSerialResponceItem(ourReading);
     readCompile = true;
-    utils.parseSerial(ourReading, PARAM_LENGTH, boots->getMaxVal(), VALUE_HOLD);
+    // @here
+    utils.parseSplitReadSerial(ourReading, PARAM_LENGTH, boots->getMaxVal(), valueMap, VALUE_HOLD);
     readCompile = false;
 }
 
@@ -384,7 +329,7 @@ void AllWeather::parseSerial(String ourReading)
  *
  * @return void
  */
-void AllWeather::print()
+void RikaAirQuality::print()
 {
     for (size_t i = 0; i < PARAM_LENGTH; i++)
     {
@@ -405,7 +350,7 @@ void AllWeather::print()
  *
  * @return void
  */
-void AllWeather::init()
+void RikaAirQuality::init()
 {
     boots->startSerial();
 }
@@ -420,7 +365,7 @@ void AllWeather::init()
  *
  * @return void
  */
-void AllWeather::restoreDefaults()
+void RikaAirQuality::restoreDefaults()
 {
 }
 
@@ -433,7 +378,7 @@ void AllWeather::restoreDefaults()
  *
  * @return size_t
  */
-size_t AllWeather::buffSize()
+size_t RikaAirQuality::buffSize()
 {
     return 250; // 600;
 }
@@ -447,7 +392,7 @@ size_t AllWeather::buffSize()
  *
  * @return size_t
  */
-uint8_t AllWeather::paramCount()
+uint8_t RikaAirQuality::paramCount()
 {
     return PARAM_LENGTH;
 }
@@ -462,7 +407,7 @@ uint8_t AllWeather::paramCount()
  *
  * @return uint8_t
  */
-uint8_t AllWeather::matenanceCount()
+uint8_t RikaAirQuality::matenanceCount()
 {
     uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;
