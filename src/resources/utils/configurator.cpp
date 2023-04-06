@@ -247,6 +247,8 @@ Device *Configurator::pullDeviceType(String configurationStore[], Bootstrap *boo
         return new FlowMeter(boots);
     case video_capture:
         return new VideoCapture(boots);
+    case rika_airquality:
+        return new RikaAirQuality(boots);
     default:
         return NULL;
     }
