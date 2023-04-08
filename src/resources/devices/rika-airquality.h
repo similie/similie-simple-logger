@@ -17,12 +17,12 @@ class RikaAirQuality : public Device
 {
 private:
     String valueMap[RIKA_MAX_PARAM_SIZE] =
-        {"temp", "hum", "pressure", "pm2_5", "pm10", "o3", "ch4", "co2", "no2", "so2"};
+        {"temp", "hum", "press", "pm2_5", "pm10", "o3", "ch4", "co2", "no2", "so2"};
     enum
     {
         temp,
         hum,
-        pressure,
+        press,
         pm2_5,
         pm10,
         o3,

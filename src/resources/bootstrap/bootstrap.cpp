@@ -959,6 +959,10 @@ int Bootstrap::serialBuilder()
     {
         char inChar = Serial1.read();
         // Serial.print(inChar);
+        if (inChar > 127)
+        {
+            continue;
+        }
         if (inChar == '\n' || inChar == '\0')
         {
             return 1;

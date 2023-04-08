@@ -306,7 +306,7 @@ String RikaAirQuality::replaceSerialResponceItem(String message)
 void RikaAirQuality::parseSerial(String ourReading)
 {
 
-    if (ourReading.startsWith(serialResponseIdentity()))
+    if (!ourReading.startsWith(serialResponseIdentity()))
     {
         return Utils::log("RIKA_AIR_QUALITY", "Invalid Message String");
     }
