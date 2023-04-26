@@ -86,7 +86,6 @@ void FlowMeter::loop()
 
 void FlowMeter::clear()
 {
-    //  Serial.println("THIS SHIT IS SO CLEAR");
     // pulseCount = 0;
     // flowRate = 0.0;
     // flowMilliLitres = 0;
@@ -171,11 +170,11 @@ void FlowMeter::setConfiguration()
 
 /**
  * @private
- * 
+ *
  * getPin
- * 
+ *
  * Gets the configured pin
- * 
+ *
  * @return int
  */
 int FlowMeter::getPin()
@@ -189,8 +188,8 @@ void FlowMeter::setLifeTimeFlow()
 }
 
 /**
- * 
- * 
+ *
+ *
  */
 void FlowMeter::setInterrupt()
 {
@@ -284,14 +283,14 @@ void FlowMeter::removeInterrupt()
 }
 
 /**
-* @private
-* 
-* getProm 
-*
-* Returns the wl configuration structure
-* 
-* @return WlDevice
-*/
+ * @private
+ *
+ * getProm
+ *
+ * Returns the wl configuration structure
+ *
+ * @return WlDevice
+ */
 FlowStruct FlowMeter::getProm()
 {
     FlowStruct prom;
@@ -316,15 +315,15 @@ int FlowMeter::clearTotalCount(String val)
     return 1;
 }
 /**
-* @private
-* 
-* setCalibration 
-*
-* Cloud function for setting the calibration value
-* @param String read - payload from the particle API
-* 
-* @return int
-*/
+ * @private
+ *
+ * setCalibration
+ *
+ * Cloud function for setting the calibration value
+ * @param String read - payload from the particle API
+ *
+ * @return int
+ */
 int FlowMeter::setCalibrationFactor(String read)
 {
     double val = Utils::parseCloudFunctionDouble(read, uniqueName());
@@ -341,15 +340,15 @@ int FlowMeter::setCalibrationFactor(String read)
     return 1;
 }
 /**
-* @private
-* 
-* setCalibration 
-*
-* Cloud function for setting the calibration value
-* @param String read - payload from the particle API
-* 
-* @return int
-*/
+ * @private
+ *
+ * setCalibration
+ *
+ * Cloud function for setting the calibration value
+ * @param String read - payload from the particle API
+ *
+ * @return int
+ */
 int FlowMeter::setCalibrationDifference(String read)
 {
     double val = Utils::parseCloudFunctionDouble(read, uniqueName());
@@ -368,11 +367,11 @@ int FlowMeter::setCalibrationDifference(String read)
 
 /**
  * @private
- * 
+ *
  * saveEEPROM
- * 
+ *
  * @param WLStruct storage - the config payload needing storage
- * 
+ *
  * @return void
  */
 void FlowMeter::saveEEPROM(FlowStruct storage)
@@ -426,29 +425,29 @@ void FlowMeter::setIdentity(int identity)
 }
 
 /**
-* @private 
-*
-* appendIdentity 
-* 
-* If there is an integer identity, it concats the id as a string
-*
-* @return String
-*/
+ * @private
+ *
+ * appendIdentity
+ *
+ * If there is an integer identity, it concats the id as a string
+ *
+ * @return String
+ */
 String FlowMeter::appendIdentity()
 {
     return this->hasSerialIdentity() ? String(this->sendIdentity) : "";
 }
 
 /**
-* @private 
-*
-* uniqueName 
-* 
-* If there is an integer identity, it concats the id with the name, otherwise
-* it simply returns the given name
-*
-* @return String
-*/
+ * @private
+ *
+ * uniqueName
+ *
+ * If there is an integer identity, it concats the id with the name, otherwise
+ * it simply returns the given name
+ *
+ * @return String
+ */
 String FlowMeter::uniqueName()
 {
     if (this->hasSerialIdentity())
@@ -469,14 +468,14 @@ String FlowMeter::getParamName(size_t index)
 }
 
 /**
-* @private 
-*
-* restoreDefaults 
-* 
-* Restores the default values
-*
-* @return void
-*/
+ * @private
+ *
+ * restoreDefaults
+ *
+ * Restores the default values
+ *
+ * @return void
+ */
 bool FlowMeter::hasSerialIdentity()
 {
     return utils.hasSerialIdentity(this->sendIdentity);
@@ -489,8 +488,8 @@ void FlowMeter::setDeviceAddress()
 }
 
 /**
- * 
- * 
+ *
+ *
  */
 
 void FlowMeter::pulseCounter()
