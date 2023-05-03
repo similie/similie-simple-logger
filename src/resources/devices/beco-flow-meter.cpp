@@ -75,46 +75,37 @@ void BecoFlowMeter::publish(JSONBufferWriter &writer, uint8_t attempt_count)
     // Utils::log("SENDIND_FLOW_DATA_ML", String::format("Identity=%s has total %.6f", append, totalMilliLitres));
 }
 
+bool BecoFlowMeter::pulseDebounceRead()
+{
+    return millis() - debounce > READ_COUNT_DEBOUNCE;
+}
+
 void BecoFlowMeter::read()
 {
 }
 
 void BecoFlowMeter::loop()
 {
+    if (!pulseReady || !pulseDebounceRead())
+    {
+        return;
+    }
+    pulseReady = false;
+    debounce = millis();
+    pulseCount++;
 }
 
 void BecoFlowMeter::clear()
 {
-    // pulseCount = 0;
-    // flowRate = 0.0;
-    // flowMilliLitres = 0;
-    // totalMilliLitres = 0;
-    // lastTime = 0;
     currentFlow = 0;
-    // setInterrupt();
+    debounce = millis();
 }
 
 void BecoFlowMeter::print()
 {
     // Print the flow rate for this second in litres / minute
-
-    Serial.print("Flow rate: ");
-    Serial.print(flowRate); // Print the integer part of the variable
-    Serial.print("L/min");
-    Serial.print("\t"); // Print tab space
-
-    // Print the cumulative total of litres flowed since starting
-    Serial.print("Output Liquid Quantity: ");
-    Serial.print(currentFlow);
-    Serial.print("mL");
-
-    Serial.print("\t"); // Print tab space
-    Serial.print(totalMilliLitres);
-    Serial.print("mL");
-
-    Serial.print("\t"); // Print tab space
-    Serial.print(totalMilliLitres / 1000);
-    Serial.println("L");
+    // String("Flow rate: ") + String(flowRate) + String("L/min\t") +
+    Utils::log("BECO_FLOW_RATE", String("Output Liquid Quantity: ") + String(currentFlow) + String("mL\t") + String("Total FLow: ") + String(totalMilliLitres) + String("L"));
 }
 
 size_t BecoFlowMeter::buffSize()
@@ -140,8 +131,10 @@ void BecoFlowMeter::setPin(int pin)
 void BecoFlowMeter::configurePin()
 {
     pinMode(getPin(), INPUT_PULLUP);
+    delay(100);
     // digitalWrite(getPin(), HIGH);
     setInterrupt();
+    debounce = millis();
 }
 
 ///////////////////////////
@@ -199,11 +192,6 @@ void BecoFlowMeter::setInterrupt()
     attachInterrupt(getPin(), &BecoFlowMeter::pulseCounter, this, FALLING);
 }
 
-// bool BecoFlowMeter::isDisconnected()
-// {
-//     return pulseCount >= 12;
-// }
-
 void BecoFlowMeter::setTotal()
 {
     if (totalMilliLitres < startingPosition)
@@ -215,76 +203,10 @@ void BecoFlowMeter::setTotal()
 
 void BecoFlowMeter::processRead()
 {
-    currentFlow = pulseCount;
+    currentFlow = pulseCount * calibrationFactor;
     pulseCount = 0;
     setTotal();
-    // if ((millis() - lastTime) > 1000) // Only process counters once per second
-    // {
-    // if (isDisconnected())
-    // {
-    //     lastTime = millis();
-    //     String append = appendIdentity();
-    //     Utils::log("FLOW_METER_DISCONNECT", append + " " + String(pulseCount));
-    //     pulseCount = 0;
-    //     return;
-    // }
-
-    // removeInterrupt();
-    // // Because this loop may not complete in exactly 1 second intervals we calculate
-    // // the number of milliseconds that have passed since the last execution and use
-    // // that to scale the output. We also apply the calibrationFactor to scale the output
-    // // based on the number of pulses per second per units of measure (litres/minute in
-    // // this case) coming from the sensor.
-    // float tmp = (1000.0 / (millis() - lastTime)) * pulseCount;
-    // countIteration++;
-    // Serial.print("ITERATION: ");
-    // Serial.print(countIteration); // Print the integer part of the variable
-    // Serial.print(" ");
-    // Serial.print("\t"); // Print tab space
-
-    // Serial.print("PULSE: ");
-    // Serial.print(pulseCount); // Print the integer part of the variable
-    // Serial.print(" ");
-    // Serial.print("\t"); // Print tab space
-
-    // Serial.print("TMP: ");
-    // Serial.print(tmp); // Print the integer part of the variable
-    // Serial.print(" ");
-    // Serial.print("\t"); // Print tab space
-
-    // // As we have a add operation we need to avoid the positive value when no pulse is found
-    // if (tmp > 0)
-    // {
-    //     flowRate = tmp / calibrationFactor + calibrationDifference;
-    // }
-    // else
-    // {
-    //     flowRate = 0;
-    // }
-
-    // // Note the time this processing pass was executed. Note that because we've
-    // // disabled interrupts the millis() function won't actually be incrementing right
-    // // at this point, but it will still return the value it was set to just before
-    // // interrupts went away.
-    // lastTime = millis();
-    // // Divide the flow rate in litres/minute by 60 to determine how many litres have
-    // // passed through the sensor in this 1 second interval, then multiply by 1000 to
-    // // convert to millilitres.
-    // flowMilliLitres = (flowRate / 60) * 1000;
-
-    // currentFlow += flowMilliLitres;
-    // // Add the millilitres passed in this second to the cumulative total
-    // totalMilliLitres += flowMilliLitres;
-
-    // print();
-    // // this serial print was used to get the FREQUENCY value to calculate the other values.
-    // // Serial.print("F: ");
-    // // Serial.println(tmp);
-    // // Reset the pulse counter so we can start incrementing again
-    // pulseCount = 0;
-
-    //     setInterrupt();
-    // }
+    print();
 }
 
 void BecoFlowMeter::removeInterrupt()
@@ -338,13 +260,13 @@ int BecoFlowMeter::clearTotalCount(String val)
  */
 int BecoFlowMeter::setStartingPosition(String read)
 {
-    double val = Utils::parseCloudFunctionDouble(read, uniqueName());
-    if (val == 0)
+    int val = Utils::parseCloudFunctionInteger(read, uniqueName());
+    if (val <= 0)
     {
         return 0;
     }
 
-    startingPosition = val;
+    startingPosition = (unsigned long)val;
     BecoFlowStruct storage = getProm();
     storage.startingPosition = startingPosition;
     saveEEPROM(storage);
@@ -362,41 +284,16 @@ int BecoFlowMeter::setStartingPosition(String read)
  */
 int BecoFlowMeter::setCalibrationFactor(String read)
 {
-    double val = Utils::parseCloudFunctionDouble(read, uniqueName());
-    if (val == 0)
+    int val = Utils::parseCloudFunctionInteger(read, uniqueName());
+    if (val <= 0)
     {
         return 0;
     }
 
-    calibrationFactor = val;
+    calibrationFactor = (unsigned long)val;
 
     BecoFlowStruct storage = getProm();
     storage.calibrationFactor = calibrationFactor;
-    saveEEPROM(storage);
-    return 1;
-}
-/**
- * @private
- *
- * setCalibration
- *
- * Cloud function for setting the calibration value
- * @param String read - payload from the particle API
- *
- * @return int
- */
-int BecoFlowMeter::setCalibrationDifference(String read)
-{
-    double val = Utils::parseCloudFunctionDouble(read, uniqueName());
-    if (val == 0)
-    {
-        return 0;
-    }
-
-    calibrationDifference = val;
-
-    BecoFlowStruct storage = getProm();
-    storage.calibrationDifference = calibrationDifference;
     saveEEPROM(storage);
     return 1;
 }
@@ -428,7 +325,6 @@ void BecoFlowMeter::setFlow()
         return;
     }
     storage.totalMilliLitres = totalMilliLitres;
-    storage.calibrationDifference = calibrationDifference;
     storage.calibrationFactor = calibrationFactor;
     saveEEPROM(storage);
 }
@@ -446,14 +342,12 @@ unsigned long BecoFlowMeter::getToltalFlowMiliLiters()
 void BecoFlowMeter::setListeners()
 {
     String appendage = appendIdentity();
-    // Particle.function("setCalibrationFactor" + appendage, &BecoFlowMeter::setCalibrationFactor, this);
-    // Particle.function("setCalibrationDifference" + appendage, &BecoFlowMeter::setCalibrationDifference, this);
+    Particle.function("setCalibrationFactor" + appendage, &BecoFlowMeter::setCalibrationFactor, this);
     Particle.function("setStartingPosition" + appendage, &BecoFlowMeter::setStartingPosition, this);
     Particle.function("clearTotalFlow" + appendage, &BecoFlowMeter::clearTotalCount, this);
 
-    // Particle.variable("getTotalFlow" + appendage, totalMilliLitres);
-    // Particle.variable("getCalibrationFactor" + appendage, calibrationFactor);
-    // Particle.variable("getCalibrationDifference" + appendage, calibrationDifference);
+    Particle.variable("getTotalFlow" + appendage, totalMilliLitres);
+    Particle.variable("getCalibrationFactor" + appendage, calibrationFactor);
 }
 
 void BecoFlowMeter::setIdentity(int identity)
@@ -531,5 +425,6 @@ void BecoFlowMeter::setDeviceAddress()
 
 void BecoFlowMeter::pulseCounter()
 {
-    pulseCount++;
+    // pulseCount++;
+    pulseReady = true;
 }

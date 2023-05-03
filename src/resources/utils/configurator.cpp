@@ -245,6 +245,19 @@ Device *Configurator::pullDeviceType(String configurationStore[], Bootstrap *boo
                                  parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
         }
         return new FlowMeter(boots);
+    case beco_flow_meter:
+        if (!configurationStore[DEVICE_PIN_INDEX].equals(""))
+        {
+            return new BecoFlowMeter(boots,
+                                     parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]),
+                                     parseIdentity(configurationStore[DEVICE_PIN_INDEX]));
+        }
+        else if (configurationStore[DEVICE_IDENTITY_INDEX].equals(""))
+        {
+            return new BecoFlowMeter(boots,
+                                     parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
+        }
+        return new BecoFlowMeter(boots);
     case video_capture:
         return new VideoCapture(boots);
     case rika_airquality:

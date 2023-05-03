@@ -12,8 +12,8 @@
 
 #define FLOW_PIN_DEFAULT D1 // Stripe Green
 // #define FLOW_PIN_DEFAULT D2 // Blue/Or Strip Blue // 5.85
-#define CALIBRATION_FACTOR_DEFAULT 0.001
-#define CALIBRATION_DIFFERENCE_DEFAULT 1.91 // 2.7
+#define CALIBRATION_FLOW_FACTOR_DEFAULT 10
+
 #define PARAM_LENGTH_FLOW 2
 #define READ_COUNT_DEBOUNCE 110
 
@@ -21,9 +21,8 @@ struct BecoFlowStruct
 {
     uint8_t version;
     unsigned long totalMilliLitres;
-    double calibrationFactor;
-    double calibrationDifference;
-    double startingPosition;
+    unsigned long calibrationFactor;
+    unsigned long startingPosition;
 };
 
 class BecoFlowMeter : public Device
@@ -58,18 +57,19 @@ private:
     void processRead();
     void saveEEPROM(BecoFlowStruct storage);
     int setCalibrationFactor(String read);
-    int setCalibrationDifference(String read);
+    //  int setCalibrationDifference(String read);
     int setStartingPosition(String read);
     int getPin();
     void setFlow();
     void setDeviceAddress();
     void setIdentity(int identity);
     int sendIdentity = -1;
-    double calibrationFactor = CALIBRATION_FACTOR_DEFAULT;
-    double calibrationDifference = CALIBRATION_DIFFERENCE_DEFAULT;
-    double startingPosition = 0;
+    unsigned long calibrationFactor = CALIBRATION_FLOW_FACTOR_DEFAULT;
+    // double calibrationDifference = CALIBRATION_DIFFERENCE_DEFAULT;
+    unsigned long startingPosition = 0;
     int flowPin = FLOW_PIN_DEFAULT;
-    volatile byte pulseCount;
+    volatile bool pulseReady;
+    unsigned long pulseCount;
     float flowRate = 0.0;
     unsigned long countIteration = 0;
     unsigned int flowMilliLitres = 0;
@@ -81,6 +81,8 @@ private:
     String getParamName(size_t index);
     String uniqueName();
     String appendIdentity();
+    bool pulseDebounceRead();
+    unsigned long debounce = 0;
 
 public:
     ~BecoFlowMeter();

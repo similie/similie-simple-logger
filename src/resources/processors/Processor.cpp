@@ -5,11 +5,11 @@
  * The processor class can inherited for producing additional means of sending data payloads such as MQTT.
  * This default class uses particle's api for sending data. Future classes will use other protocols
  *
- */  
+ */
 
 /**
-* @deconstuctor
-*/
+ * @deconstuctor
+ */
 Processor::~Processor()
 {
 }
@@ -23,11 +23,11 @@ Processor::Processor()
 
 /**
  * @public
- * 
+ *
  * getHeartbeatTopic
- * 
- * What's the hearbeat topic name we send 
- * 
+ *
+ * What's the hearbeat topic name we send
+ *
  * @return String
  */
 String Processor::getHeartbeatTopic()
@@ -37,11 +37,11 @@ String Processor::getHeartbeatTopic()
 
 /**
  * @public
- * 
+ *
  * getPublishTopic
- * 
- * What's the publish topic name we send 
- * 
+ *
+ * What's the publish topic name we send
+ *
  * @return String
  */
 String Processor::getPublishTopic(bool maintenance)
@@ -56,14 +56,14 @@ String Processor::getPublishTopic(bool maintenance)
 
 /**
  * @public
- * 
+ *
  * publish
- * 
+ *
  * Sends the payload over the network
- * 
+ *
  * @param topic - the topic name
  * @param payload - the actual stringified data
- * 
+ *
  * @return bool - true if successfull
  */
 bool Processor::publish(String topic, String payload)
@@ -72,14 +72,13 @@ bool Processor::publish(String topic, String payload)
     return success;
 }
 
-
 /**
  * @public
- * 
+ *
  * connected
- * 
+ *
  * Is the device connected to the network it sends to
- * 
+ *
  * @return bool - true if connected
  */
 bool Processor::connected()
@@ -89,12 +88,12 @@ bool Processor::connected()
 
 /**
  * @public
- * 
+ *
  * isConnected
- * 
- * Is the device connected to the network it sends to. 
+ *
+ * Is the device connected to the network it sends to.
  * Same as above. For API compatibiity
- * 
+ *
  * @return bool - true if connected
  */
 bool Processor::isConnected()
@@ -104,14 +103,14 @@ bool Processor::isConnected()
 
 /**
  * @public
- * 
+ *
  * parseMessage
- * 
+ *
  * Parses a given message based on a message topic
- * 
+ *
  * @param String data - the message string
  * @param char *topic - the topic that was sent
- * 
+ *
  * @return void
  */
 void Processor::parseMessage(String data, char *topic)
@@ -128,30 +127,32 @@ void Processor::parseMessage(String data, char *topic)
 
 /**
  * @public
- * 
+ *
  * loop
- * 
+ *
  * Loops with the main loop. Some processors require
  * a constant checkin, including particle in manual mode
- * 
+ *
  * @return void
  */
 void Processor::loop()
 {
 
-    if (MANUAL_MODE)
+    if (!MANUAL_MODE)
     {
-        manageManualModel();
+        return;
     }
+
+    manageManualModel();
 }
 
 /**
  * @public
- * 
+ *
  * hasHeartbeat
- * 
+ *
  * Is the heartbeat event ready
- * 
+ *
  * @return bool
  */
 bool Processor::hasHeartbeat()
@@ -161,11 +162,11 @@ bool Processor::hasHeartbeat()
 
 /**
  * @public
- * 
+ *
  * primaryPostName
- * 
+ *
  * Sends the the primary send event name
- * 
+ *
  * @return bool
  */
 const char *Processor::primaryPostName()
@@ -175,28 +176,30 @@ const char *Processor::primaryPostName()
 
 /**
  * @public
- * 
+ *
  * connect
- * 
+ *
  * Connect to the send network
- * 
+ *
  * @return void
  */
 void Processor::connect()
 {
-    if (MANUAL_MODE)
+    if (!MANUAL_MODE)
     {
-        Particle.connect();
+        return;
     }
+
+    Particle.connect();
 }
 
 /**
  * @private
- * 
+ *
  * manageManualModel
- * 
+ *
  * Manages the manual mode if required in the loop
- * 
+ *
  * @return void
  */
 /* IF IN MANUAL MODE */
@@ -205,9 +208,8 @@ void Processor::manageManualModel()
     if (waitFor(Particle.connected, 500))
     {
         Particle.process();
+        return;
     }
-    else
-    {
-        Particle.connect();
-    }
+
+    Particle.connect();
 }
