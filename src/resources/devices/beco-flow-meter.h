@@ -10,12 +10,13 @@
 
 #include "resources/utils/utils.h"
 
-#define FLOW_PIN_DEFAULT D1 // Stripe Green
+#define BECO_FLOW_PIN_DEFAULT D2 // Stripe Green
 // #define FLOW_PIN_DEFAULT D2 // Blue/Or Strip Blue // 5.85
 #define CALIBRATION_FLOW_FACTOR_DEFAULT 10
 
 #define PARAM_LENGTH_FLOW 2
-#define READ_COUNT_DEBOUNCE 110
+#define READ_COUNT_DEBOUNCE 100
+#define READ_COUNT_DEBOUNCE_SLOT_BUFFER 10
 
 struct BecoFlowStruct
 {
@@ -67,8 +68,8 @@ private:
     unsigned long calibrationFactor = CALIBRATION_FLOW_FACTOR_DEFAULT;
     // double calibrationDifference = CALIBRATION_DIFFERENCE_DEFAULT;
     unsigned long startingPosition = 0;
-    int flowPin = FLOW_PIN_DEFAULT;
-    volatile bool pulseReady;
+    int flowPin = BECO_FLOW_PIN_DEFAULT;
+    volatile bool pulseReady = false;
     unsigned long pulseCount;
     float flowRate = 0.0;
     unsigned long countIteration = 0;
@@ -81,7 +82,10 @@ private:
     String getParamName(size_t index);
     String uniqueName();
     String appendIdentity();
+    bool pulseReadCrossedDebounceSlotBuffer();
     bool pulseDebounceRead();
+    void incrementRead();
+    bool pulseReadCrossedDebounce();
     unsigned long debounce = 0;
 
 public:

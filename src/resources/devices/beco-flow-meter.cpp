@@ -44,12 +44,15 @@ void BecoFlowMeter::restoreDefaults()
 
 void BecoFlowMeter::init()
 {
+
     instantated = true;
     setDeviceAddress();
     setLifeTimeFlow();
     setConfiguration();
     setListeners();
     configurePin();
+    //  delay(100);
+    pulseReady = false;
 }
 
 void BecoFlowMeter::publish(JSONBufferWriter &writer, uint8_t attempt_count)
@@ -75,36 +78,90 @@ void BecoFlowMeter::publish(JSONBufferWriter &writer, uint8_t attempt_count)
     // Utils::log("SENDIND_FLOW_DATA_ML", String::format("Identity=%s has total %.6f", append, totalMilliLitres));
 }
 
+bool BecoFlowMeter::pulseReadCrossedDebounce()
+{
+    return millis() - debounce >= READ_COUNT_DEBOUNCE;
+}
+
+bool BecoFlowMeter::pulseReadCrossedDebounceSlotBuffer()
+{
+    unsigned long span = millis() - debounce;
+    return span >= READ_COUNT_DEBOUNCE && span <= READ_COUNT_DEBOUNCE + READ_COUNT_DEBOUNCE_SLOT_BUFFER;
+}
+
 bool BecoFlowMeter::pulseDebounceRead()
 {
-    return millis() - debounce > READ_COUNT_DEBOUNCE;
+
+    if (debounce == 0)
+    {
+        return false;
+    }
+
+    u_int8_t val = digitalRead(getPin());
+
+    return pulseReadCrossedDebounce() || val == HIGH;
 }
 
 void BecoFlowMeter::read()
 {
 }
 
+void BecoFlowMeter::incrementRead()
+{
+    if (pulseReadCrossedDebounceSlotBuffer())
+    {
+        pulseCount++;
+    }
+    else
+    {
+        pulseCount = 0;
+    }
+    pulseReady = false;
+    debounce = 0;
+}
+
 void BecoFlowMeter::loop()
 {
-    if (!pulseReady || !pulseDebounceRead())
+
+    if (!pulseReady)
     {
         return;
     }
-    pulseReady = false;
-    debounce = millis();
-    pulseCount++;
+
+    // if (!pulseReady || !pulseDebounceRead())
+    // {
+    //     return;
+    // }
+    if (debounce == 0)
+    {
+        debounce = millis();
+    }
+
+    if (pulseDebounceRead())
+    {
+        return incrementRead();
+    }
+
+    Serial.print("BOUNCE TIME ");
+    Serial.print(millis() - debounce);
+    Serial.print(" HIGH ");
+    Serial.print(HIGH);
+    Serial.print(" LOW ");
+    Serial.print(LOW);
+    Serial.println(digitalRead(BECO_FLOW_PIN_DEFAULT));
+    Utils::log("BECO_PULSE_PRINT", String(pulseCount));
 }
 
 void BecoFlowMeter::clear()
 {
     currentFlow = 0;
-    debounce = millis();
+    pulseCount = 0;
+    debounce = 0;
+    pulseReady = false;
 }
 
 void BecoFlowMeter::print()
 {
-    // Print the flow rate for this second in litres / minute
-    // String("Flow rate: ") + String(flowRate) + String("L/min\t") +
     Utils::log("BECO_FLOW_RATE", String("Output Liquid Quantity: ") + String(currentFlow) + String("mL\t") + String("Total FLow: ") + String(totalMilliLitres) + String("L"));
 }
 
@@ -132,9 +189,8 @@ void BecoFlowMeter::configurePin()
 {
     pinMode(getPin(), INPUT_PULLUP);
     delay(100);
-    // digitalWrite(getPin(), HIGH);
     setInterrupt();
-    debounce = millis();
+    debounce = 0;
 }
 
 ///////////////////////////
@@ -207,6 +263,7 @@ void BecoFlowMeter::processRead()
     pulseCount = 0;
     setTotal();
     print();
+    currentFlow = 0;
 }
 
 void BecoFlowMeter::removeInterrupt()
@@ -425,6 +482,5 @@ void BecoFlowMeter::setDeviceAddress()
 
 void BecoFlowMeter::pulseCounter()
 {
-    // pulseCount++;
     pulseReady = true;
 }
