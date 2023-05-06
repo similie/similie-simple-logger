@@ -17,6 +17,7 @@
 #define PARAM_LENGTH_FLOW 2
 #define READ_COUNT_DEBOUNCE 95
 #define READ_COUNT_DEBOUNCE_SLOT_BUFFER 15
+#define READ_OFFSET_SEND_MULTIPLE 1
 
 struct BecoFlowStruct
 {
@@ -24,6 +25,7 @@ struct BecoFlowStruct
     unsigned long totalMilliLitres;
     unsigned long calibrationFactor;
     unsigned long startingPosition;
+    unsigned long offsetMultiple;
 };
 
 class BecoFlowMeter : public Device
@@ -86,7 +88,9 @@ private:
     bool pulseDebounceRead();
     void incrementRead();
     bool pulseReadCrossedDebounce();
+    int setOffsetMultiple(String);
     unsigned long debounce = 0;
+    unsigned long offsetMultiple = READ_OFFSET_SEND_MULTIPLE;
 
 public:
     ~BecoFlowMeter();

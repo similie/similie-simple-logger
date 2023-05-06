@@ -64,29 +64,25 @@ void BecoFlowMeter::publish(JSONBufferWriter &writer, uint8_t attempt_count)
         switch (i)
         {
         case c_flow:
-            writer.name(utils.stringConvert(param)).value(currentFlow);
+            writer.name(utils.stringConvert(param)).value(currentFlow * offsetMultiple);
             break;
         case t_flow:
-            writer.name(utils.stringConvert(param)).value(totalMilliLitres);
+            writer.name(utils.stringConvert(param)).value(totalMilliLitres * offsetMultiple);
             break;
         }
     }
-
     setFlow();
-    // setInterrupt();
-    // String append = appendIdentity();
-    // Utils::log("SENDIND_FLOW_DATA_ML", String::format("Identity=%s has total %.6f", append, totalMilliLitres));
 }
 
 bool BecoFlowMeter::pulseReadCrossedDebounce()
 {
-    return millis() - debounce >= READ_COUNT_DEBOUNCE;
+    return millis() - debounce > READ_COUNT_DEBOUNCE + READ_COUNT_DEBOUNCE_SLOT_BUFFER;
 }
 
 bool BecoFlowMeter::pulseReadCrossedDebounceSlotBuffer()
 {
     unsigned long span = millis() - debounce;
-    return span >= READ_COUNT_DEBOUNCE && span <= READ_COUNT_DEBOUNCE + READ_COUNT_DEBOUNCE_SLOT_BUFFER;
+    return span > READ_COUNT_DEBOUNCE && span <= READ_COUNT_DEBOUNCE + READ_COUNT_DEBOUNCE_SLOT_BUFFER;
 }
 
 bool BecoFlowMeter::pulseDebounceRead()
@@ -98,7 +94,6 @@ bool BecoFlowMeter::pulseDebounceRead()
     }
 
     u_int8_t val = digitalRead(getPin());
-
     return pulseReadCrossedDebounce() || val == HIGH;
 }
 
@@ -128,10 +123,6 @@ void BecoFlowMeter::loop()
         return;
     }
 
-    // if (!pulseReady || !pulseDebounceRead())
-    // {
-    //     return;
-    // }
     if (debounce == 0)
     {
         debounce = millis();
@@ -142,22 +133,22 @@ void BecoFlowMeter::loop()
         return incrementRead();
     }
 
-    Serial.print("BOUNCE TIME ");
-    Serial.print(millis() - debounce);
-    Serial.print(" HIGH ");
-    Serial.print(HIGH);
-    Serial.print(" LOW ");
-    Serial.print(LOW);
-    Serial.println(digitalRead(BECO_FLOW_PIN_DEFAULT));
+    // Serial.print("BOUNCE TIME ");
+    // Serial.print(millis() - debounce);
+    // Serial.print(" HIGH ");
+    // Serial.print(HIGH);
+    // Serial.print(" LOW ");
+    // Serial.print(LOW);
+    // Serial.println(digitalRead(BECO_FLOW_PIN_DEFAULT));
     Utils::log("BECO_PULSE_PRINT", String(pulseCount));
 }
 
 void BecoFlowMeter::clear()
 {
     currentFlow = 0;
-    pulseCount = 0;
-    debounce = 0;
-    pulseReady = false;
+    // pulseCount = 0;
+    // debounce = 0;
+    // pulseReady = false;
 }
 
 void BecoFlowMeter::print()
@@ -214,6 +205,11 @@ void BecoFlowMeter::setConfiguration()
     {
         startingPosition = storage.startingPosition;
     }
+
+    if (storage.offsetMultiple != 0 && !isnan(storage.offsetMultiple))
+    {
+        offsetMultiple = storage.offsetMultiple;
+    }
 }
 
 /**
@@ -236,7 +232,7 @@ void BecoFlowMeter::setLifeTimeFlow()
 }
 
 /**
- *
+ * setInterrupt
  *
  */
 void BecoFlowMeter::setInterrupt()
@@ -291,6 +287,16 @@ BecoFlowStruct BecoFlowMeter::getProm()
     return prom;
 }
 
+/**
+ * @private
+ *
+ * clearTotalCount
+ *
+ * Cloud function for clearing to totalizer
+ * @param String read - payload from the particle API
+ *
+ * @return int
+ */
 int BecoFlowMeter::clearTotalCount(String val)
 {
     if (!val.equals("DELETE"))
@@ -302,6 +308,31 @@ int BecoFlowMeter::clearTotalCount(String val)
     flow.startingPosition = 0;
     saveEEPROM(flow);
     totalMilliLitres = 0;
+    return 1;
+}
+
+/**
+ * @private
+ *
+ * setOffsetMultiple
+ *
+ * Cloud function for setting an offset value for the meter
+ * @param String read - payload from the particle API
+ *
+ * @return int
+ */
+int BecoFlowMeter::setOffsetMultiple(String read)
+{
+    int val = Utils::parseCloudFunctionInteger(read, uniqueName());
+    if (val <= 0)
+    {
+        return 0;
+    }
+
+    offsetMultiple = (unsigned long)val;
+    BecoFlowStruct storage = getProm();
+    storage.offsetMultiple = offsetMultiple;
+    saveEEPROM(storage);
     return 1;
 }
 
@@ -401,8 +432,9 @@ void BecoFlowMeter::setListeners()
     String appendage = appendIdentity();
     Particle.function("setCalibrationFactor" + appendage, &BecoFlowMeter::setCalibrationFactor, this);
     Particle.function("setStartingPosition" + appendage, &BecoFlowMeter::setStartingPosition, this);
+    Particle.function("setOffsetMultiple" + appendage, &BecoFlowMeter::setOffsetMultiple, this);
     Particle.function("clearTotalFlow" + appendage, &BecoFlowMeter::clearTotalCount, this);
-
+    Particle.variable("getOffsetMultiple" + appendage, offsetMultiple);
     Particle.variable("getTotalFlow" + appendage, totalMilliLitres);
     Particle.variable("getCalibrationFactor" + appendage, calibrationFactor);
 }
