@@ -9,8 +9,8 @@ SYSTEM_MODE(AUTOMATIC);
 // SYSTEM_MODE(MANUAL);
 // SYSTEM_MODE(SEMI_AUTOMATIC);
 #include "resources/devices/device-manager.h"
-#define DEBUGGER true                       // set to false for field devices
-SerialLogHandler logHandler(LOG_LEVEL_ALL); // LOG_LEVEL_ALL LOG_LEVEL_INFO
+#define DEBUGGER true                        // set to false for field devices
+SerialLogHandler logHandler(LOG_LEVEL_INFO); // LOG_LEVEL_ALL LOG_LEVEL_INFO
 Processor processor;
 // MqttProcessor processor(&boots);
 DeviceManager manager(&processor, DEBUGGER);
