@@ -16,7 +16,7 @@
 
 #define PARAM_LENGTH_FLOW 2
 #define READ_COUNT_DEBOUNCE 95
-#define READ_COUNT_DEBOUNCE_SLOT_BUFFER 15
+#define READ_COUNT_DEBOUNCE_SLOT_BUFFER 20
 #define READ_OFFSET_SEND_MULTIPLE 1
 
 struct BecoFlowStruct
@@ -41,7 +41,7 @@ private:
         c_flow,
         t_flow,
     };
-    bool instantated = false;
+
     uint16_t saveAddressForFlow = -1;
     Bootstrap *boots;
     String deviceName = "BecoFlowMeter";
@@ -55,7 +55,6 @@ private:
     void setTotal();
     // bool isDisconnected();
     void pulseCounter();
-    void removeInterrupt();
     void setListeners();
     void processRead();
     void saveEEPROM(BecoFlowStruct storage);
@@ -68,17 +67,16 @@ private:
     void setIdentity(int identity);
     int sendIdentity = -1;
     unsigned long calibrationFactor = CALIBRATION_FLOW_FACTOR_DEFAULT;
-    // double calibrationDifference = CALIBRATION_DIFFERENCE_DEFAULT;
+    unsigned long offsetMultiple = READ_OFFSET_SEND_MULTIPLE;
+    bool instantated = false;
     unsigned long startingPosition = 0;
     int flowPin = BECO_FLOW_PIN_DEFAULT;
     volatile bool pulseReady = false;
     unsigned long pulseCount;
-    float flowRate = 0.0;
-    unsigned long countIteration = 0;
-    unsigned int flowMilliLitres = 0;
     unsigned long currentFlow = 0;
     unsigned long totalMilliLitres = 0;
     unsigned long lastTime = 0;
+    unsigned long debounce = 0;
     Utils utils;
     bool hasSerialIdentity();
     String getParamName(size_t index);
@@ -89,8 +87,8 @@ private:
     void incrementRead();
     bool pulseReadCrossedDebounce();
     int setOffsetMultiple(String);
-    unsigned long debounce = 0;
-    unsigned long offsetMultiple = READ_OFFSET_SEND_MULTIPLE;
+    void resetAll();
+    boolean exceedsMax(unsigned long);
 
 public:
     ~BecoFlowMeter();
