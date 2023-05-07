@@ -82,7 +82,7 @@ bool BecoFlowMeter::pulseReadCrossedDebounce()
 bool BecoFlowMeter::pulseReadCrossedDebounceSlotBuffer()
 {
     unsigned long span = millis() - debounce;
-    return span > READ_COUNT_DEBOUNCE && span <= READ_COUNT_DEBOUNCE + READ_COUNT_DEBOUNCE_SLOT_BUFFER;
+    return span >= READ_COUNT_DEBOUNCE && span <= READ_COUNT_DEBOUNCE + READ_COUNT_DEBOUNCE_SLOT_BUFFER;
 }
 
 bool BecoFlowMeter::pulseDebounceRead()
@@ -146,9 +146,9 @@ void BecoFlowMeter::loop()
 void BecoFlowMeter::clear()
 {
     currentFlow = 0;
-    // pulseCount = 0;
-    // debounce = 0;
-    // pulseReady = false;
+    pulseCount = 0;
+    debounce = 0;
+    pulseReady = false;
 }
 
 void BecoFlowMeter::print()

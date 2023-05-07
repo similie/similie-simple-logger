@@ -77,6 +77,8 @@ bool Configurator::violatesOccurances(String value, int occrances)
         return occrances > 1;
     case sonic_sensor:
         return false;
+    case beco_flow_meter:
+        return occrances > 2;
     case flow_meter:
         return false;
     case video_capture:
