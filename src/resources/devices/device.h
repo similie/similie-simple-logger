@@ -18,7 +18,7 @@ public:
     virtual String name();
     virtual void read();
     virtual void loop();
-    virtual uint8_t matenanceCount();
+    virtual uint8_t maintenanceCount();
     virtual uint8_t paramCount();
     virtual void clear();
     virtual void print();

@@ -68,7 +68,7 @@ uint8_t GpsDevice::paramCount()
     return 4;
 }
 
-uint8_t GpsDevice::matenanceCount()
+uint8_t GpsDevice::maintenanceCount()
 {
     return 0;
 }

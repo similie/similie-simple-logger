@@ -511,13 +511,13 @@ uint8_t SoilMoisture::paramCount()
 /**
  * @public
  * 
- * matenanceCount
+ * maintenanceCount
  * 
  * Number of params with invalid data
  *
  * @return uint8_t
  */
-uint8_t SoilMoisture::matenanceCount()
+uint8_t SoilMoisture::maintenanceCount()
 {
     uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;

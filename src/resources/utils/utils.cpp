@@ -349,6 +349,17 @@ int Utils::containsValue(String arr[], size_t size, String value)
     return has;
 }
 
+/**
+ * @brief
+ *
+ * Gets the index of a string in an array
+ *
+ * @param key
+ * @param arr
+ * @param paramLength
+ * @return int
+ */
+
 int Utils::getIndexOf(String key, String arr[], size_t paramLength)
 {
     for (size_t i = 0; i < paramLength; i++)
@@ -361,6 +372,17 @@ int Utils::getIndexOf(String key, String arr[], size_t paramLength)
     return -1;
 }
 
+/**
+ * @brief
+ *
+ * Used when parsing the serial payload
+ *
+ * @param ourReading
+ * @param paramLength
+ * @param max
+ * @param nameMap
+ * @param value_hold
+ */
 void Utils::parseSplitReadSerial(String ourReading, size_t paramLength, size_t max, String nameMap[], float value_hold[][Bootstrap::OVERFLOW_VAL])
 {
     size_t j = 1;
@@ -406,6 +428,87 @@ void Utils::parseSplitReadSerial(String ourReading, size_t paramLength, size_t m
 }
 
 /**
+ * @brief
+ *
+ * Strips the ID from the payload
+ *
+ * @param String ourReading
+ * @return String
+ */
+String Utils::removeSensorIdFromPayload(String ourReading)
+{
+    String value = "";
+    boolean progress = false;
+    for (size_t i = 0; i < ourReading.length(); i++)
+    {
+        char c = ourReading.charAt(i);
+        if ((c == '+' || c == '-') && !progress)
+        {
+            progress = true;
+            continue;
+        }
+        else if (!progress)
+        {
+            continue;
+        }
+        value += String(c);
+    }
+    return value;
+}
+
+/**
+ * @brief
+ *
+ * checks the character to determine if it is a valid non-stop character
+ *
+ * @param char d
+ * @return true if this isn't a control character
+ */
+bool Utils::notStopCheckChar(char d)
+{
+    return d != '+' && d != '-' && d != '\n' && d != '\0' && d != 13;
+}
+
+/**
+ * @brief
+ *
+ * parses the string from the SDI-12 interface sensors
+ *
+ * @param String ourReading our string for parsing
+ * @param String * values - the array to fill
+ * @param size_t maxLength  the max length of the array
+ */
+void Utils::splitStringToValues(String ourReading, String *values, size_t maxLength)
+{
+    String cleanedReading = removeSensorIdFromPayload(ourReading);
+    size_t length = cleanedReading.length();
+    size_t index = 0;
+    size_t storageIndex = 0;
+    while (index < length && storageIndex < maxLength)
+    {
+        char c = cleanedReading.charAt(index);
+        if (!notStopCheckChar(c))
+        {
+            index++;
+            continue;
+        }
+        char scale = cleanedReading.charAt(index - 1);
+        String startChar = scale == '+' ? "" : String(scale);
+        String build = startChar;
+        size_t valueLength = 0;
+        while (notStopCheckChar(c))
+        {
+            build += String(c);
+            valueLength++;
+            c = cleanedReading.charAt(index + valueLength);
+        }
+        index += valueLength;
+        values[storageIndex] = build.equals("-") || build.equals("") ? String(FAILED_VALUE) : build;
+        storageIndex++;
+    }
+}
+
+/**
  * @public
  *
  * parseSerial
@@ -422,47 +525,30 @@ void Utils::parseSplitReadSerial(String ourReading, size_t paramLength, size_t m
  */
 void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float value_hold[][Bootstrap::OVERFLOW_VAL])
 {
-
-    size_t j = 1;
+    String stringifiedValues[paramLength];
+    splitStringToValues(ourReading, stringifiedValues, paramLength);
     for (size_t i = 0; i < paramLength; i++)
     {
-        char c = ourReading.charAt(j);
-        j++;
-        if (c == '+' || c == '-')
+        String value = stringifiedValues[i];
+        if (this->invalidNumber(value))
         {
-            String buff = "";
-            char d = ' ';
-            while (d != '+' && d != '-' && d != '\n' && d != '\0')
-            {
-                d = ourReading.charAt(j);
-                buff += String(d);
-                j++;
-                d = ourReading.charAt(j);
-            }
-            if (this->invalidNumber(buff))
-            {
-                continue;
-            }
-
-            if (this->containsChar('.', buff))
-            {
-                float value = buff.toFloat();
-                if (c == '-')
-                {
-                    value = value * -1;
-                }
-                this->insertValue(value, value_hold[i], max);
-            }
-            else
-            {
-                float value = buff.toInt();
-                if (c == '-')
-                {
-                    value = value * -1;
-                }
-                this->insertValue(value, value_hold[i], max);
-            }
+            continue;
         }
+        float storedValue = NO_VALUE;
+        if (this->containsChar('.', value))
+        {
+            storedValue = value.toFloat();
+        }
+        else
+        {
+            storedValue = value.toInt();
+        }
+
+        if (isnan(storedValue))
+        {
+            continue;
+        }
+        this->insertValue(storedValue, value_hold[i], max);
     }
 }
 
@@ -518,13 +604,8 @@ int Utils::simCallback(int type, const char *buf, int len, char *value)
 {
     if ((type == TYPE_PLUS) && value)
     {
-        // if (sscanf(buf, "\r\n+CCID: %[^\r]\r\n", value) == 1)
-        /*nothing*/;
+        // @todo
     }
-    // Log.info("GOT THIS TYPE %d", type);
-    // Log.info("GOT THIS BUF %s", buf);
-    // Log.info("GOT THIS LENGTH %d", len);
-    // Log.info("GOT THIS VALUE %s", value);
     return WAIT;
 }
 
@@ -560,9 +641,9 @@ bool Utils::connected()
 float Utils::getSum(float values[], size_t MAX)
 {
     int sum = 0;
-    const int THRSHOLD_VAL = 100;
+    const int THRESHOLD_VAL = 100;
     const int DIVISOR = 100;
-    const int THRESHOLD = DIVISOR * THRSHOLD_VAL;
+    const int THRESHOLD = DIVISOR * THRESHOLD_VAL;
     bool hasValue = false;
     size_t MIN = 0;
     size_t last = 0;
@@ -692,18 +773,18 @@ bool Utils::containsChar(char c, String readFrom)
  */
 bool Utils::invalidNumber(String value)
 {
-    // value.charAt(j)
     bool invalid = false;
     for (uint16_t i = 0; i < value.length(); i++)
     {
         char c = value.charAt(i);
-        if ((c > '9' || c < '0') && (c != '.' && c != '-'))
+        // we leave in the / char for simplicity
+        if (c >= '-' && c <= '9')
         {
-            invalid = true;
-            break;
+            continue;
         }
+        invalid = true;
+        break;
     }
-
     return invalid;
 }
 

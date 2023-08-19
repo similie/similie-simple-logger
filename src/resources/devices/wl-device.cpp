@@ -571,13 +571,13 @@ uint8_t WlDevice::paramCount()
 /**
  * @public
  *
- * matenanceCount
+ * maintenanceCount
  *
  * How many parameters are sending valid data
  *
  * @return uint8_t
  */
-uint8_t WlDevice::matenanceCount()
+uint8_t WlDevice::maintenanceCount()
 {
     uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;

@@ -21,7 +21,7 @@ public:
     String name();
     void read();
     void loop();
-    uint8_t matenanceCount();
+    uint8_t maintenanceCount();
     uint8_t paramCount();
     void clear();
     void print();

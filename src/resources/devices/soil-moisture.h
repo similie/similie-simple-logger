@@ -79,7 +79,7 @@ public:
     void print();
     void init();
     String name();
-    uint8_t matenanceCount();
+    uint8_t maintenanceCount();
     uint8_t paramCount();
     size_t buffSize();
     void restoreDefaults();

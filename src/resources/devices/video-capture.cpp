@@ -91,13 +91,13 @@ uint8_t VideoCapture::paramCount()
 /**
  * @public
  *
- * matenanceCount
+ * maintenanceCount
  *
  * Is the VideoCapture functional
  *
  * @return uint8_t
  */
-uint8_t VideoCapture::matenanceCount()
+uint8_t VideoCapture::maintenanceCount()
 {
     return 0;
 }

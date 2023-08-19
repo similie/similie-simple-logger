@@ -400,14 +400,14 @@ uint8_t RikaAirQuality::paramCount()
 /**
  * @public
  *
- * matenanceCount
+ * maintenanceCount
  *
  * How many sensors appear non operational. The system will use this to
  * determin if device is unplugged or there are a few busted sensors.
  *
  * @return uint8_t
  */
-uint8_t RikaAirQuality::matenanceCount()
+uint8_t RikaAirQuality::maintenanceCount()
 {
     uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;

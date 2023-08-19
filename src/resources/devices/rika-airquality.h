@@ -62,7 +62,7 @@ public:
     void init();
     String name();
     void nullifyPayload(const char *key);
-    u_int8_t matenanceCount();
+    u_int8_t maintenanceCount();
     u_int8_t paramCount();
     size_t buffSize();
     void restoreDefaults();

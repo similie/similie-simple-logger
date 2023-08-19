@@ -175,13 +175,13 @@ uint8_t Battery::paramCount()
 /**
  * @public
  *
- * matenanceCount
+ * maintenanceCount
  *
  * Is the device functional
  *
  * @return uint8_t
  */
-uint8_t Battery::matenanceCount()
+uint8_t Battery::maintenanceCount()
 {
     return 0;
 }

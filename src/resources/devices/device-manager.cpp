@@ -550,7 +550,7 @@ String DeviceManager::payloadWriter(uint8_t &maintenanceCount)
         {
             // this->devices[i][j]->print();
             this->devices[i][j]->publish(writer, attempt_count);
-            maintenanceCount += this->devices[i][j]->matenanceCount();
+            maintenanceCount += this->devices[i][j]->maintenanceCount();
         }
         writer.endObject();
     }

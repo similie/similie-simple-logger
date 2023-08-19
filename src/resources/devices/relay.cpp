@@ -110,13 +110,13 @@ uint8_t Relay::paramCount()
 /**
  * @public
  *
- * matenanceCount
+ * maintenanceCount
  *
  * Is the Relay functional
  *
  * @return uint8_t
  */
-uint8_t Relay::matenanceCount()
+uint8_t Relay::maintenanceCount()
 {
     return 0;
 }

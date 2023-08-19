@@ -80,7 +80,7 @@ public:
     void clear();
     void print();
     void init();
-    uint8_t matenanceCount();
+    uint8_t maintenanceCount();
     uint8_t paramCount();
     size_t buffSize();
     void publish(JSONBufferWriter &writer, uint8_t attempt_count);

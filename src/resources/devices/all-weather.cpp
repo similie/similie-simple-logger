@@ -98,6 +98,18 @@ float AllWeather::extractValue(float values[], size_t key)
     return extractValue(values, key, MAX);
 }
 
+void AllWeather::runSingleSample()
+{
+    if (!SINGLE_SAMPLE)
+    {
+        return;
+    }
+    if (READ_OVER_WIRE)
+    {
+        readWire();
+    }
+}
+
 /**
  * @public
  *
@@ -113,7 +125,7 @@ float AllWeather::extractValue(float values[], size_t key)
  */
 void AllWeather::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
-    // print();
+    runSingleSample();
     size_t MAX = readSize();
     for (size_t i = 0; i < AllWeather::PARAM_LENGTH; i++)
     {
@@ -125,7 +137,8 @@ void AllWeather::publish(JSONBufferWriter &writer, uint8_t attempt_count)
         // set the param as having failed
         if (param.equals(NULL) || param.equals(" ") || param.equals(""))
         {
-            param = "_FAILURE_";
+            maintenanceTick++;
+            param = "_FAILURE_" + String(maintenanceTick);
         }
         float paramValue = extractValue(VALUE_HOLD[i], i, MAX);
         if (isnan(paramValue))
@@ -153,6 +166,16 @@ void AllWeather::publish(JSONBufferWriter &writer, uint8_t attempt_count)
  */
 bool AllWeather::readReady()
 {
+    if (!isConnected())
+    {
+        return false;
+    }
+
+    if (SINGLE_SAMPLE)
+    {
+        return true;
+    }
+
     if (!waitFor(SerialStorage::notSendingOfflineData, 1000))
     {
         return SerialStorage::notSendingOfflineData();
@@ -177,6 +200,12 @@ bool AllWeather::readReady()
  */
 size_t AllWeather::readSize()
 {
+
+    if (SINGLE_SAMPLE)
+    {
+        return 1;
+    }
+
     unsigned int size = boots->getReadTime() / 1000;
     size_t skip = utils.skipMultiple(size, boots->getMaxVal(), READ_THRESHOLD);
     size_t expand = floor(boots->getMaxVal() / skip);
@@ -254,13 +283,13 @@ String AllWeather::fetchReading()
 /**
  * @public
  *
- * read
+ * readSerial
  *
  * Called by the device manager when a read request is required
  *
  * @return void
  */
-void AllWeather::read()
+void AllWeather::readSerial()
 {
     readAttempt++;
     if (!readReady())
@@ -274,6 +303,79 @@ void AllWeather::read()
     Serial1.flush();
 }
 
+bool AllWeather::isConnected()
+{
+    if (!READ_ON_LOW_ONLY)
+    {
+        return true;
+    }
+    return digitalRead(DEVICE_CONNECTED_PIN) == LOW;
+}
+
+/**
+ * @private
+ * @brief
+ *
+ * getWire
+ *
+ * pulls the wire for a given content
+ *
+ * @return String
+ */
+String AllWeather::getWire(String content)
+{
+    return this->boots->getCommunicator().sendAndWaitForResponse(Bootstrap::coProcessorAddress, content, this->boots->defaultWireTimeout(), WIRE_TIMEOUT);
+}
+
+/**
+ * @public
+ *
+ * read
+ *
+ * Called by the device manager when a read request is required
+ *
+ * @return void
+ */
+void AllWeather::readWire()
+{
+    readAttempt++;
+    if (!readReady())
+    {
+        return;
+    }
+    readAttempt = 0;
+    String identity = this->serialResponseIdentity();
+    String content = String(getReadContent() + "\n");
+    String response = getWire(content);
+    if (boots->wireContainsError(response))
+    {
+        return Utils::log("READ_WIRE_ERROR", response);
+    }
+    parseSerial(response);
+}
+
+/**
+ * @public
+ *
+ * read
+ *
+ * Called by the device manager when a read request is required
+ *
+ * @return void
+ */
+void AllWeather::read()
+{
+    if (READ_OVER_WIRE)
+    {
+        if (SINGLE_SAMPLE)
+        {
+            return;
+        }
+        return readWire();
+    }
+    return readSerial();
+}
+
 /**
  * @public
  *
@@ -285,6 +387,12 @@ void AllWeather::read()
  */
 void AllWeather::loop()
 {
+
+    if (READ_OVER_WIRE)
+    {
+        return;
+    }
+
     String completedSerialItem = boots->fetchSerial(this->serialResponseIdentity());
     if (!completedSerialItem.equals(""))
     {
@@ -362,12 +470,16 @@ String AllWeather::replaceSerialResponceItem(String message)
  */
 void AllWeather::parseSerial(String ourReading)
 {
-    if (utils.inValidMessageString(ourReading, this->sendIdentity))
+    if (!READ_OVER_WIRE)
     {
-        return Utils::log("ALL_WEATHER_MESSAGE", "Invalid Message String");
+        if (utils.inValidMessageString(ourReading, this->sendIdentity))
+        {
+            return Utils::log("ALL_WEATHER_MESSAGE", "Invalid Message String");
+        }
+
+        ourReading = replaceSerialResponceItem(ourReading);
     }
 
-    ourReading = replaceSerialResponceItem(ourReading);
     readCompile = true;
     utils.parseSerial(ourReading, PARAM_LENGTH, boots->getMaxVal(), VALUE_HOLD);
     readCompile = false;
@@ -407,6 +519,16 @@ void AllWeather::print()
  */
 void AllWeather::init()
 {
+    if (READ_ON_LOW_ONLY)
+    {
+        pinMode(DEVICE_CONNECTED_PIN, INPUT_PULLUP);
+    }
+
+    if (READ_OVER_WIRE)
+    {
+        return;
+    }
+
     boots->startSerial();
 }
 
@@ -455,15 +577,19 @@ uint8_t AllWeather::paramCount()
 /**
  * @public
  *
- * matenanceCount
+ * maintenanceCount
  *
  * How many sensors appear non operational. The system will use this to
  * determin if device is unplugged or there are a few busted sensors.
  *
  * @return uint8_t
  */
-uint8_t AllWeather::matenanceCount()
+uint8_t AllWeather::maintenanceCount()
 {
+    if (!isConnected())
+    {
+        return (uint8_t)TOTAL_PARAM_VALUES;
+    }
     uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;
     return maintenance;

@@ -93,6 +93,7 @@ void Bootstrap::init()
 
     beachedTimer.start();
     heartBeatTimer.start();
+    communicator.begin();
     this->bootstrap();
     this->serialInit();
 }
@@ -117,6 +118,27 @@ void Bootstrap::storeDevice(String device, int index)
     uint16_t address = deviceConfigAdresses[index];
     Utils::log("STORING_DEVICE_CONFIGURATION", "Device " + device + String::format(" Address %u Version %u Index %u", address, confg.version, index));
     EEPROM.put(address, confg);
+}
+
+/**
+ * @name getCommunicator
+ * @brief gets the communication wrapper for I2C Wire
+ *  Protocol
+ * @return {WireComms}
+ */
+WireComms Bootstrap::getCommunicator()
+{
+    return communicator;
+}
+
+unsigned long Bootstrap::defaultWireTimeout()
+{
+    return WireComms::DEFAULT_WIRE_TIMEOUT;
+}
+
+bool Bootstrap::wireContainsError(String response)
+{
+    return communicator.containsError(response);
 }
 
 /**
@@ -782,7 +804,7 @@ bool Bootstrap::isBeached()
     BeachStruct beachBase = {0, beachedIncrement};
     EEPROM.put(BEACH_ADDRESS, beachBase);
     Log.info("GOT THIS BEACH COUNT %u of %u and increment %u", bCount, BEACHED_THRSHOLD, beachBase.count);
-    return bCount >= BEACHED_THRSHOLD;
+    return NO_BEACH_MODE ? false : bCount >= BEACHED_THRSHOLD;
 }
 
 /**
@@ -796,7 +818,7 @@ void Bootstrap::beach()
 
     uint8_t fail = 0;
     uint8_t FAIL_POINT = 4;
-
+    Log.info("BEACHING SYSTEM");
     int value = 0;
     char response[64] = "";
     Cellular.command(Utils::simCallback, response, BEACH_LISTEN_TIME, "AT+COPS=0,2\r\n");
@@ -885,9 +907,10 @@ void Bootstrap::restoreDefaults()
  */
 void Bootstrap::batteryController()
 {
-    PMIC pmic;
-    pmic.begin();
-    pmic.disableCharging();
+    bat.setup();
+    // PMIC pmic;
+    // pmic.begin();
+    // pmic.disableCharging();
 }
 
 /*
@@ -898,7 +921,7 @@ void Bootstrap::batteryController()
  */
 void Bootstrap::timers()
 {
-
+    bat.loop();
     processSerial();
 
     if (strappingTimers)

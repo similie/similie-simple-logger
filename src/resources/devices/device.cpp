@@ -84,13 +84,13 @@ uint8_t Device::paramCount()
 /**
  * @public
  * 
- * matenanceCount
+ * maintenanceCount
  * 
  * Is the device functional
  * 
  * @return uint8_t
  */
-uint8_t Device::matenanceCount()
+uint8_t Device::maintenanceCount()
 {
     return 0;
 }

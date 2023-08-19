@@ -10,11 +10,16 @@
 
 #ifndef all_weather_h
 #define all_weather_h
+#define READ_OVER_WIRE true
+#define SINGLE_SAMPLE true
+#define READ_ON_LOW_ONLY true
+#define DEVICE_CONNECTED_PIN D7
+#define TOTAL_PARAM_VALUES 17
 
 class AllWeather : public Device
 {
 private:
-    String valueMap[17] =
+    String valueMap[TOTAL_PARAM_VALUES] =
         {
             "sol",
             "pre",
@@ -62,7 +67,7 @@ private:
     bool readCompile = false;
     bool readReady();
     size_t readSize();
-
+    bool isConnected();
     String deviceName = "AllWeather";
     u_int8_t maintenanceTick = 0;
     String ourReading = "";
@@ -78,6 +83,11 @@ private:
     size_t readAttempt = 0;
     int sendIdentity = -1;
     String fetchReading();
+    void readSerial();
+    void readWire();
+    static const unsigned long WIRE_TIMEOUT = 2000;
+    String getWire(String);
+    void runSingleSample();
 
 public:
     ~AllWeather();
@@ -90,7 +100,7 @@ public:
     void init();
     String name();
     void nullifyPayload(const char *key);
-    u_int8_t matenanceCount();
+    u_int8_t maintenanceCount();
     u_int8_t paramCount();
     size_t buffSize();
     void restoreDefaults();

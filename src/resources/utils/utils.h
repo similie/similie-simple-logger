@@ -9,6 +9,11 @@
 class Utils
 {
 private:
+    String removeSensorIdFromPayload(String);
+    void splitStringToValues(String, String *, size_t);
+    bool notStopCheckChar(char);
+    const static int FAILED_VALUE = 9999;
+
 public:
     ~Utils();
     Utils();

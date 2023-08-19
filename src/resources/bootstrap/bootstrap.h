@@ -1,10 +1,13 @@
 #include "Particle.h"
 #include "string.h"
 #include "resources/utils/sleeper.h"
+#include "resources/utils/wire-comms.h"
+#include "resources/utils/battery.h"
 
 #define DEVICE_BYTE_BUFFER_SIZE 48
 #ifndef bootstrap_h
 #define bootstrap_h
+#define NO_BEACH_MODE true
 
 #define DEFAULT_PUB_INTERVAL 1
 
@@ -68,7 +71,8 @@ private:
     };
     String processorNames[2] = {"MO_SAMD_21G18", "FW_32u4"};
     int getProcessorEnum(String name);
-
+    WireComms communicator;
+    SystemBattery bat;
     bool hasSerialComms = false;
     void pullRegistration();
     void addNewDeviceToStructure(DeviceStruct device);
@@ -174,13 +178,16 @@ public:
     unsigned int getReadTime();
     unsigned int getPublishTime();
     void startSerial();
-
+    WireComms getCommunicator();
+    unsigned long defaultWireTimeout();
+    bool wireContainsError(String);
     String fetchSerial(String identity);
     uint16_t registerAddress(String name, uint16_t size);
     static size_t epromSize();
     static void beachReset();
     size_t getMaxVal();
-    const static unsigned int ONE_MINUTE = 1 * MILISECOND * MINUTE_IN_SECONDS;
+    static const uint8_t coProcessorAddress = 9;
+    static const unsigned int ONE_MINUTE = 1 * MILISECOND * MINUTE_IN_SECONDS;
     static const size_t OVERFLOW_VAL = MAX_SEND_TIME + 5;
     static const unsigned int HEARTBEAT_TIMER = MILISECOND * MINUTE_IN_SECONDS * 15;
     static const unsigned long BEACH_TIMEOUT_RESTORE = MINUTE_IN_SECONDS * MILISECOND * 10;
