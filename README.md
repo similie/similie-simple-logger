@@ -1,6 +1,6 @@
 # ![Similie Logo](https://cdn.similie.org/assets/similie/logo-similie-icon.svg) Similie AiLogger
 
-This project is the primary firmware for running our field-based data loggers using Particle's IoT architecture. The software has been testing using Particle's 3.0 and 3.1-based firmware. It may compile with older versions, but we have found problems running the firmware with 3rd-party SIM cards. Additionally the software is intended for Particle's 3rd-gen Boron/Argon Series and untested with other generatations. For devices requiring serial communications such as the Atmos41 or Terros 10/11, please see our repository [similie/sdi12-allweather-interface](https://github.com/similie/sdi12-allweather-interface)
+This project is the primary firmware for running our field-based data loggers using Particle's IoT architecture. The software has been testing using Particle's 3.0 and 3.1-based firmware. It may compile with older versions, but we have found problems running the firmware with 3rd-party SIM cards. Additionally the software is intended for Particle's 3rd-gen Boron/Argon Series and untested with other generations. For devices requiring serial communications such as the Atmos41 or Terros 10/11, please see our repository [similie/hyphen-coprocessor-firmware](https://github.com/similie/hyphen-coprocessor-firmware)
 
 ## Basic Architecture Overview
 
@@ -50,7 +50,7 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 
 #### External libraries
 
-We use CellularHelper for our HeartBeat class. It is a simple library that analyzes the SIM/Cellular details for the Boron-based builds. It should not be used if the solution runs with non-cellular capability. Additionally, we can use other libraries for our processors or devices if required, such as the AdafruitVC0706SerialCameraLibrary. The goal is to use libraries that can be cloud compiled and remotely flashed, so we try to limit our use of external dependencies, particularly those that violate this objective.
+We use CellularHelper for our HeartBeat class. It is a simple library that analyzes the SIM/Cellular details for the Boron-based builds. It should not be used if the solution runs with non-cellular capability. Additionally, we can use other libraries for our processors or devices if required, such as the [AdafruitVC0706SerialCameraLibrary](https://github.com/similie/Adafruit-VC0706-Serial-Camera-Library). The goal is to use libraries that can be cloud compiled and remotely flashed, so we try to limit our use of external dependencies, particularly those that violate this objective.
 
 #### `project.properties` file:
 
