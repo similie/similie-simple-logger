@@ -4,19 +4,20 @@
 #include "resources/utils/wire-comms.h"
 #include "resources/utils/battery.h"
 
+#define DEBUG_WIRE_DISCONNECT 0
 #define DEVICE_BYTE_BUFFER_SIZE 48
 #ifndef bootstrap_h
 #define bootstrap_h
 #define NO_BEACH_MODE true
-
+#define NO_SERIAL_START true
 #define DEFAULT_PUB_INTERVAL 1
 
 #define MAX_DEVICES 7
 #define EPROM_ADDRESS 0
 #define MINUTE_IN_SECONDS 60
-#define MILISECOND 1000
+#define MILLISECOND 1000
 #define NO_VALUE -9999
-#define TIMEZONE 9
+#define TIMEZONE_SET 9
 #define ATTEMPT_THRESHOLD 3
 
 #define MAX_SEND_TIME 15
@@ -25,6 +26,8 @@
 
 #define MAX_U16 65535
 #define MAX_EEPROM_ADDRESS 8197
+
+static const int TIMEZONE = TIMEZONE_SET;
 
 struct DeviceConfig
 {
@@ -51,6 +54,7 @@ struct EpromStruct
 {
     uint8_t version;
     uint8_t pub;
+    int timezone;
     double sleep;
 };
 
@@ -69,13 +73,18 @@ private:
         MO_SAMD_21G18,
         FW_32u4
     };
+    int localTimezone = TIMEZONE;
+    unsigned long debugWireDisconnectTime = millis();
     String processorNames[2] = {"MO_SAMD_21G18", "FW_32u4"};
-    int getProcessorEnum(String name);
+    int getProcessorEnum(String);
+    bool validTimezone(int);
     WireComms communicator;
     SystemBattery bat;
     bool hasSerialComms = false;
+    bool hasWireComms = false;
+    void applyTimeZone();
     void pullRegistration();
-    void addNewDeviceToStructure(DeviceStruct device);
+    void addNewDeviceToStructure(DeviceStruct);
     bool bootstrapped = false;
     uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
     double batterySleepThresholdValue = 0;
@@ -84,17 +93,19 @@ private:
     // unsigned long machineName(String name);
     void collectDevices();
     void setFunctions();
-    int setMaintenanceMode(String read);
-    int setBatterySleepThreshold(String read);
-    void sendBatteryValueToConfig(double val);
+    int setMaintenanceMode(String);
+    int setBatterySleepThreshold(String);
+    int setTimeZone(String);
+    void sendBatteryValueToConfig(double);
     // we can use 255 to know the index is invalid as 0 is a valid index
     void pingSerialComms();
     void pingPong();
+    void processPong(String);
     int maxAddressIndex();
     Sleeper sleep;
     DeviceMetaStruct deviceMeta;
     DeviceStruct devices[MAX_DEVICES];
-    DeviceStruct getDeviceByName(String name, uint16_t size);
+    DeviceStruct getDeviceByName(String, uint16_t);
     void saveDeviceMetaDetails();
     uint16_t getNextDeviceAddress();
     uint16_t deviceInitAddress();
@@ -103,13 +114,14 @@ private:
     void batteryController();
     void bootstrap();
     EpromStruct getsavedConfig();
-    void putSavedConfig(EpromStruct config);
+    void putSavedConfig(EpromStruct);
+    void sendTimezoneValueToConfig(short);
     // reset beachcount after 5 Minutes
     const size_t MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
     unsigned int READ_TIMER;
     unsigned int PUBLISH_TIMER;
     unsigned int BEAT_TIMER;
-    const unsigned int BEACH_LISTEN_TIME = 240 * MILISECOND;
+    const unsigned int BEACH_LISTEN_TIME = 240 * MILLISECOND;
     uint8_t beachCount();
     const uint8_t BEACHED_THRSHOLD = 5;
 
@@ -120,13 +132,14 @@ private:
     String serialReadContent = "";
     bool checkHasId();
     void serialInit();
-    size_t indexCounter(size_t startIndex);
-    bool isCorrectIdentity(String identity, size_t index);
+    size_t indexCounter(size_t);
+    bool isCorrectIdentity(String, size_t);
     void storeSerialContent();
     int serialBuilder();
     void processSerial();
-    void pushSerial(String serial);
-    String popSerial(size_t index);
+    void pushSerial(String);
+    String popSerial(size_t);
+    void debugNetworkDisconnect();
     // EEPROM Address Management
     void setMetaAddresses();
     uint16_t deviceMetaAdresses[MAX_DEVICES];
@@ -150,24 +163,25 @@ public:
     bool hasSerial();
     bool isStrapped();
     void init();
+    bool hasCoprocessor();
     String getProcessorName();
     bool isCoProcessorMemoryConstrained();
-    bool doesNotExceedsMaxAddressSize(uint16_t address);
-    void strapDevices(String *devices);
-    void storeDevice(String device, int index);
+    bool doesNotExceedsMaxAddressSize(uint16_t);
+    void strapDevices(String *);
+    void storeDevice(String, int);
     void clearDeviceConfigArray();
     void haultPublication();
     void resumePublication();
     double getCalibration();
     void restoreDefaults();
-    void setPublishTimer(bool time);
-    void setHeatbeatTimer(bool time);
-    void setReadTimer(bool time);
-    void setCalibration(double val);
-    void setDigital(bool digital);
-    void buildSendInterval(int interval);
-    void buildSleepThreshold(double sleepThreshold);
-    void setMaintenance(bool maintain);
+    void setPublishTimer(bool);
+    void setHeatbeatTimer(bool);
+    void setReadTimer(bool);
+    void setCalibration(double);
+    void setDigital(bool);
+    void buildSendInterval(int);
+    void buildSleepThreshold(double);
+    void setMaintenance(bool);
     bool hasMaintenance();
     bool publishTimerFunc();
     bool heatbeatTimerFunc();
@@ -180,17 +194,20 @@ public:
     void startSerial();
     WireComms getCommunicator();
     unsigned long defaultWireTimeout();
+    unsigned long defaultWireWait();
     bool wireContainsError(String);
-    String fetchSerial(String identity);
-    uint16_t registerAddress(String name, uint16_t size);
+    String fetchSerial(String);
+    uint16_t registerAddress(String, uint16_t);
     static size_t epromSize();
     static void beachReset();
     size_t getMaxVal();
+    bool isWire();
+    String removeNewLine(String value);
     static const uint8_t coProcessorAddress = 9;
-    static const unsigned int ONE_MINUTE = 1 * MILISECOND * MINUTE_IN_SECONDS;
+    static const unsigned int ONE_MINUTE = 1 * MILLISECOND * MINUTE_IN_SECONDS;
     static const size_t OVERFLOW_VAL = MAX_SEND_TIME + 5;
-    static const unsigned int HEARTBEAT_TIMER = MILISECOND * MINUTE_IN_SECONDS * 15;
-    static const unsigned long BEACH_TIMEOUT_RESTORE = MINUTE_IN_SECONDS * MILISECOND * 10;
+    static const unsigned int HEARTBEAT_TIMER = MILLISECOND * MINUTE_IN_SECONDS * 15;
+    static const unsigned long BEACH_TIMEOUT_RESTORE = MINUTE_IN_SECONDS * MILLISECOND * 10;
 };
 
 #endif

@@ -150,7 +150,7 @@ void AllWeather::publish(JSONBufferWriter &writer, uint8_t attempt_count)
         {
             maintenanceTick++;
         }
-
+        // Utils::log("SETTING PARAM " + param, String(paramValue));
         writer.name(param.c_str()).value(paramValue);
     }
 }
@@ -291,6 +291,12 @@ String AllWeather::fetchReading()
  */
 void AllWeather::readSerial()
 {
+
+    if (READ_OVER_WIRE)
+    {
+        return;
+    }
+
     readAttempt++;
     if (!readReady())
     {
@@ -324,7 +330,7 @@ bool AllWeather::isConnected()
  */
 String AllWeather::getWire(String content)
 {
-    return this->boots->getCommunicator().sendAndWaitForResponse(Bootstrap::coProcessorAddress, content, this->boots->defaultWireTimeout(), WIRE_TIMEOUT);
+    return this->boots->getCommunicator().sendAndWaitForResponse(Bootstrap::coProcessorAddress, content, this->boots->defaultWireWait(), WIRE_TIMEOUT);
 }
 
 /**
@@ -351,6 +357,7 @@ void AllWeather::readWire()
     {
         return Utils::log("READ_WIRE_ERROR", response);
     }
+    // Serial.print(response);
     parseSerial(response);
 }
 

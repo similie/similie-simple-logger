@@ -14,6 +14,19 @@ WireComms::~WireComms()
     end();
 }
 
+void WireComms::reset()
+{
+    Wire.reset();
+}
+
+void WireComms::resetAll()
+{
+    writeToWire(slaveAddress, String(resetCmd));
+    delay(300);
+    reset();
+    delay(300);
+}
+
 void WireComms::begin()
 {
 
@@ -35,19 +48,34 @@ void WireComms::end()
     Wire.end();
 }
 
+void WireComms::setCoprocessorAddress(int address)
+{
+    this->coprocessorAddress = address;
+}
+
 void WireComms::endAndStop(uint8_t address)
 {
     Wire.endTransmission();
     Wire.beginTransmission(address);
 }
 
-size_t WireComms::writeToWire(uint8_t address, String message)
+String WireComms::appendForCoprocessor(String message)
+{
+    if (message.endsWith("\n"))
+    {
+        return message;
+    }
+    return message + "\n";
+}
+
+size_t WireComms::writeToWire(uint8_t address, String send)
 {
     if (!Wire.isEnabled())
     {
         begin();
         delay(200);
     }
+    String message = appendForCoprocessor(send);
     size_t length = message.length();
     Wire.beginTransmission(address);
     for (size_t i = 0; i < length; i++)
@@ -108,12 +136,27 @@ String WireComms::responseBufferToString()
     return send;
 }
 
-bool WireComms::fillResponseBuffer(uint16_t index)
+int WireComms::fillResponseBuffer(int index)
 {
     bool breakCycle = Wire.available() == 0;
+    // if (breakCycle)
+    // {
+    //     delay(100);
+    // }
+    // Serial.print("\nWIRE HERE ");
+    // Serial.println(Wire.available());
+    uint16_t breakCount = 0;
+    uint16_t iterationCount = 0;
     while (Wire.available())
-    {                         // slave may send less than requested
+    {
+        iterationCount++;     // slave may send less than requested
         char c = Wire.read(); // receive a byte as character
+        if (c == 255)
+        {
+            breakCount++;
+            continue;
+        }
+
         if (inValidCharacter(c))
         {
             breakCycle = true;
@@ -121,10 +164,15 @@ bool WireComms::fillResponseBuffer(uint16_t index)
         }
         responseBuffer[index] = c;
         index++;
-        receivedBufferSize = index;
     }
     responseBuffer[index] = '\0';
-    return breakCycle;
+    receivedBufferSize = index;
+    // if (!breakCycle)
+    // {
+    //     responseBuffer[index] = '\0';
+    // }
+
+    return iterationCount == breakCount || breakCycle ? -1 : index;
 }
 
 void WireComms::requestFrom(uint8_t address, unsigned long timeout)
@@ -135,18 +183,21 @@ void WireComms::requestFrom(uint8_t address, unsigned long timeout)
 void WireComms::getAllResponseData(uint8_t address, unsigned long timeout)
 {
     receivedBufferSize = 0;
-    uint16_t index = 0;
+    int index = 0;
     uint16_t cycle = 0;
     while (cycle < MAX_CYCLES)
     {
         requestFrom(address, timeout);
-        if (fillResponseBuffer(index))
+        // Serial.println(index);
+        index = fillResponseBuffer(index);
+        if (index == -1)
         {
             break;
         }
         cycle++;
-        index = cycle * maxSize;
+        // index = cycle * maxSize;
     }
+    // Serial.println("\nENDING RESPONSE");
 }
 
 bool WireComms::receivedNoData()
@@ -166,17 +217,17 @@ String WireComms::requiredFromWire(uint8_t address, unsigned long timeout)
 
 String WireComms::requiredFromWire(uint8_t address)
 {
-    return requiredFromWire(address, DEFAULT_WIRE_TIMEOUT);
+    return requiredFromWire(address, DEFAULT_WIRE_WAIT);
 }
 
 String WireComms::sendAndWaitForResponse(uint8_t address, String message)
 {
-    return sendAndWaitForResponse(address, message, DEFAULT_WIRE_TIMEOUT);
+    return sendAndWaitForResponse(address, message, DEFAULT_WIRE_WAIT);
 }
 
 String WireComms::sendAndWaitForResponse(uint8_t address, String message, unsigned long timeout)
 {
-    return sendAndWaitForResponse(address, message, DEFAULT_WIRE_TIMEOUT, DEFAULT_WIRE_TIMEOUT);
+    return sendAndWaitForResponse(address, message, DEFAULT_WIRE_WAIT, DEFAULT_WIRE_TIMEOUT);
 }
 
 String WireComms::sendAndWaitForResponse(uint8_t address, String message, unsigned long timeout, unsigned long cmdTimeout)
@@ -190,4 +241,9 @@ bool WireComms::containsError(String response)
 {
     String errorType = response.replace(ERROR_FLAG, "");
     return errorType.length() < response.length();
+}
+
+String WireComms::sendAndWaitForResponse(String message)
+{
+    return sendAndWaitForResponse(coprocessorAddress, message);
 }

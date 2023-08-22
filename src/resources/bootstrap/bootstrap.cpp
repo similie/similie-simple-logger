@@ -54,11 +54,16 @@ void printMemory()
     Utils::log("MEMORY CHANGE", String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
     freememLast = freemem;
 }
+
+#ifndef TIMERBUILD
 // timer setup. This are the heartbeat of the system. Triggers system events
 Timer publishtimer(Bootstrap::ONE_MINUTE, releasePublishRead);
 Timer readtimer(Bootstrap::ONE_MINUTE, releaseRead);
 Timer heartBeatTimer(Bootstrap::HEARTBEAT_TIMER, releaseHeartbeat);
 Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true);
+#define TIMERBUILD 1
+#endif
+
 // Timer memoryPrinter(10000, printMemory);
 
 /**
@@ -67,8 +72,8 @@ Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true
 Bootstrap::~Bootstrap()
 {
     int interval = (int)publicationIntervalInMinutes;
-    this->READ_TIMER = (MINUTE_IN_SECONDS * interval) / MAX_SEND_TIME * MILISECOND;
-    this->PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILISECOND;
+    this->READ_TIMER = (MINUTE_IN_SECONDS * interval) / MAX_SEND_TIME * MILLISECOND;
+    this->PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILLISECOND;
 }
 
 /**
@@ -80,22 +85,25 @@ Bootstrap::~Bootstrap()
 void Bootstrap::init()
 {
     setFunctions();
-    this->setMetaAddresses();
-    this->pullRegistration();
-    this->batteryController();
+    setMetaAddresses();
+    pullRegistration();
+    batteryController();
     // memoryPrinter.start();
     // Cellular.setCredentials("internet");
-    Time.zone(TIMEZONE);
-    Particle.syncTime();
     Particle.keepAlive(30);
-    Particle.variable("publicationInterval", publishedInterval);
-    Particle.variable("batterySleepThreshold", batterySleepThresholdValue);
 
     beachedTimer.start();
     heartBeatTimer.start();
     communicator.begin();
-    this->bootstrap();
-    this->serialInit();
+    communicator.setCoprocessorAddress(Bootstrap::coProcessorAddress);
+    bootstrap();
+    serialInit();
+    applyTimeZone();
+    Particle.syncTime();
+
+    Particle.variable("publicationInterval", publishedInterval);
+    Particle.variable("batterySleepThreshold", batterySleepThresholdValue);
+    Particle.variable("timezone", localTimezone);
 }
 
 /**
@@ -109,15 +117,15 @@ void Bootstrap::init()
  */
 void Bootstrap::storeDevice(String device, int index)
 {
-    DeviceConfig confg = {1};
+    DeviceConfig config = {1};
     if (device.equals(""))
     {
-        confg = {255};
+        config = {255};
     }
-    Utils::machineNameDirect(device, confg.device);
+    Utils::machineNameDirect(device, config.device);
     uint16_t address = deviceConfigAdresses[index];
-    Utils::log("STORING_DEVICE_CONFIGURATION", "Device " + device + String::format(" Address %u Version %u Index %u", address, confg.version, index));
-    EEPROM.put(address, confg);
+    Utils::log("STORING_DEVICE_CONFIGURATION", "Device " + device + String::format(" Address %u Version %u Index %u", address, config.version, index));
+    EEPROM.put(address, config);
 }
 
 /**
@@ -134,6 +142,11 @@ WireComms Bootstrap::getCommunicator()
 unsigned long Bootstrap::defaultWireTimeout()
 {
     return WireComms::DEFAULT_WIRE_TIMEOUT;
+}
+
+unsigned long Bootstrap::defaultWireWait()
+{
+    return WireComms::DEFAULT_WIRE_WAIT;
 }
 
 bool Bootstrap::wireContainsError(String response)
@@ -200,6 +213,19 @@ void Bootstrap::sendBatteryValueToConfig(double val)
 }
 
 /*
+ * @private sendTimezoneValueToConfig:
+ *
+ * Called to set the timezone
+ * @return void
+ */
+void Bootstrap::sendTimezoneValueToConfig(short val)
+{
+    EpromStruct config = getsavedConfig();
+    config.timezone = val;
+    putSavedConfig(config);
+}
+
+/*
  * @private buildSleepThreshold:
  *
  * Called to set the sleeper threshold
@@ -238,6 +264,35 @@ int Bootstrap::setBatterySleepThreshold(String read)
     return 1;
 }
 
+void Bootstrap::applyTimeZone()
+{
+    if (!validTimezone(localTimezone))
+    {
+        return;
+    }
+    Utils::log("APPLYING_TIMEZONE", String(localTimezone));
+    Time.zone(localTimezone);
+}
+
+int Bootstrap::setTimeZone(String read)
+{
+
+    int val = (int)atoi(read);
+    if (!validTimezone(val))
+    {
+        return -1;
+    }
+    localTimezone = val;
+    applyTimeZone();
+    sendTimezoneValueToConfig(localTimezone);
+    return val;
+}
+
+bool Bootstrap::validTimezone(int val)
+{
+    return val >= -12 && val <= 12;
+}
+
 /**
  * @private setFunctions
  *
@@ -248,6 +303,7 @@ void Bootstrap::setFunctions()
 {
     Particle.function("setMaintenanceMode", &Bootstrap::setMaintenanceMode, this);
     Particle.function("setBatterySleepThreshold", &Bootstrap::setBatterySleepThreshold, this);
+    Particle.function("setTimezone", &Bootstrap::setTimeZone, this);
 }
 
 /**
@@ -718,8 +774,8 @@ void Bootstrap::buildSendInterval(int interval)
     strappingTimers = true;
     publicationIntervalInMinutes = (uint8_t)interval;
     publishedInterval = interval;
-    this->READ_TIMER = (unsigned int)(MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
-    this->PUBLISH_TIMER = (unsigned int)(publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND);
+    this->READ_TIMER = (unsigned int)(MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILLISECOND;
+    this->PUBLISH_TIMER = (unsigned int)(publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILLISECOND);
     haultPublication();
     publishtimer.changePeriod(PUBLISH_TIMER);
     readtimer.changePeriod(READ_TIMER);
@@ -743,7 +799,7 @@ EpromStruct Bootstrap::getsavedConfig()
     EEPROM.get(EPROM_ADDRESS, values);
     if (values.version != 1)
     {
-        EpromStruct defObject = {1, 1};
+        EpromStruct defObject = {1, 1, TIMEZONE, 0};
         values = defObject;
     }
     return values;
@@ -771,6 +827,26 @@ void Bootstrap::beachReset()
     Log.info("BEACH RESET > %u", Bootstrap::BEACH_ADDRESS);
     BeachStruct rebeach = {0, 0};
     EEPROM.put(Bootstrap::BEACH_ADDRESS, rebeach);
+}
+
+bool Bootstrap::isWire()
+{
+    return NO_SERIAL_START && hasWireComms;
+}
+
+/**
+ * @brief checks if the system has a coprocessor
+ *
+ * @return true
+ * @return false
+ */
+bool Bootstrap::hasCoprocessor()
+{
+    if (NO_SERIAL_START)
+    {
+        return hasWireComms;
+    }
+    return hasSerialComms;
 }
 
 /**
@@ -877,6 +953,13 @@ void Bootstrap::bootstrap()
     // a default version is 2 or 0 when instantiated.
     buildSendInterval((int)values.pub);
     buildSleepThreshold(values.sleep);
+
+    if (validTimezone(values.timezone))
+    {
+        localTimezone = values.timezone;
+        applyTimeZone();
+    }
+
     bootstrapped = true;
     staticBootstrapped = true;
 }
@@ -892,7 +975,7 @@ void Bootstrap::restoreDefaults()
     // EEPROM.clear();
     buildSendInterval(DEFAULT_PUB_INTERVAL);
     sleep.clear();
-    EpromStruct defObject = {1, publicationIntervalInMinutes, 0};
+    EpromStruct defObject = {1, publicationIntervalInMinutes, TIMEZONE, 0};
     putSavedConfig(defObject);
 }
 
@@ -948,6 +1031,31 @@ void Bootstrap::timers()
     {
         heartBeatTimer.start();
     }
+    debugNetworkDisconnect();
+}
+/**
+ * debugNetworkDisconnect
+ * @brief Used to test a disconnection event
+ */
+void Bootstrap::debugNetworkDisconnect()
+{
+    if (!DEBUG_WIRE_DISCONNECT)
+    {
+        return;
+    }
+
+    if (!Particle.connected())
+    {
+        return;
+    }
+
+    if (millis() - debugWireDisconnectTime < DEBUG_WIRE_DISCONNECT)
+    {
+        return;
+    }
+    Utils::log("DEBUG_WIRE_DISCONNECT", "Disconnected");
+    debugWireDisconnectTime = millis();
+    Particle.disconnect();
 }
 
 /**
@@ -959,9 +1067,9 @@ void Bootstrap::timers()
 void Bootstrap::serialInit()
 {
     // SERIAL_COMMS_BAUD
-    if (!SERIAL_COMMS_BAUD)
+    if (!SERIAL_COMMS_BAUD || NO_SERIAL_START)
     {
-        return;
+        return pingSerialComms();
     }
 
     Serial1.begin(SERIAL_COMMS_BAUD);
@@ -1064,9 +1172,9 @@ void Bootstrap::storeSerialContent()
 {
     if (serialReadContent.startsWith("pong"))
     {
-        processorName = serialReadContent.substring(5);
+        processPong(serialReadContent);
         serialReadContent = "";
-        return pingPong();
+        return;
     }
     if (serialStoreIndex < 0 || serialStoreIndex >= serial_buffer_length)
     {
@@ -1162,7 +1270,6 @@ int Bootstrap::getProcessorEnum(String name)
             break;
         }
     }
-
     return index;
 }
 
@@ -1176,6 +1283,15 @@ int Bootstrap::getProcessorEnum(String name)
  * */
 String Bootstrap::fetchSerial(String identity)
 {
+    if (!Serial1.isEnabled())
+    {
+        if (!SERIAL_COMMS_BAUD)
+        {
+            return "";
+        }
+        Serial1.begin(SERIAL_COMMS_BAUD);
+    }
+
     if (!wantsSerial)
     {
         wantsSerial = true;
@@ -1247,7 +1363,38 @@ String Bootstrap::getProcessorName()
  * */
 void Bootstrap::pingPong()
 {
-    hasSerialComms = true;
+    if (NO_SERIAL_START)
+    {
+        hasWireComms = true;
+    }
+    else
+    {
+        hasSerialComms = true;
+    }
+}
+
+/**
+ * @brief removes the \n character from the end of a string
+ *
+ */
+String Utils::removeNewLine(String value)
+{
+    if (!value.endsWith("\n"))
+    {
+        return value;
+    }
+    return value.substring(0, value.length() - 1);
+}
+
+/**
+ * @brief processes the pong result from the coprocessor
+ *
+ * @param response
+ */
+void Bootstrap::processPong(String response)
+{
+    processorName = removeNewLine(response.startsWith("pong") ? response.substring(5) : response);
+    pingPong();
 }
 
 /**
@@ -1261,5 +1408,11 @@ void Bootstrap::pingPong()
  * */
 void Bootstrap::pingSerialComms()
 {
+    if (NO_SERIAL_START)
+    {
+        String pong = communicator.sendAndWaitForResponse("ping");
+        return processPong(pong);
+    }
+
     Serial1.println("ping");
 }

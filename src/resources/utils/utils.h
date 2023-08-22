@@ -12,7 +12,7 @@ private:
     String removeSensorIdFromPayload(String);
     void splitStringToValues(String, String *, size_t);
     bool notStopCheckChar(char);
-    const static int FAILED_VALUE = 9999;
+    const static int FAILED_VALUE = NO_VALUE;
 
 public:
     ~Utils();
@@ -43,12 +43,15 @@ public:
     float getSum(float values[], size_t MAX);
     float getMedian(float arr[], size_t max);
     long getMedian(long readparam, long arr[]);
+    void fillStringifiedFailedDefaults(String *, size_t);
     static bool connected();
     static void machineNameDirect(String name, byte *save);
     static String machineToReadableName(byte *restore);
     static unsigned long machineName(String name, bool unique);
     static int containsValue(String arr[], size_t size, String value);
     static int getIndexOf(String, String arr[], size_t);
+    static bool containsString(String, String);
+    String removeNewLine(String value);
     // template<typename T>
     static void log(String event, String message);
     static int log(String event, String message, int errorCode);

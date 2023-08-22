@@ -35,7 +35,7 @@ SerialStorage::~SerialStorage()
 void SerialStorage::clearDeviceStorage()
 {
     EEPROM.clear();
-    Utils::log("EPROM_CLEARED", String(millis()));
+    Utils::log("EEPROM_CLEARED", String(millis()));
 }
 
 /**
@@ -69,11 +69,8 @@ int SerialStorage::getNewLineIndex(String payload)
 {
     int newLine = INVALID;
     // start at the end. It is more likely to find there
-    // Serial.print("WHAT THE HELL ");Serial.println(payload.length());
     for (int i = payload.length() - 1; i >= 0; i--)
     {
-        // Serial.print("INDEX ");Serial.print(i); Serial.print(" ");
-        // Serial.println(payload.charAt(i));
         if (payload.charAt(i) == '\n' || payload.charAt(i) == '}')
         {
 
@@ -144,13 +141,37 @@ String SerialStorage::getPopStartIndex(String read)
     return read;
 }
 
+String SerialStorage::setStale(String content)
+{
+    String stale = "{\"stale\":true,";
+    String stripped = content.substring(1);
+    return stale + stripped;
+}
+
 bool SerialStorage::sendPop(popContent content)
 {
     String SEND_TO = content.key;
-    String SEND = content.content;
+    String SEND = setStale(content.content);
     Utils::log("SERIAL_POP_SEND", SEND_TO + " " + SEND);
     bool published = this->holdProcessor->publish(SEND_TO, SEND);
     return published;
+}
+
+bool SerialStorage::sendPop(String content)
+{
+    short int topicIndex = firstSpaceIndex(content, 1);
+    if (topicIndex == INVALID)
+    {
+        return false;
+    }
+
+    String topic = content.substring(0, topicIndex - 1);
+    String send = content.substring(topicIndex);
+    popContent pop;
+    pop.valid = true;
+    pop.key = topic;
+    pop.content = send;
+    return sendPop(pop);
 }
 
 /**
@@ -200,7 +221,6 @@ void SerialStorage::checkPopSend()
     }
     popContent pop = popStore[index];
     bool sent = sendPop(pop);
-    // Utils::log("SENDING_POP_ELEMENT", pop.key + " " + pop.content + " " + String(sent));
     if (sent)
     {
         sendIndex = index + 1;
@@ -277,8 +297,6 @@ short int SerialStorage::storePayloadToSend(popContent content)
 {
 
     short int index = -1;
-    // Serial.print("GHEE "); Serial.print(content.valid); Serial.print(" "); Serial.println(content.key);
-
     if (!content.valid)
     {
         return index;
@@ -293,7 +311,6 @@ short int SerialStorage::storePayloadToSend(popContent content)
             startIndex = 0;
         }
         popContent pop = popStore[startIndex];
-        // Serial.print("HEHE "); Serial.print(startIndex); Serial.print(" ");Serial.println(pop.valid);
         if (pop.valid != true)
         {
             index = startIndex;
@@ -302,8 +319,44 @@ short int SerialStorage::storePayloadToSend(popContent content)
         startIndex++;
         cycles++;
     }
-    // Serial.print("GOT THIS SHIT ");Serial.println(index);
     return index;
+}
+
+bool SerialStorage::checkValidPopString(String value)
+{
+    short int topicIndex = firstSpaceIndex(value, 1);
+    if (topicIndex == INVALID)
+    {
+        return false;
+    }
+    return value.substring(topicIndex).startsWith("{") && (value.endsWith("}") || value.endsWith("}\n"));
+}
+
+void SerialStorage::popWire()
+{
+    sendingOffline = true;
+    for (uint8_t i = 0; i < POP_COUNT_VALUE; i++)
+    {
+        // delay(300);
+        String result = boots->getCommunicator().sendAndWaitForResponse("pop");
+        if (boots->getCommunicator().containsError(result))
+        {
+            Utils::log("POP_COMMUNICATION_ERROR", result);
+            break;
+        }
+        if (!checkValidPopString(result))
+        {
+            Utils::log("POP_INVALID_STRING", "CONTINUING...");
+            continue;
+        }
+
+        if (!sendPop(result))
+        {
+            sendPayloadOverWire(result);
+            break;
+        }
+    }
+    sendingOffline = false;
 }
 
 /**
@@ -320,9 +373,14 @@ short int SerialStorage::storePayloadToSend(popContent content)
  */
 void SerialStorage::popOfflineCollection()
 {
-    if (!boots->hasSerial())
+    if (!boots->hasCoprocessor())
     {
         return;
+    }
+
+    if (boots->isWire())
+    {
+        return popWire();
     }
 
     sendingOffline = true;
@@ -428,6 +486,19 @@ short int SerialStorage::firstSpaceIndex(String value, uint8_t index)
     return sendIndex;
 }
 
+void SerialStorage::sendPayloadOverWire(String send)
+{
+    String cmd = "push " + send;
+    // Serial.print("PUSHING PAYLAD ");
+    // Serial.println(cmd);
+    String ok = boots->getCommunicator().sendAndWaitForResponse(cmd);
+    if (boots->getCommunicator().containsError(ok))
+    {
+        return Utils::log("PUSH_PAYLOAD_RESPONSE_FAILURE", ok);
+    }
+    Utils::log("PUSH_PAYLOAD_RESPONSE", ok);
+}
+
 /**
  * @public
  *
@@ -443,25 +514,30 @@ short int SerialStorage::firstSpaceIndex(String value, uint8_t index)
  */
 void SerialStorage::storePayload(String payload, String topic)
 {
-    if (!boots->hasSerial())
+    if (!boots->hasCoprocessor())
     {
         return;
     }
-
-    sendingOffline = true;
 
     bool constrained = boots->isCoProcessorMemoryConstrained();
     Utils::log("PROCESSOR_" + boots->getProcessorName(), "constrained? " + String(constrained));
     // let's let everything clear from the buffer if there's
     // data being delivered
+    String send = topic + " " + payload + "\n";
+    if (boots->isWire())
+    {
+        return sendPayloadOverWire(send);
+    }
+
+    sendingOffline = true;
     Serial1.flush();
     delay(100);
-    String send = topic + " " + payload + "\n";
+
     // String send = topic + " " + payload;
     size_t length = send.length();
     // there is a lot of noise this function picks up on the co-processor. I think it is related
     // with tight memory limitations with the 32u4 chip.
-    uint8_t MAX_CHUNCK = 30;
+    uint8_t MAX_CHUNK = 30;
     String push = "push ";
     if (constrained)
     {
@@ -470,7 +546,7 @@ void SerialStorage::storePayload(String payload, String topic)
         {
             // print push to tag the payload as a storage event
             Serial1.print(push);
-            for (size_t j = 0; j < MAX_CHUNCK && i < length; j++)
+            for (size_t j = 0; j < MAX_CHUNK && i < length; j++)
             {
                 Serial1.write(send.charAt(i));
                 i++;
@@ -506,6 +582,12 @@ void SerialStorage::storePayload(String payload, String topic)
  */
 void SerialStorage::loop()
 {
+
+    if (boots->isWire())
+    {
+        return;
+    }
+
     String pop = this->boots->fetchSerial("pop");
     if (!pop.equals(""))
     {

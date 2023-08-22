@@ -224,10 +224,10 @@ void Utils::log(String event, String message)
     {
         return;
     }
-
+    String strippedMessage = message.endsWith("\n") ? message.substring(0, message.length() - 1) : message;
     Serial.print(getTimePadding());
     Serial.print(" [SIMILIE] " + event + ": ");
-    Serial.println(message);
+    Serial.println(strippedMessage);
 }
 
 /**
@@ -502,9 +502,19 @@ void Utils::splitStringToValues(String ourReading, String *values, size_t maxLen
             valueLength++;
             c = cleanedReading.charAt(index + valueLength);
         }
+        // Serial.print("SCALED ");
+        // Serial.println(build);
         index += valueLength;
         values[storageIndex] = build.equals("-") || build.equals("") ? String(FAILED_VALUE) : build;
         storageIndex++;
+    }
+}
+
+void Utils::fillStringifiedFailedDefaults(String *values, size_t length)
+{
+    for (size_t i = 0; i < length; i++)
+    {
+        values[i] = String(FAILED_VALUE);
     }
 }
 
@@ -526,6 +536,7 @@ void Utils::splitStringToValues(String ourReading, String *values, size_t maxLen
 void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float value_hold[][Bootstrap::OVERFLOW_VAL])
 {
     String stringifiedValues[paramLength];
+    fillStringifiedFailedDefaults(stringifiedValues, paramLength);
     splitStringToValues(ourReading, stringifiedValues, paramLength);
     for (size_t i = 0; i < paramLength; i++)
     {
@@ -702,6 +713,19 @@ float Utils::getMax(float values[], size_t MAX)
         i--;
     }
     return value;
+}
+
+/**
+ * @brief checks to see if there is a match against string values
+ *
+ * @param value
+ * @param match
+ * @return true
+ * @return false
+ */
+bool Utils::containsString(String value, String match)
+{
+    return value.indexOf(match) >= 0;
 }
 
 /**
@@ -1076,4 +1100,17 @@ void Utils::reboot()
 void Utils::setDebug(bool debug)
 {
     debugValue = debug;
+}
+
+/**
+ * @brief removes the \n character from the end of a string
+ *
+ */
+String Utils::removeNewLine(String value)
+{
+    if (!value.endsWith("\n"))
+    {
+        return value;
+    }
+    return value.substring(0, value.length() - 1);
 }
