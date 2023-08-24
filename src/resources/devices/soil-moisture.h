@@ -1,18 +1,11 @@
 #define SOIL_MOISTURE_DEFAULT 0.0003879
 #define MINERAL_SOIL_DEFAULT true
-
-#include "Particle.h"
-#include "string.h"
-#include "device.h"
-#include "math.h"
-#include "resources/bootstrap/bootstrap.h"
-#include "resources/processors/Processor.h"
-#include "resources/utils/utils.h"
-#include "resources/utils/serial_storage.h"
-#include <stdint.h>
+#include "sdi-12.h"
 
 #ifndef soil_moisture_h
 #define soil_moisture_h
+
+#define SOIL_MOISTURE_PARAMS 2
 
 struct VWCStruct
 {
@@ -21,21 +14,43 @@ struct VWCStruct
     double multiple;
 };
 
-class SoilMoisture : public Device
+class SoilMoistureElements : public SDIParamElements
 {
 private:
-    String valueMap[2] =
+    Utils utils;
+    String deviceName = "SoilMoisture";
+    size_t buffSize = 75;
+    uint8_t maxSize = TOTAL_PARAM_VALUES;
+    String valueMap[SOIL_MOISTURE_PARAMS] =
         {
             "vwc",
             "s_t"};
-    enum
+
+public:
+    SoilMoistureElements() : SDIParamElements(deviceName, valueMap, maxSize, buffSize)
     {
-        vwc,
-        soil_temp,
-    };
-    Bootstrap *boots;
-    String serialMsgStr = "0R0!";
-    String deviceName = "SoilMoisture";
+    }
+
+    // float extractValue(float values[], size_t key, size_t max)
+    // {
+    //     switch (key)
+    //     {
+    //     case gust_wind_speed:
+    //     case strike_distance:
+    //         return utils.getMax(values, max);
+    //     case precipitation:
+    //     case strikes:
+    //         return utils.getSum(values, max);
+    //     default:
+    //         return utils.getMedian(values, max);
+    //     }
+    // }
+};
+
+class SoilMoisture : public SDI12Device
+{
+private:
+    SoilMoistureElements elements;
     Utils utils;
     uint16_t saveAddressForMoisture = -1;
     double multiple = SOIL_MOISTURE_DEFAULT;
@@ -46,44 +61,44 @@ private:
     void pullEpromData();
     void setFunctions();
     void parseSerial(String ourReading);
-    bool readyRead = false;
-    bool readCompile = false;
+    // bool readyRead = false;
+    // bool readCompile = false;
     bool mineral_soil = MINERAL_SOIL_DEFAULT;
-    bool readReady();
-    size_t readSize();
-    uint8_t maintenanceTick = 0;
-    String ourReading = "";
-    String getReadContent();
-    String uniqueName();
-    bool hasSerialIdentity();
-    String constrictSerialIdentity();
-    String serialResponseIdentity();
-    String replaceSerialResponceItem(String message);
-    bool validMessageString(String message);
-    unsigned int READ_THRESHOLD = 12;
-    static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);
-    float VALUE_HOLD[SoilMoisture::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
-    size_t readAttempt = 0;
-    int sendIdentity = -1;
-    String paramName(size_t index);
-    String fetchReading();
+    // bool readReady();
+    // size_t readSize();
+    // uint8_t maintenanceTick = 0;
+    // String ourReading = "";
+    // String getReadContent();
+    // String uniqueName();
+    // bool hasSerialIdentity();
+    // String constrictSerialIdentity();
+    // String serialResponseIdentity();
+    // String replaceSerialResponceItem(String message);
+    // bool validMessageString(String message);
+    // unsigned int READ_THRESHOLD = 12;
+    // static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);
+    // float VALUE_HOLD[SoilMoisture::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
+    // size_t readAttempt = 0;
+    // int sendIdentity = -1;
+    // String paramName(size_t index);
+    // String fetchReading();
     float applySoilMoistureEquation(float value);
 
 public:
     ~SoilMoisture();
     SoilMoisture(Bootstrap *boots);
     SoilMoisture(Bootstrap *boots, int identity);
-    void read();
-    void loop();
-    void clear();
-    void print();
+    // void read();
+    // void loop();
+    // void clear();
+    // void print();
     void init();
-    String name();
-    uint8_t maintenanceCount();
-    uint8_t paramCount();
-    size_t buffSize();
+    // String name();
+    // uint8_t maintenanceCount();
+    // uint8_t paramCount();
+    // size_t buffSize();
     void restoreDefaults();
-    void publish(JSONBufferWriter &writer, uint8_t attempt_count);
+    // void publish(JSONBufferWriter &writer, uint8_t attempt_count);
     float extractValue(float values[], size_t key);
     float extractValue(float values[], size_t key, size_t max);
 };
