@@ -31,6 +31,7 @@ private:
     void printResponseBuffer();
     void getAllResponseData(uint8_t, unsigned long);
     bool receivedNoData();
+    bool containsString(String, String);
 
 public:
     // static const size_t I2C_BUFFER_LENGTH = 512;

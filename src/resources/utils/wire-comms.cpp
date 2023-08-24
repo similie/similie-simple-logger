@@ -226,10 +226,22 @@ String WireComms::sendAndWaitForResponse(uint8_t address, String message, unsign
     return requiredFromWire(address, timeout);
 }
 
+/**
+ * @brief checks to see if there is a match against string values
+ *
+ * @param value
+ * @param match
+ * @return true - if there is a match
+ * @return false - if there is no match
+ */
+bool WireComms::containsString(String value, String match)
+{
+    return value.indexOf(match) >= 0;
+}
+
 bool WireComms::containsError(String response)
 {
-    String errorType = response.replace(ERROR_FLAG, "");
-    return errorType.length() < response.length();
+    return containsString(response, String(ERROR_FLAG)); //  errorType.length() < response.length();
 }
 
 String WireComms::sendAndWaitForResponse(String message)

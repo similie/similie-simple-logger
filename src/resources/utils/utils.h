@@ -1,11 +1,11 @@
 #include "Particle.h"
 #include "string.h"
 #include "math.h"
-#include "resources/bootstrap/bootstrap.h"
 
 #ifndef Utils_h
 #define Utils_h
 
+#include "resources/bootstrap/bootstrap.h"
 
 class Utils
 {

@@ -344,13 +344,12 @@ void SerialStorage::popWire()
             Utils::log("POP_COMMUNICATION_ERROR", result);
             break;
         }
-        if (!checkValidPopString(result))
+        else if (!checkValidPopString(result))
         {
             Utils::log("POP_INVALID_STRING", "CONTINUING...");
             continue;
         }
-
-        if (!sendPop(result))
+        else if (!sendPop(result))
         {
             sendPayloadOverWire(result);
             break;

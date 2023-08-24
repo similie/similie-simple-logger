@@ -29,7 +29,7 @@
 class Configurator
 {
 private:
-    String devicesAvaliable[CURRENT_DEVICES_COUNT] = {"all_weather", "soil_moisture", "rain_gauge", "gps", "battery", "sonic_sensor", "flow_meter", "beco_flow_meter", "video_capture", "rika_airquality"};
+    String devicesAvailable[CURRENT_DEVICES_COUNT] = {"all_weather", "soil_moisture", "rain_gauge", "gps", "battery", "sonic_sensor", "flow_meter", "beco_flow_meter", "video_capture", "rika_airquality"};
     enum
     {
         all_weather,
@@ -52,7 +52,7 @@ public:
     ~Configurator();
     Configurator();
     int getEnumIndex(String value);
-    bool violatesOccurances(String value, int occrances);
+    bool violatesOccurrences(String value, int occrances);
     void loadConfigurationStorage(String payload, String configurationStore[], size_t size);
     Device *addDevice(String payload, Bootstrap *boots);
     bool removeDevice(String payload);

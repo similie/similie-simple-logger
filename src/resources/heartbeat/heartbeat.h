@@ -1,13 +1,16 @@
 #include "Particle.h"
 #include "string.h"
-#define HAS_LOCAL_POWER false
-#define BUFFERSIZE 800
+
 #ifndef heartbeat_h
 #define heartbeat_h
+
+#define HAS_LOCAL_POWER false
+#define HEART_BUFFER_SIZE 400
+
 class HeartBeat
 {
 private:
-    char buf[BUFFERSIZE];
+    char buf[HEART_BUFFER_SIZE];
     String deviceID;
     FuelGauge fuel;
     String cellAccessTech(int rat);

@@ -60,7 +60,7 @@ bool Configurator::noIdentity(String configurationStore[], int index)
  *
  *
  */
-bool Configurator::violatesOccurances(String value, int occrances)
+bool Configurator::violatesOccurrences(String value, int occrances)
 {
     int index = getEnumIndex(value);
     switch (index)
@@ -144,7 +144,7 @@ void Configurator::loadConfigurationStorage(String payload, String configuration
  */
 int Configurator::getEnumIndex(String value)
 {
-    return Utils::containsValue(devicesAvaliable, CURRENT_DEVICES_COUNT, value);
+    return Utils::containsValue(devicesAvailable, CURRENT_DEVICES_COUNT, value);
 }
 
 /**

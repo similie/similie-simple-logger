@@ -30,21 +30,6 @@ public:
     SoilMoistureElements() : SDIParamElements(deviceName, valueMap, maxSize, buffSize)
     {
     }
-
-    // float extractValue(float values[], size_t key, size_t max)
-    // {
-    //     switch (key)
-    //     {
-    //     case gust_wind_speed:
-    //     case strike_distance:
-    //         return utils.getMax(values, max);
-    //     case precipitation:
-    //     case strikes:
-    //         return utils.getSum(values, max);
-    //     default:
-    //         return utils.getMedian(values, max);
-    //     }
-    // }
 };
 
 class SoilMoisture : public SDI12Device

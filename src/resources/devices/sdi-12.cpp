@@ -360,7 +360,7 @@ void SDI12Device::readWire()
     {
         return Utils::log("READ_WIRE_ERROR", response);
     }
-    // Serial.print(response);
+    Serial.print(response);
     parseSerial(response);
 }
 
@@ -547,7 +547,7 @@ void SDI12Device::init()
 {
     if (READ_ON_LOW_ONLY)
     {
-        pinMode(DEVICE_CONNECTED_PIN, INPUT_PULLUP);
+        pinMode(DEVICE_CONNECTED_PIN, INPUT);
     }
 
     if (READ_OVER_WIRE)

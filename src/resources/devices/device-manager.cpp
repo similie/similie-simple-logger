@@ -549,7 +549,10 @@ JSONBufferWriter DeviceManager::createJSONBuffer(size_t bufferSize)
  */
 String DeviceManager::payloadWriter(uint8_t &maintenanceCount)
 {
-    JSONBufferWriter writer = createJSONBuffer();
+    // JSONBufferWriter *writer = createJSONBuffer();
+    resetBuffer();
+    size_t bufferSize = getBufferSize();
+    JSONBufferWriter writer(jsonBuffer, bufferSize - 1);
     packagePayload(&writer);
     for (size_t i = 0; i < this->deviceCount; i++)
     {
@@ -904,7 +907,7 @@ bool DeviceManager::violatesDeviceRules(String value)
      */
     size_t occurrences = countDeviceType(deviceName);
 
-    if (config.violatesOccurances(deviceName, occurrences))
+    if (config.violatesOccurrences(deviceName, occurrences))
     {
         return violation;
     }
@@ -942,7 +945,7 @@ int DeviceManager::addDevice(String value)
     int valid = applyDevice(config.addDevice(value, &boots), value, true);
     if (valid == 0)
     {
-        return DEFVICE_FAILED_TO_INSTANTIATE;
+        return DEVICE_FAILED_TO_INSTANTIATE;
     }
     setParamsCount();
     boots.storeDevice(value, valid - 1);
@@ -1050,10 +1053,11 @@ int DeviceManager::removeDevice(String value)
  */
 bool DeviceManager::publishDeviceList()
 {
-    JSONBufferWriter writer = createJSONBuffer(BUFF_SIZE);
+    // JSONBufferWriter writer = createJSONBuffer(BUFF_SIZE);
     // char buf[BUFF_SIZE];
     // memset(buf, 0, sizeof(buf));
-    // JSONBufferWriter writer(buf, sizeof(buf) - 1);
+    resetBuffer();
+    JSONBufferWriter writer(jsonBuffer, BUFF_SIZE - 1);
     packagePayload(&writer);
     writer.name("payload").beginObject();
     for (size_t i = 0; i < MAX_DEVICES; i++)
