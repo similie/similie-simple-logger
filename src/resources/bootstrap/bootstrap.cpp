@@ -61,10 +61,9 @@ Timer publishtimer(Bootstrap::ONE_MINUTE, releasePublishRead);
 Timer readtimer(Bootstrap::ONE_MINUTE, releaseRead);
 Timer heartBeatTimer(Bootstrap::HEARTBEAT_TIMER, releaseHeartbeat);
 Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true);
+Timer memoryPrinter(10000, printMemory);
 #define TIMERBUILD 1
 #endif
-
-// Timer memoryPrinter(10000, printMemory);
 
 /**
  * @constructor Bootstrap
@@ -88,7 +87,7 @@ void Bootstrap::init()
     setMetaAddresses();
     pullRegistration();
     batteryController();
-    // memoryPrinter.start();
+    memoryPrinter.start();
     // Cellular.setCredentials("internet");
     Particle.keepAlive(30);
 
@@ -1377,13 +1376,9 @@ void Bootstrap::pingPong()
  * @brief removes the \n character from the end of a string
  *
  */
-String Utils::removeNewLine(String value)
+String Bootstrap::removeNewLine(String value)
 {
-    if (!value.endsWith("\n"))
-    {
-        return value;
-    }
-    return value.substring(0, value.length() - 1);
+    return Utils::removeNewLine(value);
 }
 
 /**

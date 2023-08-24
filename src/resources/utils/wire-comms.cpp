@@ -29,7 +29,6 @@ void WireComms::resetAll()
 
 void WireComms::begin()
 {
-
     if (this->slaveAddress != -1)
     {
         return begin(this->slaveAddress);
@@ -81,6 +80,7 @@ size_t WireComms::writeToWire(uint8_t address, String send)
     for (size_t i = 0; i < length; i++)
     {
         char c = message.charAt(i);
+        //  Serial.print(c);
         Wire.write(c);
         if (i % maxSize == 0)
         {
@@ -117,6 +117,7 @@ void WireComms::printResponseBuffer()
     char c = responseBuffer[index];
     while (c != '\0' && index < MAX_BUFFER_SIZE)
     {
+        Serial.print(c);
         index++;
         c = responseBuffer[index];
     }
@@ -139,12 +140,6 @@ String WireComms::responseBufferToString()
 int WireComms::fillResponseBuffer(int index)
 {
     bool breakCycle = Wire.available() == 0;
-    // if (breakCycle)
-    // {
-    //     delay(100);
-    // }
-    // Serial.print("\nWIRE HERE ");
-    // Serial.println(Wire.available());
     uint16_t breakCount = 0;
     uint16_t iterationCount = 0;
     while (Wire.available())
@@ -167,11 +162,6 @@ int WireComms::fillResponseBuffer(int index)
     }
     responseBuffer[index] = '\0';
     receivedBufferSize = index;
-    // if (!breakCycle)
-    // {
-    //     responseBuffer[index] = '\0';
-    // }
-
     return iterationCount == breakCount || breakCycle ? -1 : index;
 }
 
@@ -188,16 +178,15 @@ void WireComms::getAllResponseData(uint8_t address, unsigned long timeout)
     while (cycle < MAX_CYCLES)
     {
         requestFrom(address, timeout);
-        // Serial.println(index);
         index = fillResponseBuffer(index);
         if (index == -1)
         {
             break;
         }
         cycle++;
-        // index = cycle * maxSize;
     }
-    // Serial.println("\nENDING RESPONSE");
+
+    //  printResponseBuffer();
 }
 
 bool WireComms::receivedNoData()

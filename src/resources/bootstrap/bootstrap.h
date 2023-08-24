@@ -21,7 +21,13 @@
 #define ATTEMPT_THRESHOLD 3
 
 #define MAX_SEND_TIME 15
+
+#ifdef NO_SERIAL_START
+#define SERIAL_BUFFER_LENGTH 1
+#else
 #define SERIAL_BUFFER_LENGTH 5
+#endif
+
 #define SERIAL_COMMS_BAUD 76800 // 9600
 
 #define MAX_U16 65535

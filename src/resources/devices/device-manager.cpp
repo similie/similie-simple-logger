@@ -1,7 +1,7 @@
 #include "device-manager.h"
 /**
  * ~DeviceManager
- * 
+ *
  * Default deconstructor
  */
 DeviceManager::~DeviceManager()
@@ -10,8 +10,8 @@ DeviceManager::~DeviceManager()
 
 /**
  * DeviceManager
- * 
- * Default constrictuor. Add your devices to the devices muti-dimentional 
+ *
+ * Default constrictuor. Add your devices to the devices muti-dimentional
  * array. Generally we will only need one device array established. But there
  * are options for more. The limit is 7 devices applied to a given box.
  *
@@ -37,15 +37,15 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
     Utils::setDebug(debug);
 
     /**
-    * Our primary method of device configuration is via the particle
-    * cloud using the addDevice function. However, we can also configure
-    * our devices directly in the constructor by setting the deviceAggregateCounts array.
-    * Normally you will leave the first dimension at ONE_I.
-    * Between the curly braces {NUM}, Set the number of devices you need to initialize.
-    * The max is by default set to 7. If you want to collect multiple datasets, then set 
-    * another dimension. This behavior is not support through cloud configuration 
-    * (only a single dataset is available), but it can be set here manually.
-    */
+     * Our primary method of device configuration is via the particle
+     * cloud using the addDevice function. However, we can also configure
+     * our devices directly in the constructor by setting the deviceAggregateCounts array.
+     * Normally you will leave the first dimension at ONE_I.
+     * Between the curly braces {NUM}, Set the number of devices you need to initialize.
+     * The max is by default set to 7. If you want to collect multiple datasets, then set
+     * another dimension. This behavior is not support through cloud configuration
+     * (only a single dataset is available), but it can be set here manually.
+     */
     // deviceAggregateCounts[ONE_I] =  {ONE}; //{FOUR}; // set the number of devices here
     // the numerical N_I values a indexs from 0, 1, 2 ... n
     // unless others datasets are needed. Most values will only needs the
@@ -67,10 +67,10 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
 /// Public Functions
 //////////////////////////////
 /**
- * @public 
- * 
+ * @public
+ *
  * setSendInverval
- * 
+ *
  * Cloud function for setting the send interval
  * @return void
  */
@@ -83,15 +83,15 @@ int DeviceManager::setSendInverval(String read)
         return 0;
     }
     Utils::log("CLOUD_REQUESTED_INTERVAL_CHANGE", "setting payload delivery for every " + String(val) + " minutes");
-    this->buildSendInverval(val);
+    this->buildSendInterval(val);
     return val;
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * init
- * 
+ *
  * Init function called at the device setup
  * @return void
  */
@@ -102,9 +102,9 @@ void DeviceManager::init()
     // delay(10000);
     processor->connect();
     boots.init();
-    waitForTrue(&DeviceManager::isStrapped, this, 10000);
-    // if there are already default devices, let's process
-    // their init before we run the dynamic configuration
+    // waitForTrue(&DeviceManager::isStrapped, this, 10000);
+    // // if there are already default devices, let's process
+    // // their init before we run the dynamic configuration
     iterateDevices(&DeviceManager::initCallback, this);
     strapDevices();
     setParamsCount();
@@ -115,11 +115,11 @@ void DeviceManager::init()
 
 /**
  * @public
- * 
+ *
  * setReadCount
- * 
- * Sets the read count 
- * @param unsigned int read_count 
+ *
+ * Sets the read count
+ * @param unsigned int read_count
  * @return void
  */
 void DeviceManager::setReadCount(unsigned int read_count)
@@ -128,10 +128,10 @@ void DeviceManager::setReadCount(unsigned int read_count)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * recommendedMaintenace
- * 
+ *
  * Is maintenance mode recommeneded based on the timestamps
  * and the number of failed parameters? Device has neither connected
  * to the cloud nor has sensor connected.
@@ -150,10 +150,10 @@ bool DeviceManager::recommendedMaintenace(uint8_t damangeCount)
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * isNotPublishing
- * 
+ *
  * It is not currently in publish mode
  * @return bool - true if a publish event can proceed
  */
@@ -163,10 +163,10 @@ bool DeviceManager::isNotPublishing()
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * isNotReading
- * 
+ *
  * It is not currently in read mode
  * @return bool - true if a read event can proceed
  */
@@ -176,10 +176,10 @@ bool DeviceManager::isNotReading()
 }
 
 /**
- * @public 
- * 
+ * @public
+ *
  * clearArray
- * 
+ *
  * Sends api request to clear devices storage arrays
  * @return void
  */
@@ -190,9 +190,9 @@ void DeviceManager::clearArray()
 
 /**
  * @public
- * 
+ *
  * loop
- * 
+ *
  * runs off the main loop
  * @return void
  */
@@ -210,10 +210,10 @@ void DeviceManager::loop()
 /// Private Functions
 //////////////////////////////
 /**
- * @public 
- * 
+ * @public
+ *
  * setParamsCount
- * 
+ *
  * Counts the number of params that the system is collecting from
  * all of the initialized devices
  * @return void
@@ -225,12 +225,12 @@ void DeviceManager::setParamsCount()
 
 /**
  * @private
- * 
+ *
  * process
- * 
- * This waits until there is a request 
+ *
+ * This waits until there is a request
  * to reboot the system
- * 
+ *
  * @return void
  */
 void DeviceManager::process()
@@ -244,11 +244,11 @@ void DeviceManager::process()
 
 /**
  * @private
- * 
+ *
  * processTimers
- * 
+ *
  * Checks the timers to see if they are ready for the various events
- * 
+ *
  * @return void
  */
 void DeviceManager::processTimers()
@@ -273,13 +273,13 @@ void DeviceManager::processTimers()
 }
 
 /**
-* @private 
-*
-* rebootRequest
-*
-* Cloud function that calls a reboot request
-* @param String read 
-*/
+ * @private
+ *
+ * rebootRequest
+ *
+ * Cloud function that calls a reboot request
+ * @param String read
+ */
 int DeviceManager::rebootRequest(String read)
 {
     Utils::log("REBOOT_EVENT_REQUESTED", "Shutting down");
@@ -288,15 +288,15 @@ int DeviceManager::rebootRequest(String read)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * restoreDefaults
- * 
+ *
  * Cloud function for resetting defaults
- * 
- * @param String read 
- * 
- * @return void 
+ *
+ * @param String read
+ *
+ * @return void
  */
 int DeviceManager::restoreDefaults(String read)
 {
@@ -306,13 +306,13 @@ int DeviceManager::restoreDefaults(String read)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * restoreDefaults
- * 
+ *
  * Calls the devices to restore their default values
  * should there be a request
- * @return void 
+ * @return void
  */
 void DeviceManager::processRestoreDefaults()
 {
@@ -321,10 +321,10 @@ void DeviceManager::processRestoreDefaults()
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * setCloudFunction
- * 
+ *
  * Sets the cloud functions for the device
  * @return void
  */
@@ -336,10 +336,10 @@ void DeviceManager::setCloudFunction()
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * storePayload
- * 
+ *
  * A payload need to be stored to a given memory card
  * @return void
  */
@@ -349,10 +349,10 @@ void DeviceManager::storePayload(String payload, String topic)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * heartbeat
- * 
+ *
  * Publishes a heartbeach payload
  * @return void
  */
@@ -368,9 +368,9 @@ void DeviceManager::heartbeat()
 
 /**
  * @private
- * 
+ *
  * read
- * 
+ *
  * API call to the devices to ask for a reading
  * @return void
  */
@@ -391,9 +391,9 @@ void DeviceManager::read()
 
 /**
  * @private
- * 
+ *
  * read
- * 
+ *
  * Wrapper to setup devices for publishing
  * @return void
  */
@@ -402,7 +402,7 @@ void DeviceManager::publish()
     // checkBootThreshold();
     waitForTrue(&DeviceManager::isNotReading, this, 10000);
     Utils::log("PUBLICATION_EVENT", "EVENT=" + processor->getPublishTopic(false));
-    //waitFor(DeviceManager::isNotReading, 10000);
+    // waitFor(DeviceManager::isNotReading, 10000);
     publishBusy = true;
 
     publisher();
@@ -422,9 +422,9 @@ void DeviceManager::publish()
 
 /**
  * @private
- * 
+ *
  * getBufferSize
- * 
+ *
  * Returns the buffer size for all connected devices
  * @return size_t
  */
@@ -453,9 +453,9 @@ size_t DeviceManager::getBufferSize()
 
 /**
  * @private
- * 
+ *
  * getBupopOfflineCollectionfferSize
- * 
+ *
  * Asks the storage to pop off data stored while offline
  * @return void
  */
@@ -466,13 +466,13 @@ void DeviceManager::popOfflineCollection()
 
 /**
  * @private
- * 
+ *
  * packagePayload
- * 
+ *
  * Places the payload details in the header
- * 
+ *
  * @param JSONBufferWriter *writer
- * 
+ *
  * @return void
  */
 void DeviceManager::packagePayload(JSONBufferWriter *writer)
@@ -485,13 +485,13 @@ void DeviceManager::packagePayload(JSONBufferWriter *writer)
 
 /**
  * @private
- * 
+ *
  * getTopic
- * 
+ *
  * Returns the publication topic based on maintenance count
- * 
+ *
  * @param uint8_t maintenanceCount
- * 
+ *
  * @return bool
  */
 bool DeviceManager::checkMaintenance(uint8_t maintenanceCount)
@@ -504,13 +504,13 @@ bool DeviceManager::checkMaintenance(uint8_t maintenanceCount)
 
 /**
  * @private
- * 
+ *
  * getTopic
- * 
+ *
  * Returns the publication topic based on maintenance count
- * 
+ *
  * @param uint8_t maintenanceCount
- * 
+ *
  * @return String
  */
 String DeviceManager::getTopic(bool maintenance)
@@ -518,20 +518,38 @@ String DeviceManager::getTopic(bool maintenance)
     return processor->getPublishTopic(maintenance);
 }
 
+void DeviceManager::resetBuffer()
+{
+    memset(jsonBuffer, 0, sizeof(jsonBuffer));
+}
+
+JSONBufferWriter DeviceManager::createJSONBuffer()
+{
+    resetBuffer();
+    size_t bufferSize = getBufferSize();
+    JSONBufferWriter writer(jsonBuffer, bufferSize - 1);
+    return writer;
+}
+
+JSONBufferWriter DeviceManager::createJSONBuffer(size_t bufferSize)
+{
+    resetBuffer();
+    JSONBufferWriter writer(jsonBuffer, bufferSize - 1);
+    return writer;
+}
+
 /**
  * @private
- * 
+ *
  * payloadWriter
- * 
+ *
  * Wraps the json buffer into a string
- * 
+ *
  * @return String
  */
 String DeviceManager::payloadWriter(uint8_t &maintenanceCount)
 {
-    char buf[getBufferSize()];
-    memset(buf, 0, sizeof(buf));
-    JSONBufferWriter writer(buf, sizeof(buf) - 1);
+    JSONBufferWriter writer = createJSONBuffer();
     packagePayload(&writer);
     for (size_t i = 0; i < this->deviceCount; i++)
     {
@@ -548,21 +566,20 @@ String DeviceManager::payloadWriter(uint8_t &maintenanceCount)
         size_t size = this->deviceAggregateCounts[i];
         for (size_t j = 0; j < size; j++)
         {
-            // this->devices[i][j]->print();
             this->devices[i][j]->publish(writer, attempt_count);
             maintenanceCount += this->devices[i][j]->maintenanceCount();
         }
         writer.endObject();
     }
     writer.endObject();
-    return String(buf);
+    return String(jsonBuffer);
 }
 
 /**
  * @private
- * 
+ *
  * publisher
- * 
+ *
  * Gathers all data and sends to the processor the returned content
  * @return void
  */
@@ -586,58 +603,56 @@ void DeviceManager::publisher()
     if (!maintenance && !success)
     {
         Utils::log("SENDING PAYLOAD FAILED. Storing", result);
-        this->storePayload(result, topic);
+        storePayload(result, topic);
     }
     else if (success)
     {
-        this->popOfflineCollection();
+        popOfflineCollection();
     }
-
     clearArray();
-
-    this->ROTATION++;
+    ROTATION++;
 }
 
 /**
- * @private 
- * 
- * buildSendInverval
- * 
+ * @private
+ *
+ * buildSendInterval
+ *
  * Called from a cloud function for setting up the timing mechanism
  * @return void
  */
-void DeviceManager::buildSendInverval(int interval)
+void DeviceManager::buildSendInterval(int interval)
 {
-    this->setReadCount(0);
-    this->clearArray();
+    setReadCount(0);
+    clearArray();
     boots.buildSendInterval(interval);
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * loopCallback
- * 
+ *
  * Calls the device loop function during the iteration loop
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::loopCallback(Device *device)
 {
     device->loop();
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * setParamsCountCallback
- * 
+ *
  * Calls the device paramCount function during the iteration loop
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::setParamsCountCallback(Device *device)
 {
     uint8_t count = device->paramCount();
@@ -645,90 +660,90 @@ void DeviceManager::setParamsCountCallback(Device *device)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * restoreDefaultsCallback
- * 
+ *
  * Calls the device restoreDefaults function during the iteration loop
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::restoreDefaultsCallback(Device *device)
 {
     device->restoreDefaults();
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * initCallback
- * 
+ *
  * Calls the device init function during the iteration loop
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::initCallback(Device *device)
 {
     device->init();
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * clearArrayCallback
- * 
+ *
  * Calls the device clear function during the iteration loop
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::clearArrayCallback(Device *device)
 {
     device->clear();
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * setReadCallback
- * 
+ *
  * Calls the device read function during the iteration loop
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::setReadCallback(Device *device)
 {
     device->read();
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * isStrapped
- * 
- * Checkts to see if bootstrap is finished bootstrapping 
- * 
+ *
+ * Checkts to see if bootstrap is finished bootstrapping
+ *
  * @return void
- * 
-*/
+ *
+ */
 bool DeviceManager::isStrapped()
 {
     return this->boots.isStrapped();
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * iterateDevices
- * 
+ *
  * Iterates through all the devices and calls the supplied callback
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::iterateDevices(void (DeviceManager::*iter)(Device *d), DeviceManager *binding)
 {
     for (size_t i = 0; i < this->deviceCount; i++)
@@ -742,19 +757,19 @@ void DeviceManager::iterateDevices(void (DeviceManager::*iter)(Device *d), Devic
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * waitForTrue
- * 
- * Similie to particle's waitFor function but want it working with 
+ *
+ * Similie to particle's waitFor function but want it working with
  * member functions.
- * 
+ *
  * @param bool() function - the function that needs to been called
  * @param unsigned long time - to wait for
- * 
+ *
  * @return bool
- * 
-*/
+ *
+ */
 bool DeviceManager::waitForTrue(bool (DeviceManager::*func)(), DeviceManager *binding, unsigned long time)
 {
     bool valid = false;
@@ -767,15 +782,15 @@ bool DeviceManager::waitForTrue(bool (DeviceManager::*func)(), DeviceManager *bi
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * setCloudFunctions
- * 
+ *
  * sets the cloud functions from particle
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::setCloudFunctions()
 {
     Particle.function("addDevice", &DeviceManager::addDevice, this);
@@ -785,15 +800,15 @@ void DeviceManager::setCloudFunctions()
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * clearDeviceString
- * 
+ *
  * Clears the device  string array
- * 
+ *
  * @return size_t
- * 
-*/
+ *
+ */
 void DeviceManager::clearDeviceString()
 {
     for (uint8_t i = 0; i < MAX_DEVICES; i++)
@@ -803,15 +818,15 @@ void DeviceManager::clearDeviceString()
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * clearAllDevice
- * 
+ *
  * Clears the device table and EEPROM
- * 
+ *
  * @return size_t
- * 
-*/
+ *
+ */
 int DeviceManager::clearAllDevices(String value)
 {
     if (!value.equals("DELETE"))
@@ -831,15 +846,15 @@ int DeviceManager::clearAllDevices(String value)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * countDeviceType
- * 
+ *
  * Counts the number of active devices with a current device tag
- * 
+ *
  * @return size_t
- * 
-*/
+ *
+ */
 size_t DeviceManager::countDeviceType(String deviceName)
 {
     size_t count = 0;
@@ -855,16 +870,16 @@ size_t DeviceManager::countDeviceType(String deviceName)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * violatesDeviceRules
- * 
+ *
  * Checks the device string to see if it can process a request
  * to add the additional device
- * 
+ *
  * @return bool
- * 
-*/
+ *
+ */
 bool DeviceManager::violatesDeviceRules(String value)
 {
     bool violation = true;
@@ -885,8 +900,8 @@ bool DeviceManager::violatesDeviceRules(String value)
         return violation;
     }
     /**
-    * We count the number and make sure there aren't too many
-    */
+     * We count the number and make sure there aren't too many
+     */
     size_t occurrences = countDeviceType(deviceName);
 
     if (config.violatesOccurances(deviceName, occurrences))
@@ -898,17 +913,17 @@ bool DeviceManager::violatesDeviceRules(String value)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * setCloudFunctions
- * 
+ *
  * sets the cloud functions from particle
- * 
+ *
  * @param String - value from the cloud function
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 int DeviceManager::addDevice(String value)
 {
     if (Utils::containsValue(devicesString, MAX_DEVICES, value) != -1)
@@ -935,17 +950,17 @@ int DeviceManager::addDevice(String value)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * resetDeviceIndex
- * 
+ *
  * Clears a device at a specific index
- * 
+ *
  * @param int index
- * 
+ *
  * @return void
- * 
-*/
+ *
+ */
 void DeviceManager::resetDeviceIndex(size_t index)
 {
     delete devices[ONE_I][index];
@@ -955,17 +970,17 @@ void DeviceManager::resetDeviceIndex(size_t index)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * copyDevicesFromIndex
- * 
+ *
  * Moves the device list from the current index to next index
- * 
+ *
  * @param String - value from the cloud function
- * 
+ *
  * @return int
- * 
-*/
+ *
+ */
 void DeviceManager::copyDevicesFromIndex(int index)
 {
     // we are at the last index
@@ -996,17 +1011,17 @@ void DeviceManager::copyDevicesFromIndex(int index)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * setCloudFunctions
- * 
+ *
  * sets the cloud functions from particle
- * 
+ *
  * @param String - value from the cloud function
- * 
+ *
  * @return int
- * 
-*/
+ *
+ */
 int DeviceManager::removeDevice(String value)
 {
     Utils::log("DEVICE_REMOVAL_EVENT_CALLED", value);
@@ -1024,20 +1039,21 @@ int DeviceManager::removeDevice(String value)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * publishDeviceList
- * 
- * sends a list of devices via the processor 
- *  
+ *
+ * sends a list of devices via the processor
+ *
  * @return bool
- * 
-*/
+ *
+ */
 bool DeviceManager::publishDeviceList()
 {
-    char buf[300];
-    memset(buf, 0, sizeof(buf));
-    JSONBufferWriter writer(buf, sizeof(buf) - 1);
+    JSONBufferWriter writer = createJSONBuffer(BUFF_SIZE);
+    // char buf[BUFF_SIZE];
+    // memset(buf, 0, sizeof(buf));
+    // JSONBufferWriter writer(buf, sizeof(buf) - 1);
     packagePayload(&writer);
     writer.name("payload").beginObject();
     for (size_t i = 0; i < MAX_DEVICES; i++)
@@ -1047,20 +1063,20 @@ bool DeviceManager::publishDeviceList()
     }
     writer.endObject();
     writer.endObject();
-    return processor->publish(AI_DEVICE_LIST_EVENT, String(buf));
+    return processor->publish(AI_DEVICE_LIST_EVENT, String(jsonBuffer));
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * showDevices
  *
  * Pulls the devices and sends the payload over the processor
  * @param String - value from the cloud function
- *  
+ *
  * @return int
- * 
-*/
+ *
+ */
 int DeviceManager::showDevices(String value)
 {
     int valid = publishDeviceList() ? 1 : 0;
@@ -1068,14 +1084,14 @@ int DeviceManager::showDevices(String value)
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * strapDevices
  *
  * Pulls the devices from bootstraps EPROM
- *  
+ *
  * @return void
-*/
+ */
 void DeviceManager::strapDevices()
 {
     boots.strapDevices(devicesString);
@@ -1092,15 +1108,15 @@ void DeviceManager::strapDevices()
 }
 
 /**
- * @private 
- * 
+ * @private
+ *
  * applyDevice
  *
  * Adds the device to the scope
- *  
+ *
  * @return void
- * 
-*/
+ *
+ */
 int DeviceManager::applyDevice(Device *device, String deviceString, bool startup)
 {
     // we also need to make sure it's cool with the rules

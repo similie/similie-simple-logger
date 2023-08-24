@@ -35,6 +35,7 @@
 #ifndef device_manager_h
 #define device_manager_h
 #define BUFF_SIZE 300
+#define SEND_HOLD_BUFFER_SIZE 512
 
 #define DEFVICE_FAILED_TO_INSTANTIATE 0
 #define DEVICES_ALREADY_INSTANTIATED -1
@@ -58,6 +59,10 @@ private:
     Configurator config;
     void strapDevices();
     int applyDevice(Device *device, String deviceString, bool startup);
+    char jsonBuffer[SEND_HOLD_BUFFER_SIZE];
+    void resetBuffer();
+    JSONBufferWriter createJSONBuffer();
+    JSONBufferWriter createJSONBuffer(size_t);
     // this value is the payload values size. We capture the other
     // values at initialization from the selected devices
     size_t DEFAULT_BUFFER_SIZE = 120;
@@ -99,7 +104,7 @@ private:
     void initCallback(Device *device);
     void clearArrayCallback(Device *device);
     void setReadCallback(Device *device);
-    void buildSendInverval(int interval);
+    void buildSendInterval(int interval);
     int restoreDefaults(String read);
     void processRestoreDefaults();
     int rebootRequest(String f);

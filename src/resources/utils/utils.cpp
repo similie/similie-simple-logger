@@ -100,7 +100,7 @@ String Utils::receiveDeviceId(int identity)
 /**
  * @public
  *
- * serialMesssageHasError
+ * serialMessageHasError
  *
  * Checks to see if there is an error on the serial bus for a specific device
  *
@@ -110,7 +110,7 @@ String Utils::receiveDeviceId(int identity)
  * @return String
  *
  */
-bool Utils::serialMesssageHasError(String message, int identity)
+bool Utils::serialMessageHasError(String message, int identity)
 {
     bool error = false;
     if (message.startsWith("ERROR_" + String(identity)))
@@ -154,9 +154,26 @@ bool Utils::hasSerialIdentity(int identity)
  */
 bool Utils::inValidMessageString(String message, int identity)
 {
-    return this->serialMesssageHasError(message, identity) ||
-           (this->hasSerialIdentity(identity) &&
+    return serialMessageHasError(message, identity) ||
+           (hasSerialIdentity(identity) &&
             !message.startsWith(receiveDeviceId(identity)));
+}
+
+/**
+ * @brief Get the Converted Address Cmd object
+ *
+ * @param String cmd
+ * @param String identity
+ * @return String - the converted string
+ */
+String Utils::getConvertedAddressCmd(String cmd, int identity)
+{
+    int localIdentity = 0;
+    if (hasSerialIdentity(identity))
+    {
+        localIdentity = identity;
+    }
+    return cmd.replace("~", String(localIdentity));
 }
 
 /**
@@ -224,10 +241,9 @@ void Utils::log(String event, String message)
     {
         return;
     }
-    String strippedMessage = message.endsWith("\n") ? message.substring(0, message.length() - 1) : message;
     Serial.print(getTimePadding());
-    Serial.print(" [SIMILIE] " + event + ": ");
-    Serial.println(strippedMessage);
+    Serial.print(" [SIMILIE] " + Utils::removeNewLine(event) + ": ");
+    Serial.println(Utils::removeNewLine(message));
 }
 
 /**
@@ -372,6 +388,50 @@ int Utils::getIndexOf(String key, String arr[], size_t paramLength)
     return -1;
 }
 
+void Utils::fillParseSplitReadSerial(String ourReading, size_t paramLength, size_t max, String nameMap[], float value_hold[][Bootstrap::OVERFLOW_VAL])
+{
+    size_t j = 1;
+    String param = "";
+    for (size_t i = 0; i < ourReading.length(); i++)
+    {
+        j = i;
+        char c = ourReading.charAt(i);
+        if (c == ',')
+        {
+            continue;
+        }
+        else if (c == '=')
+        {
+            j++;
+            String buff = "";
+            char d = ourReading.charAt(j);
+            while (d != ',' && d != '\n' && d != '\0')
+            {
+                buff += String(d);
+                j++;
+                d = ourReading.charAt(j);
+            }
+
+            if (invalidNumber(buff))
+            {
+                buff = "9999";
+            }
+            i = j;
+            float value = buff.toInt();
+            int index = Utils::getIndexOf(param, nameMap, paramLength);
+            param = "";
+            if (index > -1)
+            {
+                insertValue(value, value_hold[index], max);
+            }
+        }
+        else
+        {
+            param += String(c);
+        }
+    }
+}
+
 /**
  * @brief
  *
@@ -502,8 +562,6 @@ void Utils::splitStringToValues(String ourReading, String *values, size_t maxLen
             valueLength++;
             c = cleanedReading.charAt(index + valueLength);
         }
-        // Serial.print("SCALED ");
-        // Serial.println(build);
         index += valueLength;
         values[storageIndex] = build.equals("-") || build.equals("") ? String(FAILED_VALUE) : build;
         storageIndex++;
@@ -559,7 +617,7 @@ void Utils::parseSerial(String ourReading, size_t paramLength, size_t max, float
         {
             continue;
         }
-        this->insertValue(storedValue, value_hold[i], max);
+        insertValue(storedValue, value_hold[i], max);
     }
 }
 
@@ -933,9 +991,7 @@ void Utils::shift(long value, size_t index, long arr[], size_t size)
 void Utils::insertValue(float value, float arr[], size_t size)
 {
     size_t index = 0;
-
     float aggr = arr[index];
-
     while (value >= aggr && aggr != NO_VALUE && index < size)
     {
         index++;

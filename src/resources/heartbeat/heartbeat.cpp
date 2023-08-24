@@ -82,7 +82,6 @@ void HeartBeat::setCellDeets(JSONBufferWriter &writer)
 
 String HeartBeat::pump()
 {
-    char buf[800];
     memset(buf, 0, sizeof(buf));
     JSONBufferWriter writer(buf, sizeof(buf) - 1);
     writer.beginObject();
