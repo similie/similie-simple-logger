@@ -263,7 +263,8 @@ Device *Configurator::pullDeviceType(String configurationStore[], Bootstrap *boo
     case video_capture:
         return new VideoCapture(boots);
     case rika_airquality:
-        return new RikaAirQuality(boots);
+        return new RikaAirQuality(boots, configurationStore[DEVICE_IDENTITY_INDEX],
+                                  parseIdentity(configurationStore[DEVICE_PIN_INDEX]));
     default:
         return NULL;
     }

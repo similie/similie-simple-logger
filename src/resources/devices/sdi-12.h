@@ -14,7 +14,6 @@
 #define SINGLE_SAMPLE true
 #define READ_ON_LOW_ONLY true
 #define DEVICE_CONNECTED_PIN D7
-#define TOTAL_PARAM_VALUES 17
 
 enum
 {
@@ -36,17 +35,6 @@ enum
     null_val = 14,
     wind_speed_north = 15,
     wind_speed_east = 16,
-    // air quality
-    temp = 0,
-    hum = 1,
-    press = 2,
-    pm2_5 = 3,
-    pm10 = 4,
-    o3 = 5,
-    ch4 = 6,
-    co2 = 7,
-    no2 = 8,
-    so2 = 9,
     // soil moisture
     vwc = 0,
     soil_temp = 1,
@@ -62,11 +50,11 @@ private:
 
 public:
     SDIParamElements();
-    SDIParamElements(String deviceName, String *valueMap, uint8_t size, size_t buffSize)
+    SDIParamElements(String deviceName, String *valueMap, uint8_t totalSize, size_t buffSize)
     {
         this->deviceName = deviceName;
         this->valueMap = valueMap;
-        this->totalSize = size;
+        this->totalSize = totalSize;
         this->buffSize = buffSize;
     }
     float valueHold[Bootstrap::OVERFLOW_VAL][Bootstrap::OVERFLOW_VAL];

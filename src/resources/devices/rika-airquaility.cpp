@@ -17,6 +17,13 @@ RikaAirQuality::~RikaAirQuality()
 {
 }
 
+RikaAirQuality::RikaAirQuality(Bootstrap *boots, String config, int address)
+{
+    this->boots = boots;
+    this->config = config;
+    this->address = address;
+}
+
 /**
  * default constructor
  * @param Bootstrap boots - bootstrap object
@@ -24,6 +31,13 @@ RikaAirQuality::~RikaAirQuality()
 RikaAirQuality::RikaAirQuality(Bootstrap *boots)
 {
     this->boots = boots;
+}
+
+RikaAirQuality::RikaAirQuality(Bootstrap *boots, const char *config, int address)
+{
+    this->boots = boots;
+    this->config = String(config);
+    this->address = address;
 }
 
 /**
@@ -41,47 +55,18 @@ String RikaAirQuality::name()
 }
 
 /**
- * @public
+ * @private
+ * @brief
  *
- * extractValue
+ * getWire
  *
- * Returns a float value for the specific parameter key
+ * pulls the wire for a given content
  *
- * @param float value[] - all the read values taken since the last publish event
- * @param size_t key - the key being selected for
- * @param size_t max - max size of the search scope
- *
- * @return float
+ * @return String
  */
-float RikaAirQuality::extractValue(float values[], size_t key, size_t max)
+String RikaAirQuality::getWire(String content)
 {
-
-    switch (key)
-    {
-    case pm2_5:
-    case pm10:
-        return utils.getMedian(values, max);
-    default:
-        return utils.getMedian(values, max) / 10;
-    }
-}
-
-/**
- * @public
- *
- * extractValue
- *
- * Overload for the above function @see extractValue(float values[], size_t key, size_t max)
- *
- * @param float value[] - all the read values taken since the last publish event
- * @param size_t key - the key being selected for
- *
- * @return float
- */
-float RikaAirQuality::extractValue(float values[], size_t key)
-{
-    size_t MAX = readSize();
-    return extractValue(values, key, MAX);
+    return this->boots->getCommunicator().sendAndWaitForResponse(Bootstrap::coProcessorAddress, content, this->boots->defaultWireWait(), WAIT_TIMEOUT);
 }
 
 /**
@@ -99,85 +84,14 @@ float RikaAirQuality::extractValue(float values[], size_t key)
  */
 void RikaAirQuality::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
-    // print();
-    size_t MAX = readSize();
-    for (size_t i = 0; i < RikaAirQuality::PARAM_LENGTH; i++)
+    String content = getReadContent();
+    String wireContent = getWire(getReadContent());
+    if (boots->getCommunicator().containsError(wireContent))
     {
-        String param = valueMap[i];
-        // set the param as having failed
-        if (param.equals(NULL) || param.equals(" ") || param.equals(""))
-        {
-            param = "_FAILURE_";
-        }
-        float paramValue = extractValue(VALUE_HOLD[i], i, MAX);
-        if (isnan(paramValue))
-        {
-            paramValue = NO_VALUE;
-        }
-
-        if (paramValue == NO_VALUE)
-        {
-            maintenanceTick++;
-        }
-
-        writer.name(param.c_str()).value(paramValue);
+        return Utils::log("RIKA_AIR_QUALITY_ERROR", wireContent);
     }
-}
-
-/**
- * @private
- *
- * readReady
- *
- * Returns true with the read attempt is ready to move forward
- *
- * @return bool
- */
-bool RikaAirQuality::readReady()
-{
-    if (!waitFor(SerialStorage::notSendingOfflineData, 1000))
-    {
-        return SerialStorage::notSendingOfflineData();
-    }
-    /**
-     * We don't want the all weather system to take a reading every interval,
-     * so we limit our read attempts
-     */
-    unsigned int size = boots->getReadTime() / 1000;
-    size_t skip = utils.skipMultiple(size, boots->getMaxVal(), READ_THRESHOLD);
-    return readAttempt >= skip;
-}
-
-/**
- * @private
- *
- * readSize
- *
- * Returns the numbers of reads that are available
- *
- * @return size_t
- */
-size_t RikaAirQuality::readSize()
-{
-    unsigned int size = boots->getReadTime() / 1000;
-    size_t skip = utils.skipMultiple(size, boots->getMaxVal(), READ_THRESHOLD);
-    size_t expand = floor(boots->getMaxVal() / skip);
-    return expand;
-}
-
-/**
- * @public
- *
- * serialResponseIdentity
- *
- * Returns a reponse identity based on a given send identity
- * for seralized requests.
- *
- * @return String
- */
-String RikaAirQuality::serialResponseIdentity()
-{
-    return this->REQUEST_TAG;
+    parseReadContent(wireContent);
+    processValues(writer);
 }
 
 /**
@@ -191,26 +105,7 @@ String RikaAirQuality::serialResponseIdentity()
  */
 String RikaAirQuality::getReadContent()
 {
-    return serialResponseIdentity();
-}
-
-/**
- * @private
- *
- * fetchReading
- *
- * Called on the main loop to attempt to pull serial requests
- * for this specific device.
- *
- * @return String
- */
-String RikaAirQuality::fetchReading()
-{
-    if (!readCompile)
-    {
-        return boots->fetchSerial(this->serialResponseIdentity());
-    }
-    return "";
+    return REQUEST_TAG + " " + String(address) + "\n";
 }
 
 /**
@@ -224,16 +119,169 @@ String RikaAirQuality::fetchReading()
  */
 void RikaAirQuality::read()
 {
-    readAttempt++;
-    if (!readReady())
+}
+
+size_t RikaAirQuality::populateStringContent()
+{
+    size_t length = strlen(config);
+    paramHoldSize = 0;
+    String set = "";
+    for (size_t i = 0; i < length; i++)
     {
-        return;
+        char c = config[i];
+        if (c == ';' || i == length - 1)
+        {
+            if (i == length - 1)
+            {
+                set += String(c);
+            }
+            paramHold[paramHoldSize] = set;
+            set = "";
+            paramHoldSize++;
+            continue;
+        }
+        set += String(c);
     }
-    readAttempt = 0;
-    String content = getReadContent();
-    Serial1.println(content);
-    delay(100);
-    Serial1.flush();
+    return paramHoldSize;
+}
+
+void RikaAirQuality::printStringContent()
+{
+    for (size_t i = 0; i < paramHoldSize; i++)
+    {
+        String value = paramHold[i];
+        Utils::log("SHOWING_VALUES", value);
+    }
+}
+
+size_t RikaAirQuality::applyStringValue(size_t index, String value)
+{
+    while (index < STRING_CONVERT_SIZE)
+    {
+        String read = stringConvertBuffer[index];
+        if (read.equals(""))
+        {
+            index++;
+            continue;
+        }
+
+        int parsed = String(read).toInt();
+        if (parsed == 0)
+        {
+            index++;
+            continue;
+        }
+
+        if (value.equals(""))
+        {
+            index++;
+        }
+        break;
+    }
+    return index;
+}
+
+void RikaAirQuality::zeroOutParamValueHold()
+{
+    for (size_t i = 0; i < paramHoldSize; i++)
+    {
+        paramValues[i].param = "";
+        paramValues[i].value = NO_VALUE;
+    }
+}
+
+void RikaAirQuality::stuffValues()
+{
+    size_t index = 0;
+    for (size_t i = 0; i < paramHoldSize; i++)
+    {
+        String param = paramHold[i];
+        index = applyStringValue(index, param);
+        if (param.equals(""))
+        {
+            continue;
+        }
+
+        if (index >= STRING_CONVERT_SIZE)
+        {
+            break;
+        }
+        String value = stringConvertBuffer[index];
+        if (value.equals(""))
+        {
+            continue;
+        }
+        uint16_t parsed = String(value).toInt();
+        ReadValues values = {param, parsed};
+        paramValues[valueStore] = values;
+        valueStore++;
+        index++;
+    }
+}
+
+int RikaAirQuality::getIndexForParam(String value)
+{
+    for (uint8_t i = 0; i < RIKA_MAX_PARAM_SIZE; i++)
+    {
+        String param = valueMap[i];
+        if (param.equals(value))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+float RikaAirQuality::convertValue(ReadValues *values)
+{
+    int param = getIndexForParam(values->param);
+    uint8_t high = values->value >> 8;
+    // uint8_t high = values->value >> 8; // high byte (0x12)
+    // uint8_t low = values->value & 0x00FF; // low byte (0x34)
+    if (param == -1)
+    {
+        return NO_VALUE;
+    }
+
+    switch (param)
+    {
+    case temp:
+    case hum:
+    case press:
+        return values->value / 10;
+    case so2:
+    case no2:
+    case o3:
+    case ch4:
+        return high / 10;
+    /** pm2_5,pm10,co2 */
+    default:
+        return values->value;
+    }
+}
+
+void RikaAirQuality::processValues(JSONBufferWriter &writer)
+{
+    for (size_t i = 0; i < valueStore; i++)
+    {
+        ReadValues value = paramValues[i];
+        if (value.param.equals(""))
+        {
+            continue;
+        }
+        float converted = convertValue(&value);
+        Utils::log(value.param.c_str(), String(converted));
+        writer.name(value.param.c_str()).value(converted);
+    }
+}
+
+void RikaAirQuality::parseReadContent(String results)
+{
+    Utils::log("RS485_RESPONSE", results);
+    zeroOutParamValueHold();
+    utils.splitStringToValues(results, stringConvertBuffer, STRING_CONVERT_SIZE);
+    valueStore = 0;
+    stuffValues();
 }
 
 /**
@@ -247,11 +295,6 @@ void RikaAirQuality::read()
  */
 void RikaAirQuality::loop()
 {
-    String completedSerialItem = boots->fetchSerial(this->serialResponseIdentity());
-    if (!completedSerialItem.equals(""))
-    {
-        parseSerial(completedSerialItem);
-    }
 }
 
 /**
@@ -265,57 +308,6 @@ void RikaAirQuality::loop()
  */
 void RikaAirQuality::clear()
 {
-    for (size_t i = 0; i < RikaAirQuality::PARAM_LENGTH; i++)
-    {
-        for (size_t j = 0; j < boots->getMaxVal(); j++)
-        {
-            VALUE_HOLD[i][j] = NO_VALUE;
-        }
-    }
-}
-
-/**
- * @private
- *
- * replaceSerialResponceItem
- *
- * Strips out the serialized identity from the collected string
- *
- * @param String message - serial message
- *
- * @return bool
- */
-String RikaAirQuality::replaceSerialResponceItem(String message)
-{
-    String replaced = message.replace(this->serialResponseIdentity() + " ", "");
-    return replaced;
-}
-
-/**
- * @private
- *
- * parseSerial
- *
- * Parses the serial data that converts it to actual numbers
- * used during a read event
- *
- * @param String message - serial message
- *
- * @return bool
- */
-void RikaAirQuality::parseSerial(String ourReading)
-{
-
-    if (!ourReading.startsWith(serialResponseIdentity()))
-    {
-        return Utils::log("RIKA_AIR_QUALITY", "Invalid Message String");
-    }
-
-    ourReading = replaceSerialResponceItem(ourReading);
-    readCompile = true;
-    // @here
-    utils.parseSplitReadSerial(ourReading, PARAM_LENGTH, boots->getMaxVal(), valueMap, VALUE_HOLD);
-    readCompile = false;
 }
 
 /**
@@ -331,13 +323,6 @@ void RikaAirQuality::parseSerial(String ourReading)
  */
 void RikaAirQuality::print()
 {
-    for (size_t i = 0; i < PARAM_LENGTH; i++)
-    {
-        for (size_t j = 0; j < readSize(); j++)
-        {
-            Log.info("PARAM VALUES FOR %s of iteration %d and value %0.2f", utils.stringConvert(valueMap[i]), j, VALUE_HOLD[i][j]);
-        }
-    }
 }
 
 /**
@@ -352,7 +337,7 @@ void RikaAirQuality::print()
  */
 void RikaAirQuality::init()
 {
-    boots->startSerial();
+    populateStringContent();
 }
 
 /**
@@ -380,7 +365,7 @@ void RikaAirQuality::restoreDefaults()
  */
 size_t RikaAirQuality::buffSize()
 {
-    return 250; // 600;
+    return 50; // 600;
 }
 
 /**
@@ -394,7 +379,7 @@ size_t RikaAirQuality::buffSize()
  */
 uint8_t RikaAirQuality::paramCount()
 {
-    return PARAM_LENGTH;
+    return paramHoldSize;
 }
 
 /**

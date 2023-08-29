@@ -1,8 +1,7 @@
 
 #ifndef wire_comms_h
 #define wire_comms_h
-// #define I2C_BUFFER_LENGTH_MAX 120
-
+#include "resources/bootstrap/buffer-manager.h"
 #include <Arduino.h>
 #include "Particle.h"
 #define ERROR_FLAG_VALUE "!!ERROR::"
@@ -19,7 +18,6 @@ private:
     const static uint8_t MAX_CYCLES = 10;
     static const uint16_t MAX_BUFFER_SIZE = maxSize * MAX_CYCLES + MAX_CYCLES;
     uint16_t receivedBufferSize = 0;
-    char responseBuffer[MAX_BUFFER_SIZE];
     const char *ERROR_FLAG = ERROR_FLAG_VALUE;
     const char *ERROR_FLAG_NO_DATA = ERROR_FLAG_VALUE_NO_DATA;
     // functions
@@ -34,7 +32,6 @@ private:
     bool containsString(String, String);
 
 public:
-    // static const size_t I2C_BUFFER_LENGTH = 512;
     WireComms();
     WireComms(int);
     ~WireComms();
@@ -46,7 +43,6 @@ public:
     static const unsigned long DEFAULT_WIRE_TIMEOUT = 1000;
     static const unsigned long DEFAULT_WIRE_WAIT = 500;
     void setCoprocessorAddress(int);
-    // HAL_I2C_Config acquireWireBuffer();
     String processWhatsAvailable();
     size_t writeToWire(uint8_t, String);
     String requiredFromWire(uint8_t);

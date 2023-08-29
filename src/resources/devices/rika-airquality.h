@@ -11,13 +11,21 @@
 #ifndef rika_air_quality_h
 #define rika_air_quality_h
 
-static const size_t RIKA_MAX_PARAM_SIZE = 10;
+typedef struct
+{
+    String param;
+    uint16_t value;
+} ReadValues;
 
 class RikaAirQuality : public Device
 {
 private:
+    static const size_t RIKA_MAX_PARAM_SIZE = 10;
+    static const uint8_t STRING_CONVERT_SIZE = 30;
+    const uint16_t WAIT_TIMEOUT = 2000;
+    String stringConvertBuffer[STRING_CONVERT_SIZE];
     String valueMap[RIKA_MAX_PARAM_SIZE] =
-        {"temp", "hum", "press", "pm2_5", "pm10", "o3", "ch4", "co2", "no2", "so2"};
+        {"T", "H", "P", "PM2", "PM10", "03", "CH4", "CO2", "NO2", "SO2"};
     enum
     {
         temp,
@@ -31,30 +39,38 @@ private:
         no2,
         so2
     };
+    String paramHold[RIKA_MAX_PARAM_SIZE];
+    ReadValues paramValues[RIKA_MAX_PARAM_SIZE];
+    size_t paramHoldSize = 0;
+    size_t valueStore = 0;
+    void stuffValues();
+    void zeroOutParamValueHold();
+    size_t applyStringValue(size_t index, String value);
+    size_t populateStringContent();
+    void printStringContent();
     Bootstrap *boots;
     Utils utils;
-    void parseSerial(String ourReading);
-    bool readyRead = false;
-    bool readCompile = false;
-    bool readReady();
-    size_t readSize();
-    const String REQUEST_TAG = "airquality";
+    int address = -1;
+    String config = "";
+    const String REQUEST_TAG = "rs485";
     String deviceName = "AirQuality";
     u_int8_t maintenanceTick = 0;
     String ourReading = "";
     String getReadContent();
-    String serialResponseIdentity();
-    String replaceSerialResponceItem(String message);
     bool validMessageString(String message);
     unsigned int READ_THRESHOLD = 12;
-    static const size_t PARAM_LENGTH = sizeof(valueMap) / sizeof(String);
-    float VALUE_HOLD[RikaAirQuality::PARAM_LENGTH][Bootstrap::OVERFLOW_VAL];
     size_t readAttempt = 0;
-    String fetchReading();
+    String getWire(String content);
+    void parseReadContent(String);
+    void processValues(JSONBufferWriter &writer);
+    float convertValue(ReadValues *);
+    int getIndexForParam(String);
 
 public:
     ~RikaAirQuality();
     RikaAirQuality(Bootstrap *boots);
+    RikaAirQuality(Bootstrap *boots, String, int);
+    RikaAirQuality(Bootstrap *boots, const char *, int);
     void read();
     void loop();
     void clear();
@@ -67,8 +83,6 @@ public:
     size_t buffSize();
     void restoreDefaults();
     void publish(JSONBufferWriter &writer, u_int8_t attempt_count);
-    float extractValue(float values[], size_t key);
-    float extractValue(float values[], size_t key, size_t max);
 };
 
 #endif

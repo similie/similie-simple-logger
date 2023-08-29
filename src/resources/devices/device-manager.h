@@ -3,18 +3,15 @@
 #include <stdint.h>
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/processors/Processor.h"
-
+#include "resources/bootstrap/buffer-manager.h"
 #include "resources/utils/utils.h"
-#include "device.h"
-#include "wl-device.h"
-#include "rain-gauge.h"
 #include "resources/utils/serial_storage.h"
 #include "resources/utils/configurator.h"
-
-#include "battery.h"
-#include "all-weather.h"
-#include "soil-moisture.h"
 #include "resources/heartbeat/heartbeat.h"
+#include "device.h"
+
+// remove
+#include "rika-airquality.h"
 
 #define ONE 1
 #define TWO 2
@@ -35,7 +32,7 @@
 #ifndef device_manager_h
 #define device_manager_h
 #define BUFF_SIZE 300
-#define SEND_HOLD_BUFFER_SIZE 512
+// #define SEND_HOLD_BUFFER_SIZE 512
 
 #define DEVICE_FAILED_TO_INSTANTIATE 0
 #define DEVICES_ALREADY_INSTANTIATED -1
@@ -59,18 +56,16 @@ private:
     Configurator config;
     void strapDevices();
     int applyDevice(Device *device, String deviceString, bool startup);
-    char jsonBuffer[SEND_HOLD_BUFFER_SIZE];
     void resetBuffer();
-    JSONBufferWriter createJSONBuffer();
-    JSONBufferWriter createJSONBuffer(size_t);
     // this value is the payload values size. We capture the other
     // values at initialization from the selected devices
-    size_t DEFAULT_BUFFER_SIZE = 120;
+    const size_t DEFAULT_BUFFER_SIZE = 120;
+    const size_t DEFAULT_BUFFER_SIZE_MAX = (size_t)BUFF_SIZE;
     Bootstrap boots;
     Processor *processor;
     bool FRESH_START = false;
     const size_t deviceCount = ONE;
-    size_t deviceAggregateCounts[ONE] = {0};
+    size_t deviceAggregateCounts[ONE] = {1};
     Utils utils;
     HeartBeat *blood;
     unsigned int ROTATION = 0;
@@ -93,7 +88,6 @@ private:
     void packagePayload(JSONBufferWriter *writer);
     String devicesString[MAX_DEVICES];
     Device *devices[DEVICE_COUNT][DEVICE_AGGR_COUNT];
-    void setCloudFunction();
     String getTopic(bool maintenance);
     String payloadWriter(uint8_t &maintenanceCount);
     bool checkMaintenance(uint8_t maintenanceCount);
@@ -130,7 +124,7 @@ public:
     ~DeviceManager();
     DeviceManager(Processor *processor, bool debug);
     void init();
-    int setSendInverval(String read);
+    int setSendInterval(String read);
     void clearArray();
     void setReadCount(unsigned int read_count);
     void loop();

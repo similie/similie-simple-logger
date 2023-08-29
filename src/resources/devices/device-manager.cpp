@@ -46,15 +46,23 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
      * another dimension. This behavior is not support through cloud configuration
      * (only a single dataset is available), but it can be set here manually.
      */
-    // deviceAggregateCounts[ONE_I] =  {ONE}; //{FOUR}; // set the number of devices here
-    // the numerical N_I values a indexs from 0, 1, 2 ... n
+    deviceAggregateCounts[ONE_I] = {FIVE}; //{FOUR}; // set the number of devices here
+    // deviceAggregateCounts[TWO_I] = {ONE};
+    // the numerical N_I values a indexes from 0, 1, 2 ... n
     // unless others datasets are needed. Most values will only needs the
     // ONE_I for the first dimension.
-    // this->devices[ONE_I][ONE_I] = new Battery();
+    // this->devices[ONE_I][ONE_I] = new RikaAirQuality(&boots, "03:CH4", 4);
+    this->devices[ONE_I][ONE_I] = new RikaAirQuality(&boots, "T;H;P;PM2;PM10", 2);
+    this->devices[ONE_I][TWO_I] = new RikaAirQuality(&boots, "CO2;;SO2;NO2", 5);
+    this->devices[ONE_I][THREE_I] = new RikaAirQuality(&boots, "03;CH4", 4);
     // all weather
-    // this->devices[ONE_I][ONE_I] = new AllWeather(&boots, ONE_I);
+    this->devices[ONE_I][FOUR_I] = new AllWeather(&boots, ONE_I);
     // battery
-    // this->devices[ONE_I][TWO_I] = new Battery();
+    this->devices[ONE_I][FIVE_I] = new Battery();
+
+    // this->devices[ONE_I][TWO_I] = new AllWeather(&boots, ONE_I);
+    // // battery
+    // this->devices[ONE_I][THREE_I] = new Battery();
     // soil moisture
     // this->devices[ONE_I][THREE_I] = new SoilMoisture(&boots, TWO_I);
     // // water level
@@ -74,7 +82,7 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
  * Cloud function for setting the send interval
  * @return void
  */
-int DeviceManager::setSendInverval(String read)
+int DeviceManager::setSendInterval(String read)
 {
     int val = (int)atoi(read);
     // we dont let allows less than one or greater than 15
@@ -83,7 +91,7 @@ int DeviceManager::setSendInverval(String read)
         return 0;
     }
     Utils::log("CLOUD_REQUESTED_INTERVAL_CHANGE", "setting payload delivery for every " + String(val) + " minutes");
-    this->buildSendInterval(val);
+    buildSendInterval(val);
     return val;
 }
 
@@ -99,18 +107,30 @@ void DeviceManager::init()
 {
     // apply delay to see the devices bootstrapping
     // in the serial console
-    // delay(10000);
+    delay(10000);
+    Serial.println("Connecting...");
     processor->connect();
+    Serial.println("BootStrapping");
+    delay(2000);
     boots.init();
+    Serial.println("ITERATING DEVICES");
+    delay(2000);
     // waitForTrue(&DeviceManager::isStrapped, this, 10000);
     // // if there are already default devices, let's process
     // // their init before we run the dynamic configuration
     iterateDevices(&DeviceManager::initCallback, this);
+    Serial.println("Strapping DEVICES");
+    delay(2000);
     strapDevices();
+    Serial.println("Setting Counts");
+    delay(2000);
     setParamsCount();
-    setCloudFunction();
-    clearArray();
+    Serial.println("Setting Cloud Functions");
+    delay(2000);
     setCloudFunctions();
+    Serial.println("Clearing Array");
+    delay(2000);
+    clearArray();
 }
 
 /**
@@ -265,9 +285,9 @@ void DeviceManager::processTimers()
         publish();
     }
 
-    if (processor->hasHeartbeat() && boots.heatbeatTimerFunc())
+    if (processor->hasHeartbeat() && boots.heartbeatTimerFunc())
     {
-        boots.setHeatbeatTimer(false);
+        boots.setHeartbeatTimer(false);
         heartbeat();
     }
 }
@@ -318,21 +338,6 @@ void DeviceManager::processRestoreDefaults()
 {
     boots.restoreDefaults();
     iterateDevices(&DeviceManager::restoreDefaultsCallback, this);
-}
-
-/**
- * @private
- *
- * setCloudFunction
- *
- * Sets the cloud functions for the device
- * @return void
- */
-void DeviceManager::setCloudFunction()
-{
-    Particle.function("setPublicationInterval", &DeviceManager::setSendInverval, this);
-    Particle.function("restoreDefaults", &DeviceManager::restoreDefaults, this);
-    Particle.function("reboot", &DeviceManager::rebootRequest, this);
 }
 
 /**
@@ -430,7 +435,7 @@ void DeviceManager::publish()
  */
 size_t DeviceManager::getBufferSize()
 {
-    size_t buff_size = 120;
+    size_t buff_size = DEFAULT_BUFFER_SIZE;
     for (size_t i = 0; i < this->deviceCount; i++)
     {
         size_t size = this->deviceAggregateCounts[i];
@@ -445,7 +450,12 @@ size_t DeviceManager::getBufferSize()
     }
     if (!buff_size)
     {
-        return BUFF_SIZE;
+        return DEFAULT_BUFFER_SIZE_MAX;
+    }
+
+    if (buff_size > BufferManager::getWriteBufferLength() - 1)
+    {
+        return BufferManager::getWriteBufferLength();
     }
 
     return buff_size;
@@ -520,24 +530,8 @@ String DeviceManager::getTopic(bool maintenance)
 
 void DeviceManager::resetBuffer()
 {
-    memset(jsonBuffer, 0, sizeof(jsonBuffer));
+    BufferManager::clearWriteBuffer();
 }
-
-JSONBufferWriter DeviceManager::createJSONBuffer()
-{
-    resetBuffer();
-    size_t bufferSize = getBufferSize();
-    JSONBufferWriter writer(jsonBuffer, bufferSize - 1);
-    return writer;
-}
-
-JSONBufferWriter DeviceManager::createJSONBuffer(size_t bufferSize)
-{
-    resetBuffer();
-    JSONBufferWriter writer(jsonBuffer, bufferSize - 1);
-    return writer;
-}
-
 /**
  * @private
  *
@@ -549,11 +543,14 @@ JSONBufferWriter DeviceManager::createJSONBuffer(size_t bufferSize)
  */
 String DeviceManager::payloadWriter(uint8_t &maintenanceCount)
 {
-    // JSONBufferWriter *writer = createJSONBuffer();
     resetBuffer();
     size_t bufferSize = getBufferSize();
-    JSONBufferWriter writer(jsonBuffer, bufferSize - 1);
+    // Serial.print("I NEED A BUFFER SIZE OF ");
+    // Serial.println(bufferSize);
+    JSONBufferWriter writer(BufferManager::WRITE_BUFFER, bufferSize - 1);
     packagePayload(&writer);
+    // Serial.print("MY DEVICE COUNT");
+    // Serial.println(this->deviceCount);
     for (size_t i = 0; i < this->deviceCount; i++)
     {
         if (i != 0)
@@ -569,13 +566,17 @@ String DeviceManager::payloadWriter(uint8_t &maintenanceCount)
         size_t size = this->deviceAggregateCounts[i];
         for (size_t j = 0; j < size; j++)
         {
+            // Serial.print("READING THIS ");
+            // Serial.print(i);
+            // Serial.print(" ");
+            // Serial.println(j);
             this->devices[i][j]->publish(writer, attempt_count);
             maintenanceCount += this->devices[i][j]->maintenanceCount();
         }
         writer.endObject();
     }
     writer.endObject();
-    return String(jsonBuffer);
+    return String(BufferManager::WRITE_BUFFER);
 }
 
 /**
@@ -796,6 +797,9 @@ bool DeviceManager::waitForTrue(bool (DeviceManager::*func)(), DeviceManager *bi
  */
 void DeviceManager::setCloudFunctions()
 {
+    Particle.function("setPublicationInterval", &DeviceManager::setSendInterval, this);
+    Particle.function("restoreDefaults", &DeviceManager::restoreDefaults, this);
+    Particle.function("reboot", &DeviceManager::rebootRequest, this);
     Particle.function("addDevice", &DeviceManager::addDevice, this);
     Particle.function("removeDevice", &DeviceManager::removeDevice, this);
     Particle.function("showDevices", &DeviceManager::showDevices, this);
@@ -918,7 +922,7 @@ bool DeviceManager::violatesDeviceRules(String value)
 /**
  * @private
  *
- * setCloudFunctions
+ * addDevice
  *
  * sets the cloud functions from particle
  *
@@ -1057,7 +1061,7 @@ bool DeviceManager::publishDeviceList()
     // char buf[BUFF_SIZE];
     // memset(buf, 0, sizeof(buf));
     resetBuffer();
-    JSONBufferWriter writer(jsonBuffer, BUFF_SIZE - 1);
+    JSONBufferWriter writer(BufferManager::WRITE_BUFFER, BUFF_SIZE - 1);
     packagePayload(&writer);
     writer.name("payload").beginObject();
     for (size_t i = 0; i < MAX_DEVICES; i++)
@@ -1067,7 +1071,7 @@ bool DeviceManager::publishDeviceList()
     }
     writer.endObject();
     writer.endObject();
-    return processor->publish(AI_DEVICE_LIST_EVENT, String(jsonBuffer));
+    return processor->publish(AI_DEVICE_LIST_EVENT, String(BufferManager::WRITE_BUFFER));
 }
 
 /**

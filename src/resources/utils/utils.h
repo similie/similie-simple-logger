@@ -11,7 +11,7 @@ class Utils
 {
 private:
     String removeSensorIdFromPayload(String);
-    void splitStringToValues(String, String *, size_t);
+
     bool notStopCheckChar(char);
     const static int FAILED_VALUE = NO_VALUE;
     void fillParseSplitReadSerial(String ourReading, size_t paramLength, size_t max, String nameMap[], float value_hold[][Bootstrap::OVERFLOW_VAL]);
@@ -20,6 +20,7 @@ public:
     ~Utils();
     Utils();
     static void reboot();
+    void splitStringToValues(String, String *, size_t);
     static double parseCloudFunctionDouble(String value, String name);
     static int parseCloudFunctionInteger(String value, String name);
     static void setDebug(bool debug);

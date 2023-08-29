@@ -121,7 +121,7 @@ private:
     void bootstrap();
     EpromStruct getsavedConfig();
     void putSavedConfig(EpromStruct);
-    void sendTimezoneValueToConfig(short);
+    void sendTimezoneValueToConfig(int);
     // reset beachcount after 5 Minutes
     const size_t MAX_VALUE_THRESHOLD = MAX_SEND_TIME;
     unsigned int READ_TIMER;
@@ -148,8 +148,8 @@ private:
     void debugNetworkDisconnect();
     // EEPROM Address Management
     void setMetaAddresses();
-    uint16_t deviceMetaAdresses[MAX_DEVICES];
-    uint16_t deviceConfigAdresses[MAX_DEVICES];
+    uint16_t deviceMetaAddresses[MAX_DEVICES];
+    uint16_t deviceConfigAddresses[MAX_DEVICES];
     // BEACH Storage
     static const uint16_t BEACH_ADDRESS = sizeof(EpromStruct) + 8;
     // Device Meta Storage
@@ -181,7 +181,7 @@ public:
     double getCalibration();
     void restoreDefaults();
     void setPublishTimer(bool);
-    void setHeatbeatTimer(bool);
+    void setHeartbeatTimer(bool);
     void setReadTimer(bool);
     void setCalibration(double);
     void setDigital(bool);
@@ -190,7 +190,7 @@ public:
     void setMaintenance(bool);
     bool hasMaintenance();
     bool publishTimerFunc();
-    bool heatbeatTimerFunc();
+    bool heartbeatTimerFunc();
     bool readTimerFun();
     bool isBeached();
     void beach();

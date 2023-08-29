@@ -2,7 +2,7 @@
 
 #ifndef all_weather_h
 #define all_weather_h
-#define TOTAL_PARAM_VALUES 17
+#define ALL_WEATHER_PARAMS_TOTAL 17
 
 class AllWeatherElements : public SDIParamElements
 {
@@ -10,8 +10,8 @@ private:
     Utils utils;
     String deviceName = "AllWeather";
     size_t buffSize = 250;
-    uint8_t maxSize = TOTAL_PARAM_VALUES;
-    String valueMap[TOTAL_PARAM_VALUES] =
+    uint8_t totalSize = (uint8_t)ALL_WEATHER_PARAMS_TOTAL;
+    String valueMap[ALL_WEATHER_PARAMS_TOTAL] =
         {
             "sol",
             "pre",
@@ -32,7 +32,7 @@ private:
             "wse"};
 
 public:
-    AllWeatherElements() : SDIParamElements(deviceName, valueMap, maxSize, buffSize)
+    AllWeatherElements() : SDIParamElements(deviceName, valueMap, totalSize, buffSize)
     {
     }
 

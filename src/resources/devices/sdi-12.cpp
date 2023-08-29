@@ -125,6 +125,7 @@ void SDI12Device::publish(JSONBufferWriter &writer, uint8_t attempt_count)
     runSingleSample();
     size_t MAX = readSize();
     String *valuemap = elements->getValueMap();
+    Utils::log("PUBLISHING_VALUES", "Param Count: " + String(elements->getTotalSize()));
     for (size_t i = 0; i < elements->getTotalSize(); i++)
     {
         if (i == null_val)
@@ -215,8 +216,8 @@ size_t SDI12Device::readSize()
  *
  * serialResponseIdentity
  *
- * Returns a reponse identity based on a given send identity
- * for seralized requests.
+ * Returns a response identity based on a given send identity
+ * for serialized requests.
  *
  * @return String
  */
@@ -360,7 +361,7 @@ void SDI12Device::readWire()
     {
         return Utils::log("READ_WIRE_ERROR", response);
     }
-    Serial.print(response);
+    Utils::log("WIRE_SDI_CONTENT_RESPONSE", response);
     parseSerial(response);
 }
 
@@ -614,7 +615,8 @@ uint8_t SDI12Device::maintenanceCount()
 {
     if (!isConnected())
     {
-        return (uint8_t)TOTAL_PARAM_VALUES;
+        Utils::log("DEVICE DISCONNECTED", "SKIPPING READ");
+        return paramCount();
     }
     uint8_t maintenance = this->maintenanceTick;
     maintenanceTick = 0;

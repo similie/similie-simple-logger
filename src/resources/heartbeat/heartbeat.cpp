@@ -38,7 +38,7 @@ void HeartBeat::setSystemDeets(JSONBufferWriter &writer)
     writer.name("version").value(version);
     writer.endObject();
 }
-void HeartBeat::setPowerlDeets(JSONBufferWriter &writer)
+void HeartBeat::setPowerDeets(JSONBufferWriter &writer)
 {
     writer.name("power").beginObject();
     float vCel = fuel.getVCell();
@@ -82,15 +82,16 @@ void HeartBeat::setCellDeets(JSONBufferWriter &writer)
 
 String HeartBeat::pump()
 {
-    memset(buf, 0, sizeof(buf));
-    JSONBufferWriter writer(buf, sizeof(buf) - 1);
+    // memset(buf, 0, sizeof(buf));
+    BufferManager::clearWriteBuffer();
+    JSONBufferWriter writer(BufferManager::WRITE_BUFFER, HEART_BUFFER_SIZE - 1);
     writer.beginObject();
     writer.name("device").value(this->deviceID);
     writer.name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
     setCellDeets(writer);
-    setPowerlDeets(writer);
+    setPowerDeets(writer);
     setSystemDeets(writer);
     writer.endObject();
-    String pump = String(buf);
+    String pump = String(BufferManager::WRITE_BUFFER);
     return pump;
 }

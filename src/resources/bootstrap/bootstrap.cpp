@@ -122,7 +122,7 @@ void Bootstrap::storeDevice(String device, int index)
         config = {255};
     }
     Utils::machineNameDirect(device, config.device);
-    uint16_t address = deviceConfigAdresses[index];
+    uint16_t address = deviceConfigAddresses[index];
     Utils::log("STORING_DEVICE_CONFIGURATION", "Device " + device + String::format(" Address %u Version %u Index %u", address, config.version, index));
     EEPROM.put(address, config);
 }
@@ -166,7 +166,7 @@ void Bootstrap::strapDevices(String *devices)
 {
     for (uint8_t i = 0; i < MAX_DEVICES; i++)
     {
-        uint16_t address = deviceConfigAdresses[i];
+        uint16_t address = deviceConfigAddresses[i];
         DeviceConfig confg;
         EEPROM.get(address, confg);
         if (Utils::validConfigIdentity(confg.version))
@@ -217,7 +217,7 @@ void Bootstrap::sendBatteryValueToConfig(double val)
  * Called to set the timezone
  * @return void
  */
-void Bootstrap::sendTimezoneValueToConfig(short val)
+void Bootstrap::sendTimezoneValueToConfig(int val)
 {
     EpromStruct config = getsavedConfig();
     config.timezone = val;
@@ -269,7 +269,6 @@ void Bootstrap::applyTimeZone()
     {
         return;
     }
-    Utils::log("APPLYING_TIMEZONE", String(localTimezone));
     Time.zone(localTimezone);
 }
 
@@ -365,7 +364,7 @@ void Bootstrap::collectDevices()
          * Device meta address only contains the details for the device where it actually
          * stores the address pool details
          */
-        uint16_t address = deviceMetaAdresses[i];
+        uint16_t address = deviceMetaAddresses[i];
         Utils::log("DEVICE_REGISTRATION_ADDRESSES", "VALUE:: " + String(address));
         // DeviceStruct device;
         EEPROM.get(address, devices[i]);
@@ -545,9 +544,9 @@ void Bootstrap::setMetaAddresses()
     uint16_t sizeConf = sizeof(DeviceConfig);
     for (uint8_t i = 0; i < MAX_DEVICES; i++)
     {
-        deviceMetaAdresses[i] = DEVICE_CONFIG_STORAGE_META_ADDRESS + (size * i) + i;
-        deviceConfigAdresses[i] = DEVICE_HOLD_ADDRESS + (sizeConf * i) + i;
-        Utils::log("DEVICE_CONFIGURATION_ADDRESS, index " + String(i), "META ADDRESS " + String(deviceMetaAdresses[i]) + " DEVICE ADDRESS " + String(deviceConfigAdresses[i]));
+        deviceMetaAddresses[i] = DEVICE_CONFIG_STORAGE_META_ADDRESS + (size * i) + i;
+        deviceConfigAddresses[i] = DEVICE_HOLD_ADDRESS + (sizeConf * i) + i;
+        Utils::log("DEVICE_CONFIGURATION_ADDRESS, index " + String(i), "META ADDRESS " + String(deviceMetaAddresses[i]) + " DEVICE ADDRESS " + String(deviceConfigAddresses[i]));
     }
 }
 
@@ -578,7 +577,7 @@ void Bootstrap::addNewDeviceToStructure(DeviceStruct device)
         Utils::log("ERROR_ADDING_DEVICE: Address_EXCEEDED", String(device.address));
         return;
     }
-    uint16_t address = deviceMetaAdresses[deviceMeta.count];
+    uint16_t address = deviceMetaAddresses[deviceMeta.count];
     // now add based on to the next index
     Utils::log("DEVICE_IS_BEING_ADDED", String::format("Storing to %hu, At index, %u, With Version %u, And machine name %u", address, deviceMeta.count, device.version, device.name));
     devices[deviceMeta.count] = device;
@@ -626,7 +625,7 @@ bool Bootstrap::publishTimerFunc()
  * Sends back if a heartbeat event is available
  * @return bool - if ready
  */
-bool Bootstrap::heatbeatTimerFunc()
+bool Bootstrap::heartbeatTimerFunc()
 {
     return publishHeartbeat;
 }
@@ -661,7 +660,7 @@ void Bootstrap::setPublishTimer(bool time)
  * @param bool - sets a publish event
  * @return void
  */
-void Bootstrap::setHeatbeatTimer(bool time)
+void Bootstrap::setHeartbeatTimer(bool time)
 {
     publishHeartbeat = time;
 }
@@ -952,13 +951,11 @@ void Bootstrap::bootstrap()
     // a default version is 2 or 0 when instantiated.
     buildSendInterval((int)values.pub);
     buildSleepThreshold(values.sleep);
-
-    if (validTimezone(values.timezone))
+    if (Utils::validConfigIdentity(values.version) && validTimezone(values.timezone))
     {
         localTimezone = values.timezone;
         applyTimeZone();
     }
-
     bootstrapped = true;
     staticBootstrapped = true;
 }

@@ -1,9 +1,9 @@
-#define SOIL_MOISTURE_DEFAULT 0.0003879
-#define MINERAL_SOIL_DEFAULT true
-#include "sdi-12.h"
 
 #ifndef soil_moisture_h
 #define soil_moisture_h
+#define SOIL_MOISTURE_DEFAULT 0.0003879
+#define MINERAL_SOIL_DEFAULT true
+#include "sdi-12.h"
 
 #define SOIL_MOISTURE_PARAMS 2
 
@@ -20,15 +20,15 @@ private:
     Utils utils;
     String deviceName = "SoilMoisture";
     size_t buffSize = 75;
-    uint8_t maxSize = TOTAL_PARAM_VALUES;
+    uint8_t totalSize = (uint8_t)SOIL_MOISTURE_PARAMS;
     String valueMap[SOIL_MOISTURE_PARAMS] =
         {
             "vwc",
             "s_t"};
 
 public:
-    SoilMoistureElements() : SDIParamElements(deviceName, valueMap, maxSize, buffSize)
-    {
+    SoilMoistureElements() : SDIParamElements(deviceName, valueMap, totalSize, buffSize)
+    { 
     }
 };
 

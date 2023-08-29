@@ -114,24 +114,24 @@ bool WireComms::inValidCharacter(char c)
 void WireComms::printResponseBuffer()
 {
     uint16_t index = 0;
-    char c = responseBuffer[index];
+    char c = BufferManager::READ_BUFFER[index];
     while (c != '\0' && index < MAX_BUFFER_SIZE)
     {
         Serial.print(c);
         index++;
-        c = responseBuffer[index];
+        c = BufferManager::READ_BUFFER[index];
     }
 }
 
 String WireComms::responseBufferToString()
 {
     uint16_t index = 0;
-    char c = responseBuffer[index];
+    char c = BufferManager::READ_BUFFER[index];
     String send = String(c);
     while (c != '\0' && index < MAX_BUFFER_SIZE)
     {
         index++;
-        c = responseBuffer[index];
+        c = BufferManager::READ_BUFFER[index];
         send += String(c);
     }
     return send;
@@ -157,10 +157,10 @@ int WireComms::fillResponseBuffer(int index)
             breakCycle = true;
             break;
         }
-        responseBuffer[index] = c;
+        BufferManager::READ_BUFFER[index] = c;
         index++;
     }
-    responseBuffer[index] = '\0';
+    BufferManager::READ_BUFFER[index] = '\0';
     receivedBufferSize = index;
     return iterationCount == breakCount || breakCycle ? -1 : index;
 }
@@ -172,6 +172,7 @@ void WireComms::requestFrom(uint8_t address, unsigned long timeout)
 
 void WireComms::getAllResponseData(uint8_t address, unsigned long timeout)
 {
+    BufferManager::clearReadBuffer();
     receivedBufferSize = 0;
     int index = 0;
     uint16_t cycle = 0;
