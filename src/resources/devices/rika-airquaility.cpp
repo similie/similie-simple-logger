@@ -271,7 +271,7 @@ void RikaAirQuality::processValues(JSONBufferWriter &writer)
         }
         float converted = convertValue(&value);
         Utils::log(value.param.c_str(), String(converted));
-        writer.name(value.param.c_str()).value(converted);
+        writer.name(value.param.toLowerCase().c_str()).value(converted);
     }
 }
 
