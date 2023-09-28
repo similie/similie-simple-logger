@@ -46,19 +46,19 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
      * another dimension. This behavior is not support through cloud configuration
      * (only a single dataset is available), but it can be set here manually.
      */
-    deviceAggregateCounts[ONE_I] = {FIVE}; //{FOUR}; // set the number of devices here
-    // deviceAggregateCounts[TWO_I] = {ONE};
-    // the numerical N_I values a indexes from 0, 1, 2 ... n
-    // unless others datasets are needed. Most values will only needs the
-    // ONE_I for the first dimension.
-    // this->devices[ONE_I][ONE_I] = new RikaAirQuality(&boots, "03:CH4", 4);
-    this->devices[ONE_I][ONE_I] = new RikaAirQuality(&boots, "T;H;P;PM2;PM10", 2);
-    this->devices[ONE_I][TWO_I] = new RikaAirQuality(&boots, "CO2;;SO2;NO2", 5);
-    this->devices[ONE_I][THREE_I] = new RikaAirQuality(&boots, "03;CH4", 4);
-    // all weather
-    this->devices[ONE_I][FOUR_I] = new AllWeather(&boots, ONE_I);
-    // battery
-    this->devices[ONE_I][FIVE_I] = new Battery();
+    // deviceAggregateCounts[ONE_I] = {FIVE}; //{FOUR}; // set the number of devices here
+    // // deviceAggregateCounts[TWO_I] = {ONE};
+    // // the numerical N_I values a indexes from 0, 1, 2 ... n
+    // // unless others datasets are needed. Most values will only needs the
+    // // ONE_I for the first dimension.
+    // // this->devices[ONE_I][ONE_I] = new RikaAirQuality(&boots, "03:CH4", 4);
+    // this->devices[ONE_I][ONE_I] = new RikaAirQuality(&boots, "T;H;P;PM2;PM10", 2);
+    // this->devices[ONE_I][TWO_I] = new RikaAirQuality(&boots, "CO2;;SO2;NO2", 5);
+    // this->devices[ONE_I][THREE_I] = new RikaAirQuality(&boots, "03;CH4", 4);
+    // // all weather
+    // this->devices[ONE_I][FOUR_I] = new AllWeather(&boots, ONE_I);
+    // // battery
+    // this->devices[ONE_I][FIVE_I] = new Battery();
 
     // this->devices[ONE_I][TWO_I] = new AllWeather(&boots, ONE_I);
     // // battery
