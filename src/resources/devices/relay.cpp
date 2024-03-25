@@ -20,7 +20,39 @@ Relay::~Relay()
  */
 Relay::Relay(Bootstrap *boots)
 {
-    init();
+    this->boots = boots;
+}
+
+/**
+ * @constructor
+ */
+Relay::Relay(Bootstrap *boots, int pin) : Relay(boots)
+{
+    this->pin = pin;
+}
+
+/**
+ * @constructor
+ */
+Relay::Relay(Bootstrap *boots, int pin, bool invert) : Relay(boots, pin)
+{
+    this->invert = invert;
+}
+/**
+ * @constructor
+ */
+Relay::Relay(Bootstrap *boots, int pin, String identity) : Relay(boots, pin)
+{
+    this->sendIdentity = identity;
+    // setCloudFunctions();
+}
+
+/**
+ * @constructor
+ */
+Relay::Relay(Bootstrap *boots, int pin, String identity, bool invert) : Relay(boots, pin, invert)
+{
+    this->sendIdentity = identity;
 }
 
 /**
@@ -45,12 +77,18 @@ Relay::Relay(int pin, bool invert)
 bool Relay::on()
 {
     digitalWrite(pin, POW_ON);
+    isOn = true;
+    startTime = millis();
     return true;
 }
 
 bool Relay::off()
 {
     digitalWrite(pin, POW_OFF);
+    isOn = false;
+    startTime = 0;
+    runTime = 0;
+    timeRunning = 0;
     return false;
 }
 
@@ -90,7 +128,7 @@ void Relay::restoreDefaults()
  */
 String Relay::name()
 {
-    return "";
+    return "relay" + sendIdentity;
 }
 
 /**
@@ -135,6 +173,36 @@ void Relay::read()
 }
 
 /**
+ * @brief get the delta time from the start time
+ *
+ * @return unsigned long
+ */
+unsigned long Relay::getStartDelta()
+{
+    unsigned long currentTime = millis();
+    unsigned long delta = currentTime - startTime;
+    return delta / 1000;
+}
+
+/**
+ * @brief checks to see if there is a runTime and turns off when it exceeds
+ *
+ */
+void Relay::shouldToggleOff()
+{
+    if (!isOn || runTime == 0 || startTime == 0)
+    {
+        return;
+    }
+    timeRunning = getStartDelta();
+    if (timeRunning < runTime)
+    {
+        return;
+    }
+    off();
+}
+
+/**
  * @public
  *
  * loop
@@ -145,6 +213,7 @@ void Relay::read()
  */
 void Relay::loop()
 {
+    shouldToggleOff();
 }
 
 /**
@@ -172,7 +241,10 @@ void Relay::clear()
 void Relay::print()
 {
 }
-
+/**
+ * @brief if inverted pulls low, otherwise high
+ *
+ */
 void Relay::buildOutputs()
 {
     POW_ON = invert ? LOW : HIGH;
@@ -193,6 +265,84 @@ void Relay::init()
     buildOutputs();
     pinMode(pin, OUTPUT);
     digitalWrite(pin, POW_OFF);
+    setCloudFunctions();
+}
+/**
+ * @brief Returns the identity of the relay
+ *
+ * @return String
+ */
+String Relay::appendIdentity()
+{
+    return this->sendIdentity;
+}
+
+/**
+ * @brief for cloud functions
+ *
+ * @param command
+ * @return int
+ */
+int Relay::turnOn(String command)
+{
+    runTime = Utils::parseCloudFunctionInteger(command, "relayTurnOn" + appendIdentity());
+    Utils::log("RELAY_POWER_ON", String(runTime));
+    return on();
+}
+/**
+ * @brief for cloud functions
+ *
+ * @param command
+ * @return int
+ */
+int Relay::turnOff(String command)
+{
+    return off();
+}
+/**
+ * @brief cloud function to toggle relay
+ *
+ * @param command
+ * @return int
+ */
+int Relay::toggle(String command)
+{
+    return isOn ? off() : on();
+}
+/**
+ * @brief cloud function to invert the relay
+ *
+ * @param command
+ * @return int
+ */
+int Relay::setInvert(String command)
+{
+    invert = Utils::parseCloudFunctionInteger(command, "relayInvert" + appendIdentity());
+    init();
+    return invert;
+}
+/**
+ * @brief sets the cloud functions for the relay device
+ *
+ */
+void Relay::setCloudFunctions()
+{
+    if (registered || !boots)
+    {
+        return;
+    }
+
+    String appendage = appendIdentity();
+    Particle.function("turnOn" + appendage, &Relay::turnOn, this);
+    Particle.function("turnOff" + appendage, &Relay::turnOff, this);
+    Particle.function("toggle" + appendage, &Relay::toggle, this);
+    Particle.function("setInvert" + appendage, &Relay::setInvert, this);
+    Particle.variable("isOn" + appendage, isOn);
+    Particle.variable("relayPin" + appendage, pin);
+    Particle.variable("timeRunning" + appendage, timeRunning);
+    Particle.variable("runTime" + appendage, runTime);
+    Particle.variable("isInverted" + appendage, invert);
+    registered = true;
 }
 /**
  * @public

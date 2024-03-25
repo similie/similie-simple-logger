@@ -265,6 +265,16 @@ Device *Configurator::pullDeviceType(String configurationStore[], Bootstrap *boo
     case rika_airquality:
         return new RikaAirQuality(boots, configurationStore[DEVICE_IDENTITY_INDEX],
                                   parseIdentity(configurationStore[DEVICE_PIN_INDEX]));
+    case relay:
+        if (!configurationStore[DEVICE_PIN_INDEX].equals(""))
+        {
+            return new Relay(boots, parseIdentity(configurationStore[DEVICE_PIN_INDEX]), configurationStore[DEVICE_IDENTITY_INDEX]);
+        }
+        else if (!configurationStore[DEVICE_IDENTITY_INDEX].equals(""))
+        {
+            return new Relay(boots, parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
+        }
+        return new Relay(boots);
     default:
         return NULL;
     }

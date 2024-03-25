@@ -65,7 +65,7 @@ private:
     Processor *processor;
     bool FRESH_START = false;
     const size_t deviceCount = ONE;
-    size_t deviceAggregateCounts[ONE] = {1};
+    size_t deviceAggregateCounts[ONE] = {0};
     Utils utils;
     HeartBeat *blood;
     unsigned int ROTATION = 0;

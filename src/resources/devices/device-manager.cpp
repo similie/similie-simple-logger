@@ -107,29 +107,30 @@ void DeviceManager::init()
 {
     // apply delay to see the devices bootstrapping
     // in the serial console
-    delay(10000);
+    // EEPROM.clear();
+    // delay(10000);
     Serial.println("Connecting...");
     processor->connect();
     Serial.println("BootStrapping");
-    delay(2000);
+    //  delay(2000);
     boots.init();
     Serial.println("ITERATING DEVICES");
-    delay(2000);
-    // waitForTrue(&DeviceManager::isStrapped, this, 10000);
+    //  delay(2000);
+    waitForTrue(&DeviceManager::isStrapped, this, 10000);
     // // if there are already default devices, let's process
     // // their init before we run the dynamic configuration
     iterateDevices(&DeviceManager::initCallback, this);
     Serial.println("Strapping DEVICES");
-    delay(2000);
+    // delay(2000);
     strapDevices();
     Serial.println("Setting Counts");
-    delay(2000);
+    // delay(2000);
     setParamsCount();
     Serial.println("Setting Cloud Functions");
-    delay(2000);
+    // delay(2000);
     setCloudFunctions();
     Serial.println("Clearing Array");
-    delay(2000);
+    // delay(2000);
     clearArray();
 }
 

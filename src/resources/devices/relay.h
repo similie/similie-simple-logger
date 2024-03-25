@@ -8,22 +8,40 @@
 #ifndef relay_h
 #define relay_h
 #define DEFAULT_RELAY_PIN D7
-class Relay : Device
+class Relay : public Device
 {
 private:
+    bool registered = false;
     Bootstrap *boots;
     int pin = DEFAULT_RELAY_PIN;
     bool invert = false;
+    bool isOn = false;
     u8_t POW_ON = invert ? LOW : HIGH;
     u8_t POW_OFF = invert ? HIGH : LOW;
     void buildOutputs();
+    String sendIdentity = "";
+    String appendIdentity();
+    void setCloudFunctions();
+    uint32_t runTime = 0;
+    unsigned long timeRunning = 0;
+    unsigned long startTime = 0;
+    void shouldToggleOff();
+    int turnOn(String);
+    int turnOff(String);
+    int toggle(String);
+    unsigned long getStartDelta();
+    int setInvert(String);
 
 public:
     ~Relay();
     Relay();
-    Relay(Bootstrap *boots);
-    Relay(int pin);
-    Relay(int pin, bool invert);
+    Relay(Bootstrap *);
+    Relay(Bootstrap *, int);
+    Relay(Bootstrap *, int, bool);
+    Relay(Bootstrap *, int, String);
+    Relay(Bootstrap *, int, String, bool);
+    Relay(int);
+    Relay(int, bool);
     String name();
     void read();
     void loop();
