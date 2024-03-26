@@ -22,11 +22,32 @@ SDI12Device::~SDI12Device()
  * default constructor
  * @param Bootstrap boots - bootstrap object
  */
+SDI12Device::SDI12Device(Bootstrap *boots, SDIParamElements *elements)
+{
+    this->boots = boots;
+    this->childElements = elements;
+} // AllWeatherElements
+
+/**
+ * constructor
+ * @param Bootstrap boots - bootstrap object
+ * @param int identity - numerical value used to idenify the device
+ */
+SDI12Device::SDI12Device(Bootstrap *boots, int identity, SDIParamElements *elements)
+{
+    this->boots = boots;
+    this->sendIdentity = identity;
+    this->childElements = elements;
+}
+
+/**
+ * default constructor
+ * @param Bootstrap boots - bootstrap object
+ */
 SDI12Device::SDI12Device(Bootstrap *boots)
 {
     this->boots = boots;
-    this->elements = elements;
-}
+} // AllWeatherElements
 
 /**
  * constructor
@@ -37,12 +58,11 @@ SDI12Device::SDI12Device(Bootstrap *boots, int identity)
 {
     this->boots = boots;
     this->sendIdentity = identity;
-    this->elements = elements;
 }
 
 void SDI12Device::setElements(SDIParamElements *elements)
 {
-    this->elements = elements;
+    this->childElements = elements;
 }
 
 /**
@@ -56,7 +76,7 @@ void SDI12Device::setElements(SDIParamElements *elements)
  */
 String SDI12Device::name()
 {
-    return elements->getDeviceName();
+    return getElements()->getDeviceName();
 }
 
 /**
@@ -74,7 +94,7 @@ String SDI12Device::name()
  */
 float SDI12Device::extractValue(float values[], size_t key, size_t max)
 {
-    return elements->extractValue(values, key, max);
+    return getElements()->extractValue(values, key, max);
 }
 
 /**
@@ -124,9 +144,9 @@ void SDI12Device::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
     runSingleSample();
     size_t MAX = readSize();
-    String *valuemap = elements->getValueMap();
-    Utils::log("PUBLISHING_VALUES", "Param Count: " + String(elements->getTotalSize()));
-    for (size_t i = 0; i < elements->getTotalSize(); i++)
+    String *valuemap = getElements()->getValueMap();
+    Utils::log("PUBLISHING_VALUES", "Param Count: " + String(getElements()->getTotalSize()));
+    for (size_t i = 0; i < getElements()->getTotalSize(); i++)
     {
         if (i == null_val)
         {
@@ -139,7 +159,7 @@ void SDI12Device::publish(JSONBufferWriter &writer, uint8_t attempt_count)
             maintenanceTick++;
             param = "_FAILURE_" + String(maintenanceTick);
         }
-        float paramValue = extractValue(elements->getMappedValue(i), i, MAX);
+        float paramValue = extractValue(getElements()->getMappedValue(i), i, MAX);
         if (isnan(paramValue))
         {
             paramValue = NO_VALUE;
@@ -211,6 +231,11 @@ size_t SDI12Device::readSize()
     return expand;
 }
 
+Bootstrap *SDI12Device::getBoots()
+{
+    return boots;
+}
+
 /**
  * @public
  *
@@ -229,6 +254,11 @@ String SDI12Device::serialResponseIdentity()
 String SDI12Device::getCmd()
 {
     return utils.getConvertedAddressCmd(serialMsgStr, sendIdentity);
+}
+
+SDIParamElements *SDI12Device::getElements()
+{
+    return this->childElements;
 }
 
 /**
@@ -334,6 +364,10 @@ bool SDI12Device::isConnected()
  */
 String SDI12Device::getWire(String content)
 {
+    // Serial.print("I AM GETTING THIS WIRE CONTENT ");
+    // Serial.print(content);
+    // Serial.print(" to address ");
+    // Serial.println(Bootstrap::coProcessorAddress);
     return this->boots->getCommunicator().sendAndWaitForResponse(Bootstrap::coProcessorAddress, content, this->boots->defaultWireWait(), WIRE_TIMEOUT);
 }
 
@@ -422,11 +456,11 @@ void SDI12Device::loop()
  */
 void SDI12Device::clear()
 {
-    for (size_t i = 0; i < elements->getTotalSize(); i++)
+    for (size_t i = 0; i < getElements()->getTotalSize(); i++)
     {
         for (size_t j = 0; j < boots->getMaxVal(); j++)
         {
-            elements->setMappedValue(NO_VALUE, i, j);
+            getElements()->setMappedValue(NO_VALUE, i, j);
         }
     }
 }
@@ -508,7 +542,7 @@ void SDI12Device::parseSerial(String ourReading)
         ourReading = replaceSerialResponseItem(ourReading);
     }
     readCompile = true;
-    utils.parseSerial(ourReading, elements->getTotalSize(), boots->getMaxVal(), elements->valueHold);
+    utils.parseSerial(ourReading, getElements()->getTotalSize(), boots->getMaxVal(), getElements()->valueHold);
     readCompile = false;
 }
 
@@ -525,11 +559,11 @@ void SDI12Device::parseSerial(String ourReading)
  */
 void SDI12Device::print()
 {
-    for (size_t i = 0; i < elements->getTotalSize(); i++)
+    for (size_t i = 0; i < getElements()->getTotalSize(); i++)
     {
         for (size_t j = 0; j < readSize(); j++)
         {
-            Log.info("PARAM VALUES FOR %s of iteration %d and value %0.2f", utils.stringConvert(elements->getValueMap()[i]), j, elements->getMappedValue(i, j));
+            Log.info("PARAM VALUES FOR %s of iteration %d and value %0.2f", utils.stringConvert(getElements()->getValueMap()[i]), j, getElements()->getMappedValue(i, j));
         }
     }
 }
@@ -584,7 +618,7 @@ void SDI12Device::restoreDefaults()
  */
 size_t SDI12Device::buffSize()
 {
-    return elements->getBuffSize(); // 600;
+    return getElements()->getBuffSize(); // 600;
 }
 
 /**
@@ -598,7 +632,7 @@ size_t SDI12Device::buffSize()
  */
 uint8_t SDI12Device::paramCount()
 {
-    return elements->getTotalSize();
+    return getElements()->getTotalSize();
 }
 
 /**

@@ -48,6 +48,9 @@ private:
     String *valueMap;
     size_t buffSize = 0;
 
+protected:
+    Utils utils;
+
 public:
     SDIParamElements();
     SDIParamElements(String deviceName, String *valueMap, uint8_t totalSize, size_t buffSize)
@@ -102,14 +105,14 @@ class SDI12Device : public Device
 {
 protected:
     Bootstrap *boots;
-    SDIParamElements *elements;
+    SDIParamElements *childElements;
     String serialMsgStr = "~R0!";
     Utils utils;
     void parseSerial(String ourReading);
     bool readyRead = false;
     bool readCompile = false;
     bool readReady();
-    size_t readSize();
+
     bool isConnected();
     u_int8_t maintenanceTick = 0;
     String ourReading = "";
@@ -125,28 +128,33 @@ protected:
     String fetchReading();
     void readSerial();
     void readWire();
-    static const unsigned long WIRE_TIMEOUT = 1100;
+    static const unsigned long WIRE_TIMEOUT = 1200;
     String getWire(String);
     void runSingleSample();
     String getCmd();
-    String uniqueName();
 
 public: // SDI12Device(boots, elements)
     ~SDI12Device();
+    SDI12Device(Bootstrap *, SDIParamElements *);
     SDI12Device(Bootstrap *);
+    SDI12Device(Bootstrap *, int, SDIParamElements *);
     SDI12Device(Bootstrap *, int);
+    String uniqueName();
+    size_t readSize();
     void setElements(SDIParamElements *);
     void read();
     void loop();
     void clear();
     void print();
-    virtual void init();
+    void init();
+    SDIParamElements *getElements();
     String name();
     void nullifyPayload(const char *key);
     u_int8_t maintenanceCount();
     u_int8_t paramCount();
     size_t buffSize();
     void restoreDefaults();
+    Bootstrap *getBoots();
     void publish(JSONBufferWriter &writer, u_int8_t attempt_count);
     virtual float extractValue(float values[], size_t key);
     virtual float extractValue(float values[], size_t key, size_t max);

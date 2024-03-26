@@ -11,6 +11,11 @@
  *
  */
 
+SDIParamElements *AllWeather::getElements()
+{
+    return this->elements;
+}
+
 /**
  * default constructor
  * @param Bootstrap boots - bootstrap object
@@ -18,7 +23,8 @@
 
 AllWeather::AllWeather(Bootstrap *boots) : SDI12Device(boots)
 {
-    setElements(&elements);
+    this->elements = new AllWeatherElements();
+    setElements(getElements());
 }
 
 /**
@@ -28,5 +34,6 @@ AllWeather::AllWeather(Bootstrap *boots) : SDI12Device(boots)
  */
 AllWeather::AllWeather(Bootstrap *boots, int identity) : SDI12Device(boots, identity)
 {
-    setElements(&elements);
+    this->elements = new AllWeatherElements();
+    setElements(getElements());
 }

@@ -56,6 +56,7 @@ void WireComms::endAndStop(uint8_t address)
 {
     Wire.endTransmission();
     Wire.beginTransmission(address);
+    delay(50);
 }
 
 String WireComms::appendForCoprocessor(String message)
@@ -77,12 +78,13 @@ size_t WireComms::writeToWire(uint8_t address, String send)
     String message = appendForCoprocessor(send);
     size_t length = message.length();
     Wire.beginTransmission(address);
+    delay(50);
     for (size_t i = 0; i < length; i++)
     {
         char c = message.charAt(i);
-        //  Serial.print(c);
+        // Serial.print(c);
         Wire.write(c);
-        if (i % maxSize == 0)
+        if (i > 0 && i % maxSize == 0)
         {
             endAndStop(address);
         }
@@ -103,6 +105,8 @@ String WireComms::processWhatsAvailable()
         }
         send += String((char)read);
     }
+    // Serial.print("I JUST PROCESSED THIS WIRE TRANSMISSION ");
+    // Serial.println(send);
     return send;
 }
 
@@ -117,7 +121,7 @@ void WireComms::printResponseBuffer()
     char c = BufferManager::READ_BUFFER[index];
     while (c != '\0' && index < MAX_BUFFER_SIZE)
     {
-        Serial.print(c);
+        // Serial.print(c);
         index++;
         c = BufferManager::READ_BUFFER[index];
     }

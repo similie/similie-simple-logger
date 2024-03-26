@@ -7,7 +7,6 @@
 class AllWeatherElements : public SDIParamElements
 {
 private:
-    Utils utils;
     String deviceName = "AllWeather";
     size_t buffSize = 250;
     uint8_t totalSize = (uint8_t)ALL_WEATHER_PARAMS_TOTAL;
@@ -55,9 +54,10 @@ public:
 class AllWeather : public SDI12Device
 {
 private:
-    AllWeatherElements elements;
+    AllWeatherElements *elements;
 
 public:
+    SDIParamElements *getElements();
     AllWeather(Bootstrap *boots);
     AllWeather(Bootstrap *boots, int identity);
 };

@@ -344,6 +344,10 @@ void SerialStorage::popWire()
             Utils::log("POP_COMMUNICATION_ERROR", result);
             break;
         }
+        else if (result.equals(""))
+        {
+            break;
+        }
         else if (!checkValidPopString(result))
         {
             Utils::log("POP_INVALID_STRING", "CONTINUING...");
