@@ -27,8 +27,7 @@ SoilMoisture::~SoilMoisture()
  */
 SoilMoisture::SoilMoisture(Bootstrap *boots)
 {
-    this->sdi = new SDI12Device(boots);
-    this->sdi->setElements(&this->elements);
+    this->sdi = new SDI12Device(boots, &this->elements);
 }
 
 /**
@@ -40,8 +39,7 @@ SoilMoisture::SoilMoisture(Bootstrap *boots)
  */
 SoilMoisture::SoilMoisture(Bootstrap *boots, int identity)
 {
-    this->sdi = new SDI12Device(boots, identity);
-    this->sdi->setElements(&this->elements);
+    this->sdi = new SDI12Device(boots, identity, &this->elements);
 }
 
 /**

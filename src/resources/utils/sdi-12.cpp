@@ -364,10 +364,6 @@ bool SDI12Device::isConnected()
  */
 String SDI12Device::getWire(String content)
 {
-    // Serial.print("I AM GETTING THIS WIRE CONTENT ");
-    // Serial.print(content);
-    // Serial.print(" to address ");
-    // Serial.println(Bootstrap::coProcessorAddress);
     return this->boots->getCommunicator().sendAndWaitForResponse(Bootstrap::coProcessorAddress, content, this->boots->defaultWireWait(), WIRE_TIMEOUT);
 }
 

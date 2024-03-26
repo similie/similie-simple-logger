@@ -1,4 +1,4 @@
-#include "sdi-12.h"
+#include "resources/utils/sdi-12.h"
 
 #ifndef all_weather_h
 #define all_weather_h
@@ -7,9 +7,9 @@
 class AllWeatherElements : public SDIParamElements
 {
 private:
-    String deviceName = "AllWeather";
-    size_t buffSize = 250;
-    uint8_t totalSize = (uint8_t)ALL_WEATHER_PARAMS_TOTAL;
+    const String deviceName = "AllWeather";
+    const size_t buffSize = 250;
+    const uint8_t totalSize = (uint8_t)ALL_WEATHER_PARAMS_TOTAL;
     String valueMap[ALL_WEATHER_PARAMS_TOTAL] =
         {
             "sol",
@@ -35,7 +35,7 @@ public:
     {
     }
 
-    float extractValue(float values[], size_t key, size_t max)
+    float extractValue(float values[], size_t key, size_t max) override
     {
         switch (key)
         {
@@ -51,15 +51,28 @@ public:
     }
 };
 
-class AllWeather : public SDI12Device
+class AllWeather : public Device
 {
 private:
-    AllWeatherElements *elements;
+    AllWeatherElements elements;
+    SDI12Device *sdi;
 
 public:
-    SDIParamElements *getElements();
+    ~AllWeather();
     AllWeather(Bootstrap *boots);
     AllWeather(Bootstrap *boots, int identity);
+
+    void read();
+    void loop();
+    void clear();
+    void print();
+    void init();
+    String name();
+    uint8_t maintenanceCount();
+    uint8_t paramCount();
+    size_t buffSize();
+    void publish(JSONBufferWriter &writer, uint8_t attempt_count);
+    void restoreDefaults();
 };
 
 #endif

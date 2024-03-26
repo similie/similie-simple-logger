@@ -1,6 +1,6 @@
 #include "Particle.h"
 #include "string.h"
-#include "device.h"
+#include "resources/devices/device.h"
 #include "math.h"
 #include "resources/bootstrap/bootstrap.h"
 #include "resources/processors/Processor.h"
@@ -52,8 +52,10 @@ protected:
     Utils utils;
 
 public:
-    SDIParamElements();
-    SDIParamElements(String deviceName, String *valueMap, uint8_t totalSize, size_t buffSize)
+    SDIParamElements()
+    {
+    }
+    SDIParamElements(const String deviceName, String *valueMap, const uint8_t totalSize, const size_t buffSize)
     {
         this->deviceName = deviceName;
         this->valueMap = valueMap;
@@ -101,7 +103,7 @@ public:
     }
 };
 
-class SDI12Device : public Device
+class SDI12Device
 {
 protected:
     Bootstrap *boots;
