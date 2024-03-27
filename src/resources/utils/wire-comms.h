@@ -22,6 +22,8 @@ private:
     const char *ERROR_FLAG_NO_DATA = ERROR_FLAG_VALUE_NO_DATA;
     // functions
     String appendForCoprocessor(String);
+    /// @brief 
+    /// @param  
     void endAndStop(uint8_t);
     void requestFrom(uint8_t, unsigned long);
     bool inValidCharacter(char);
@@ -41,7 +43,7 @@ public:
     void reset();
     void resetAll();
     static const unsigned long DEFAULT_WIRE_TIMEOUT = 1000;
-    static const unsigned long DEFAULT_WIRE_WAIT = 500;
+    static const unsigned long DEFAULT_WIRE_WAIT = 700;
     void setCoprocessorAddress(int);
     String processWhatsAvailable();
     size_t writeToWire(uint8_t, String);

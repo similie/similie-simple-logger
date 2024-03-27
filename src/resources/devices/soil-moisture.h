@@ -17,58 +17,14 @@ struct VWCStruct
 class SoilMoistureElements : public SDIParamElements
 {
 private:
-    const String deviceName = "SoilMoisture";
-    const size_t buffSize = 75;
     bool mineral_soil = MINERAL_SOIL_DEFAULT;
-    const uint8_t totalSize = (uint8_t)SOIL_MOISTURE_PARAMS;
     double multiple = SOIL_MOISTURE_DEFAULT;
     String valueMap[SOIL_MOISTURE_PARAMS] =
         {
             "vwc",
             "s_t"};
-    /**
-     *
-     * @brief applySoilMoistureEquation
-     *
-     * Processes the equation for soil calibration
-     *
-     * @param value
-     * @return float
-     */
-    float applySoilMoistureEquation(float value)
-    {
-        const double MINERAL_SOIL_MULTIPLE = multiple;                                           // 3.879e-4; // pow(3.879, -4); //  0.0003879;
-        const double SOILESS_MEDIA_MULTIPLE[] = {0.0000000006771, 0.000005105, 0.01302, 10.848}; // {6.771e-10, 5.105e-6, 1.302e-2, 10.848}; // 0.00000000006771;
-        if (mineral_soil)
-        {
-            return roundf(((MINERAL_SOIL_MULTIPLE * value) - 0.6956) * 100);
-        }
-        else
-        {
-            double eq = ((SOILESS_MEDIA_MULTIPLE[0] * pow(value, 3.0)) - (SOILESS_MEDIA_MULTIPLE[1] * pow(value, 2.0)) + (SOILESS_MEDIA_MULTIPLE[2] * value)) - SOILESS_MEDIA_MULTIPLE[3];
-            return roundf(eq * 100);
-        }
-    }
-
-    /**
-     * @private
-     *
-     * multiplyValue
-     *
-     * Returns the selected value with the configured multiplyer
-     *
-     * @return float
-     */
-    float multiplyValue(float value)
-    {
-        return ((value == NO_VALUE) ? NO_VALUE : applySoilMoistureEquation(value));
-    }
 
 public:
-    SoilMoistureElements() : SDIParamElements(deviceName, valueMap, totalSize, buffSize)
-    {
-    }
-
     void setMultiple(double multiple)
     {
         this->multiple = multiple;
@@ -79,27 +35,36 @@ public:
         this->mineral_soil = mineral_soil;
     }
 
-    /**
-     *
-     *
-     * @public
-     *
-     * extractValue
-     *
-     * @brief any specific action or function to a specific parameter
-     *
-     * @param float values[] - the values of the param type
-     * @param size_t key - the integer value of the param
-     * @param size_t max - the max number of reads taken
-     *
-     * @return float
-     */
-    float extractValue(float values[], size_t key, size_t max) override
+    String getDeviceName()
+    {
+        return "SoilMoisture";
+    }
+
+    size_t getBuffSize()
+    {
+
+        return 75;
+    }
+
+    uint8_t getTotalSize()
+    {
+        return (uint8_t)SOIL_MOISTURE_PARAMS;
+    }
+    String *getValueMap()
+    {
+        return valueMap;
+    }
+
+    float extractValue(float values[], size_t key, size_t max)
     {
         switch (key)
         {
-        case vwc:
-            return multiplyValue(utils.getMedian(values, max));
+        case gust_wind_speed:
+        case strike_distance:
+            return utils.getMax(values, max);
+        case precipitation:
+        case strikes:
+            return utils.getSum(values, max);
         default:
             return utils.getMedian(values, max);
         }

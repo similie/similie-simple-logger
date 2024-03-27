@@ -43,46 +43,33 @@ enum
 class SDIParamElements
 {
 private:
-    String deviceName = "SDI12Device";
-    uint8_t totalSize = 0;
-    String *valueMap;
-    size_t buffSize = 0;
+    String values[0] = {};
 
 protected:
     Utils utils;
 
 public:
-    SDIParamElements()
-    {
-    }
-    SDIParamElements(const String deviceName, String *valueMap, const uint8_t totalSize, const size_t buffSize)
-    {
-        this->deviceName = deviceName;
-        this->valueMap = valueMap;
-        this->totalSize = totalSize;
-        this->buffSize = buffSize;
-    }
     float valueHold[Bootstrap::OVERFLOW_VAL][Bootstrap::OVERFLOW_VAL];
-    String getDeviceName()
+    virtual String getDeviceName()
     {
-        return deviceName;
+        return "SDIDevice";
     }
-
-    size_t getBuffSize()
+    virtual size_t getBuffSize()
     {
-
-        return buffSize;
+        return 0;
     }
-
-    uint8_t getTotalSize()
+    virtual uint8_t getTotalSize()
     {
-        return totalSize;
+        return 0;
     }
-    String *getValueMap()
+    virtual String *getValueMap()
     {
-        return valueMap;
+        return values;
     }
-
+    virtual float extractValue(float values[], size_t key, size_t max)
+    {
+        return 0;
+    }
     float *getMappedValue(uint8_t iteration)
     {
         return valueHold[iteration];
@@ -91,15 +78,9 @@ public:
     {
         return valueHold[iteration][index];
     }
-
     void setMappedValue(float value, uint8_t iteration, uint8_t index)
     {
         valueHold[iteration][index] = value;
-    }
-
-    virtual float extractValue(float values[], size_t key, size_t max)
-    {
-        return 0;
     }
 };
 
@@ -130,12 +111,12 @@ protected:
     String fetchReading();
     void readSerial();
     void readWire();
-    static const unsigned long WIRE_TIMEOUT = 1200;
+    static const unsigned long WIRE_TIMEOUT = 1800;
     String getWire(String);
     void runSingleSample();
     String getCmd();
 
-public: // SDI12Device(boots, elements)
+public:
     ~SDI12Device();
     SDI12Device(Bootstrap *, SDIParamElements *);
     SDI12Device(Bootstrap *);

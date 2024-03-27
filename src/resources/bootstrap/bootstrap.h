@@ -8,7 +8,7 @@
 #define DEVICE_BYTE_BUFFER_SIZE 48
 #ifndef bootstrap_h
 #define bootstrap_h
-#define NO_BEACH_MODE true
+#define NO_BEACH_MODE false
 #define NO_SERIAL_START true
 #define DEFAULT_PUB_INTERVAL 1
 
