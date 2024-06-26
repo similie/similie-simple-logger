@@ -10,7 +10,7 @@
 
 #include "resources/utils/utils.h"
 
-#define BECO_FLOW_PIN_DEFAULT D2 // Stripe Green
+#define BECO_FLOW_PIN_DEFAULT D3 // Stripe Green
 // #define FLOW_PIN_DEFAULT D2 // Blue/Or Strip Blue // 5.85
 #define CALIBRATION_FLOW_FACTOR_DEFAULT 10
 
