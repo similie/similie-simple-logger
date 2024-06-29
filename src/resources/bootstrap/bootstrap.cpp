@@ -75,6 +75,82 @@ Bootstrap::~Bootstrap()
     this->PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILLISECOND;
 }
 
+void button_handler(system_event_t event, int duration, void *)
+{
+    if (!duration)
+    { // just pressed
+        RGB.control(true);
+        RGB.color(255, 0, 255); // MAGENTA
+    }
+    else
+    { // just released
+        RGB.control(false);
+    }
+}
+
+void Bootstrap::setButtonClick()
+{
+    System.on(button_status, &Bootstrap::onModeButtonClick, this);
+    // System.on(button_status, button_handler);
+}
+
+void Bootstrap::onModeButtonPressed()
+{
+    modeButtonPressActive = false;
+    Cellular.disconnect();
+    Cellular.clearCredentials();
+    SimType simType = Cellular.getActiveSim();
+    if (simType == INTERNAL_SIM)
+    {
+        // change to external
+        Cellular.setActiveSim(EXTERNAL_SIM);
+        Cellular.setCredentials("internet");
+    }
+    else if (simType == EXTERNAL_SIM)
+    {
+        // change to internal
+        Cellular.setActiveSim(INTERNAL_SIM);
+        Utils::log("SET_SIM", "INTERNAL_SIM");
+    }
+    Cellular.connect();
+    delay(5000);
+    Utils::log("SET_SIM", "ACTION_COMPLETE");
+}
+
+void Bootstrap::onModeButtonClick()
+{
+    // Check if the mode button is currently pressed
+    uint16_t duration = System.buttonPushed();
+    Serial.print("DURATION ");
+    Serial.print(duration);
+    Serial.print(" COUNT ");
+    Serial.println(modeButtonPressCount);
+    if (duration == 0)
+    {
+        return;
+    }
+    if (duration > MODE_BUTTON_PRESS_DURATION || duration < 10 || (modeButtonPressDelta && millis() - modeButtonPressDelta > MODE_BUTTON_PRESS_TIMEOUT))
+    {
+        modeButtonPressCount = 0;
+        modeButtonPressDelta = 0;
+        return;
+    }
+
+    // If the mode button is not pressed, reset the state
+    // modeButtonPressed = false;
+    modeButtonPressCount++;
+    modeButtonPressDelta = millis();
+    if (modeButtonPressCount < MODE_BUTTON_PRESS_COUNT)
+    {
+        return;
+    }
+    modeButtonPressCount = 0;
+    modeButtonPressDelta = 0;
+    modeButtonPressActive = true;
+
+    // delay(100); // Small delay to prevent excessive processing
+}
+
 /**
  * @public init
  *
@@ -83,6 +159,7 @@ Bootstrap::~Bootstrap()
  */
 void Bootstrap::init()
 {
+    setButtonClick();
     setFunctions();
     setMetaAddresses();
     pullRegistration();
@@ -1000,6 +1077,12 @@ void Bootstrap::batteryController()
  */
 void Bootstrap::timers()
 {
+
+    if (modeButtonPressActive)
+    {
+        onModeButtonPressed();
+    }
+
     bat.loop();
     processSerial();
 

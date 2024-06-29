@@ -81,6 +81,15 @@ private:
     };
     int localTimezone = TIMEZONE;
     unsigned long debugWireDisconnectTime = millis();
+    const unsigned long MODE_BUTTON_PRESS_DURATION = 500;
+    const unsigned long MODE_BUTTON_PRESS_TIMEOUT = 1000;
+    const uint8_t MODE_BUTTON_PRESS_COUNT = 10;
+    unsigned long modeButtonPressCount = 0;
+    unsigned long modeButtonPressDelta = 0;
+    unsigned long modeButtonPressActive = false;
+
+    void onModeButtonPressed();
+    void onModeButtonClick();
     String processorNames[2] = {"MO_SAMD_21G18", "FW_32u4"};
     int getProcessorEnum(String);
     bool validTimezone(int);
@@ -90,6 +99,7 @@ private:
     bool hasWireComms = false;
     void applyTimeZone();
     void pullRegistration();
+    void setButtonClick();
     void addNewDeviceToStructure(DeviceStruct);
     bool bootstrapped = false;
     uint8_t publicationIntervalInMinutes = DEFAULT_PUB_INTERVAL;
