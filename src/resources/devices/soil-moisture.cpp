@@ -27,7 +27,8 @@ SoilMoisture::~SoilMoisture()
  */
 SoilMoisture::SoilMoisture(Bootstrap *boots)
 {
-    this->sdi = new SDI12Device(boots, &this->elements);
+    this->elements = new SoilMoistureElements();
+    this->sdi = new SDI12Device(boots, this->elements);
 }
 
 /**
@@ -39,7 +40,8 @@ SoilMoisture::SoilMoisture(Bootstrap *boots)
  */
 SoilMoisture::SoilMoisture(Bootstrap *boots, int identity)
 {
-    this->sdi = new SDI12Device(boots, identity, &this->elements);
+    this->elements = new SoilMoistureElements(identity);
+    this->sdi = new SDI12Device(boots, identity, this->elements);
 }
 
 /**
@@ -62,7 +64,7 @@ int SoilMoisture::setMoistureCalibration(String read)
         EEPROM.put(saveAddressForMoisture, store);
     }
     multiple = val;
-    elements.setMultiple(multiple);
+    elements->setMultiple(multiple);
     return 1;
 }
 
@@ -90,7 +92,7 @@ int SoilMoisture::setMineralSoilCalibration(String read)
         EEPROM.put(saveAddressForMoisture, store);
     }
     mineral_soil = val ? true : false; //  multiple = val;
-    elements.setMineralSoil(mineral_soil);
+    elements->setMineralSoil(mineral_soil);
     return 1;
 }
 
@@ -191,12 +193,12 @@ void SoilMoisture::pullEpromData()
     if (pulled.version == 1 && !isnan(pulled.multiple))
     {
         multiple = pulled.multiple;
-        elements.setMultiple(multiple);
+        elements->setMultiple(multiple);
     }
     if (pulled.version == 1 && !isnan(pulled.minerals))
     {
         mineral_soil = pulled.minerals ? true : false;
-        elements.setMineralSoil(mineral_soil);
+        elements->setMineralSoil(mineral_soil);
     }
     Utils::log("SOIL_MOISTURE_BOOTSTRAP_MULTIPLIER", String(mineral_soil));
 }
@@ -388,8 +390,8 @@ void SoilMoisture::restoreDefaults()
 {
     mineral_soil = MINERAL_SOIL_DEFAULT;
     multiple = SOIL_MOISTURE_DEFAULT;
-    elements.setMultiple(multiple);
-    elements.setMineralSoil(mineral_soil);
+    elements->setMultiple(multiple);
+    elements->setMineralSoil(mineral_soil);
     VWCStruct store = {1, mineral_soil, multiple};
     EEPROM.put(saveAddressForMoisture, store);
 }

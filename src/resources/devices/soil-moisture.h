@@ -17,12 +17,14 @@ struct VWCStruct
 class SoilMoistureElements : public SDIParamElements
 {
 private:
+    int sendIdentity = -1;
     bool mineral_soil = MINERAL_SOIL_DEFAULT;
     double multiple = SOIL_MOISTURE_DEFAULT;
     String valueMap[SOIL_MOISTURE_PARAMS] =
         {
             "vwc",
             "s_t"};
+    String copiedValues[SOIL_MOISTURE_PARAMS];
 
     /**
      *
@@ -62,6 +64,19 @@ private:
         return ((value == NO_VALUE) ? NO_VALUE : applySoilMoistureEquation(value));
     }
 
+    void setValues()
+    {
+        for (uint8_t i = 0; i < SOIL_MOISTURE_PARAMS; i++)
+        {
+            if (sendIdentity == -1)
+            {
+                copiedValues[i] = valueMap[i];
+                continue;
+            }
+            copiedValues[i] = valueMap[i] + "_" + sendIdentity;
+        }
+    }
+
 public:
     void setMultiple(double multiple)
     {
@@ -90,7 +105,7 @@ public:
     }
     String *getValueMap()
     {
-        return valueMap;
+        return copiedValues;
     }
 
     float extractValue(float values[], size_t key, size_t max) override
@@ -103,12 +118,21 @@ public:
             return utils.getMedian(values, max);
         }
     }
+    SoilMoistureElements()
+    {
+        setValues();
+    }
+    SoilMoistureElements(int identity)
+    {
+        this->sendIdentity = identity;
+        setValues();
+    }
 };
 
 class SoilMoisture : public Device
 {
 private:
-    SoilMoistureElements elements;
+    SoilMoistureElements *elements;
     SDI12Device *sdi;
     Utils utils;
     uint16_t saveAddressForMoisture = -1;
