@@ -671,11 +671,15 @@ size_t Utils::skipMultiple(unsigned int size, size_t maxVal, unsigned int thresh
  */
 int Utils::simCallback(int type, const char *buf, int len, char *value)
 {
+#if PLATFORM_ID == 13
     if ((type == TYPE_PLUS) && value)
     {
         // @todo
     }
     return WAIT;
+#else
+    return 0;
+#endif
 }
 
 /**
@@ -691,7 +695,11 @@ int Utils::simCallback(int type, const char *buf, int len, char *value)
  */
 bool Utils::connected()
 {
+#if PLATFORM_ID == 13
     return Particle.connected() || Cellular.ready();
+#else
+    return Particle.connected();
+#endif
 }
 
 /**

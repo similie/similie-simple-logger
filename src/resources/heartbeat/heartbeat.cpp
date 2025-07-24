@@ -45,8 +45,10 @@ void HeartBeat::setPowerDeets(JSONBufferWriter &writer)
     writer.name("v_cel").value(vCel);
     float soc = fuel.getSoC();
     writer.name("SoC").value(soc);
+#if PLATFORM_ID == 13
     float bat = System.batteryCharge();
     writer.name("bat").value(bat);
+#endif
     if (HAS_LOCAL_POWER)
     {
         // @todo:: pull some boomo board power
@@ -56,6 +58,7 @@ void HeartBeat::setPowerDeets(JSONBufferWriter &writer)
 
 void HeartBeat::setCellDeets(JSONBufferWriter &writer)
 {
+#if PLATFORM_ID == 13
     CellularSignal sig = Cellular.RSSI();
     writer.name("cellular").beginObject();
     int rat = sig.getAccessTechnology();
@@ -78,6 +81,7 @@ void HeartBeat::setCellDeets(JSONBufferWriter &writer)
     String imei = CellularHelper.getIMEI();
     writer.name("IMEI").value(imei);
     writer.endObject();
+#endif
 }
 
 String HeartBeat::pump()

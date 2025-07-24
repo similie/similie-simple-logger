@@ -52,6 +52,8 @@ DeviceManager::DeviceManager(Bootstrap *boots, Processor *processor)
 
 We use CellularHelper for our HeartBeat class. It is a simple library that analyzes the SIM/Cellular details for the Boron-based builds. It should not be used if the solution runs with non-cellular capability. Additionally, we can use other libraries for our processors or devices if required, such as the [AdafruitVC0706SerialCameraLibrary](https://github.com/similie/Adafruit-VC0706-Serial-Camera-Library). The goal is to use libraries that can be cloud compiled and remotely flashed, so we try to limit our use of external dependencies, particularly those that violate this objective.
 
+[SDI-12 For Arduino, Boron fork](https://github.com/joaquinperaza/Arduino-SDI-12?tab=readme-ov-file#documentation)
+
 #### `project.properties` file:
 
 This is the file that specifies the name and version number of the libraries that your project depends on. Dependencies are added automatically to your `project.properties` file when you add a library to a project using the `particle library add` command in the CLI or add a library in the Desktop IDE.

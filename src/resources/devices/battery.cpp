@@ -70,7 +70,11 @@ float Battery::getNormalizedSoC()
 
 inline float Battery::batteryCharge()
 {
+#if PLATFORM_ID == 13
     return System.batteryCharge();
+#elif PLATFORM_ID == 12
+    return 100;
+#endif
 }
 
 float Battery::getVCell()
@@ -128,7 +132,11 @@ void Battery::clear()
  */
 void Battery::print()
 {
+#if PLATFORM_ID == 13
     Log.info("BATTERY POWER %.2f", System.batteryCharge());
+#elif PLATFORM_ID == 12
+    Log.info("BATTERY POWER %.2f", 100.00);
+#endif
 }
 
 /**

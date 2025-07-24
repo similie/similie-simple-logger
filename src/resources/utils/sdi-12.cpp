@@ -1,44 +1,14 @@
 #include "sdi-12.h"
+
 /**
  * @description
  *
- * Works the Atmos 41 all-in-one weather sensor from Meter.
- * https://www.metergroup.com/environment/products/atmos-41-weather-station/
- *
- * Since particle does not support SDI-12, we use a 32u4/SAMD co-processor.
- * https://www.adafruit.com/product/2796
- * The source code we use can be found: https://github.com/similie/sdi12-SDI12Device-interface
- *
+ * Works the SDI-12 devices. The SDI-12 protocol is a one-wire, asynchronous,
+ * serial communication protocol that was developed for intelligent sensors
+ * that typically monitor environmental data.
+ * The protocol is designed to be simple, robust, and easy to implement.
+ * The SDI-12 protocol is widely used in environmental monitoring applications.
  */
-
-/**
- * deconstructor
- */
-SDI12Device::~SDI12Device()
-{
-}
-
-/**
- * default constructor
- * @param Bootstrap boots - bootstrap object
- */
-SDI12Device::SDI12Device(Bootstrap *boots, SDIParamElements *elements)
-{
-    this->boots = boots;
-    this->childElements = elements;
-} // AllWeatherElements
-
-/**
- * constructor
- * @param Bootstrap boots - bootstrap object
- * @param int identity - numerical value used to idenify the device
- */
-SDI12Device::SDI12Device(Bootstrap *boots, int identity, SDIParamElements *elements)
-{
-    this->boots = boots;
-    this->sendIdentity = identity;
-    this->childElements = elements;
-}
 
 /**
  * default constructor
@@ -47,16 +17,43 @@ SDI12Device::SDI12Device(Bootstrap *boots, int identity, SDIParamElements *eleme
 SDI12Device::SDI12Device(Bootstrap *boots)
 {
     this->boots = boots;
-} // AllWeatherElements
+    // this->sdi12 = new SDI12();
+}
+
+/**
+ * deconstructor
+ */
+SDI12Device::~SDI12Device()
+{
+    // sdi12->end();
+}
 
 /**
  * constructor
  * @param Bootstrap boots - bootstrap object
  * @param int identity - numerical value used to idenify the device
  */
-SDI12Device::SDI12Device(Bootstrap *boots, int identity)
+SDI12Device::SDI12Device(Bootstrap *boots, int identity) : SDI12Device(boots)
 {
-    this->boots = boots;
+    this->sendIdentity = identity;
+}
+
+/**
+ * default constructor
+ * @param Bootstrap boots - bootstrap object
+ */
+SDI12Device::SDI12Device(Bootstrap *boots, SDIParamElements *elements) : SDI12Device(boots)
+{
+    this->childElements = elements;
+}
+
+/**
+ * constructor
+ * @param Bootstrap boots - bootstrap object
+ * @param int identity - numerical value used to idenify the device
+ */
+SDI12Device::SDI12Device(Bootstrap *boots, int identity, SDIParamElements *elements) : SDI12Device(boots, elements)
+{
     this->sendIdentity = identity;
 }
 
@@ -121,10 +118,7 @@ void SDI12Device::runSingleSample()
     {
         return;
     }
-    if (READ_OVER_WIRE)
-    {
-        readWire();
-    }
+    readWire();
 }
 
 /**
@@ -148,7 +142,7 @@ void SDI12Device::publish(JSONBufferWriter &writer, uint8_t attempt_count)
     Utils::log("PUBLISHING_VALUES", "Param Count: " + String(getElements()->getTotalSize()));
     for (size_t i = 0; i < getElements()->getTotalSize(); i++)
     {
-        if (i == null_val)
+        if (i == getElements()->nullValue())
         {
             continue;
         }
@@ -261,88 +255,6 @@ SDIParamElements *SDI12Device::getElements()
     return this->childElements;
 }
 
-/**
- * @public
- *
- * constrictSerialIdentity
- *
- * Returns a request identity based on a given send identity along with
- * the serial command the system is requiring for seralized requests.
- *
- * @return String
- */
-String SDI12Device::constrictSerialIdentity()
-{
-    return utils.requestDeviceId(sendIdentity, getCmd());
-}
-
-/**
- * @private
- *
- * constrictSerialIdentity
- *
- * Returns a request string for serial requests
- *
- * @return String
- */
-String SDI12Device::getReadContent()
-{
-    if (this->hasSerialIdentity())
-    {
-        return constrictSerialIdentity();
-    }
-
-    return utils.getConvertedAddressCmd(getCmd(), sendIdentity);
-}
-
-/**
- * @private
- *
- * fetchReading
- *
- * Called on the main loop to attempt to pull serial requests
- * for this specific device.
- *
- * @return String
- */
-String SDI12Device::fetchReading()
-{
-    if (!readCompile)
-    {
-        return boots->fetchSerial(this->serialResponseIdentity());
-    }
-    return "";
-}
-
-/**
- * @public
- *
- * readSerial
- *
- * Called by the device manager when a read request is required
- *
- * @return void
- */
-void SDI12Device::readSerial()
-{
-
-    if (READ_OVER_WIRE)
-    {
-        return;
-    }
-
-    readAttempt++;
-    if (!readReady())
-    {
-        return;
-    }
-    readAttempt = 0;
-    String content = getReadContent();
-    Serial1.println(content);
-    delay(100);
-    Serial1.flush();
-}
-
 bool SDI12Device::isConnected()
 {
     if (!READ_ON_LOW_ONLY)
@@ -364,7 +276,24 @@ bool SDI12Device::isConnected()
  */
 String SDI12Device::getWire(String content)
 {
-    return this->boots->getCommunicator().sendAndWaitForResponse(Bootstrap::coProcessorAddress, content, this->boots->defaultWireWait(), WIRE_TIMEOUT);
+    manager.sendCommand(content);
+    delay(300); // wait a while for a response
+    return readSDI();
+}
+
+String SDI12Device::readSDI()
+{
+    String response = "";
+    for (u_int8_t i = 0; i < READ_FAILOVER_ATTEMPTS; i++)
+    {
+        while (manager.available())
+        {
+            char c = manager.read();
+            response += String(c);
+        }
+        delay(50);
+    }
+    return response;
 }
 
 /**
@@ -384,14 +313,8 @@ void SDI12Device::readWire()
         return;
     }
     readAttempt = 0;
-    String identity = this->serialResponseIdentity();
-    String content = String(getReadContent() + "\n");
-    String response = getWire(content);
-    if (boots->wireContainsError(response))
-    {
-        return Utils::log("READ_WIRE_ERROR", response);
-    }
-    Utils::log("WIRE_SDI_CONTENT_RESPONSE", response);
+    String response = getWire(getCmd());
+    Utils::log("SDI12_RESPONSE", response);
     parseSerial(response);
 }
 
@@ -406,15 +329,11 @@ void SDI12Device::readWire()
  */
 void SDI12Device::read()
 {
-    if (READ_OVER_WIRE)
+    if (SINGLE_SAMPLE)
     {
-        if (SINGLE_SAMPLE)
-        {
-            return;
-        }
-        return readWire();
+        return;
     }
-    return readSerial();
+    return readWire();
 }
 
 /**
@@ -428,17 +347,6 @@ void SDI12Device::read()
  */
 void SDI12Device::loop()
 {
-
-    if (READ_OVER_WIRE)
-    {
-        return;
-    }
-
-    String completedSerialItem = boots->fetchSerial(this->serialResponseIdentity());
-    if (!completedSerialItem.equals(""))
-    {
-        parseSerial(completedSerialItem);
-    }
 }
 
 /**
@@ -528,15 +436,6 @@ String SDI12Device::replaceSerialResponseItem(String message)
  */
 void SDI12Device::parseSerial(String ourReading)
 {
-    if (!READ_OVER_WIRE)
-    {
-        if (utils.inValidMessageString(ourReading, this->sendIdentity))
-        {
-            return Utils::log("ALL_WEATHER_MESSAGE", "Invalid Message String");
-        }
-
-        ourReading = replaceSerialResponseItem(ourReading);
-    }
     readCompile = true;
     utils.parseSerial(ourReading, getElements()->getTotalSize(), boots->getMaxVal(), getElements()->valueHold);
     readCompile = false;
@@ -581,12 +480,14 @@ void SDI12Device::init()
         pinMode(DEVICE_CONNECTED_PIN, INPUT);
     }
 
-    if (READ_OVER_WIRE)
-    {
-        return;
-    }
+    manager.start();
 
-    boots->startSerial();
+    // if (sdi12.isActive())
+    // {
+    //     return;
+    // }
+    // sdi12.setDataPin(SDI12_PIN);
+    // sdi12.begin();
 }
 
 /**

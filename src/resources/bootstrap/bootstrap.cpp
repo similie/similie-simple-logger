@@ -96,10 +96,13 @@ void Bootstrap::setButtonClick()
 
 void Bootstrap::onModeButtonPressed()
 {
+    Utils::log("WE ARE SETTING THE SIM ", "MODE_BUTTON_PRESSED");
+#if PLATFORM_ID == 13
     modeButtonPressActive = false;
     Cellular.disconnect();
     Cellular.clearCredentials();
     SimType simType = Cellular.getActiveSim();
+    Utils::log("WE ARE SETTING THE SIM ", String(simType));
     if (simType == INTERNAL_SIM)
     {
         // change to external
@@ -115,20 +118,23 @@ void Bootstrap::onModeButtonPressed()
     Cellular.connect();
     delay(5000);
     Utils::log("SET_SIM", "ACTION_COMPLETE");
+#endif
 }
 
 void Bootstrap::onModeButtonClick()
 {
     // Check if the mode button is currently pressed
     uint16_t duration = System.buttonPushed();
-    Serial.print("DURATION ");
-    Serial.print(duration);
-    Serial.print(" COUNT ");
-    Serial.println(modeButtonPressCount);
     if (duration == 0)
     {
         return;
     }
+
+    Serial.print("DURATION ");
+    Serial.print(duration);
+    Serial.print(" COUNT ");
+    Serial.println(modeButtonPressCount);
+
     if (duration > MODE_BUTTON_PRESS_DURATION || duration < 10 || (modeButtonPressDelta && millis() - modeButtonPressDelta > MODE_BUTTON_PRESS_TIMEOUT))
     {
         modeButtonPressCount = 0;
@@ -147,7 +153,6 @@ void Bootstrap::onModeButtonClick()
     modeButtonPressCount = 0;
     modeButtonPressDelta = 0;
     modeButtonPressActive = true;
-
     // delay(100); // Small delay to prevent excessive processing
 }
 
@@ -966,7 +971,7 @@ bool Bootstrap::isBeached()
  */
 void Bootstrap::beach()
 {
-
+#if PLATFORM_ID == 13
     uint8_t fail = 0;
     uint8_t FAIL_POINT = 4;
     Log.info("BEACHING SYSTEM");
@@ -994,6 +999,7 @@ void Bootstrap::beach()
     Cellular.command("AT+COPS=0,2\r\n");
     resetBeachCount();
     delay(2000);
+#endif
 }
 
 /*

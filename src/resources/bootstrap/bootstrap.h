@@ -82,7 +82,7 @@ private:
     int localTimezone = TIMEZONE;
     unsigned long debugWireDisconnectTime = millis();
     const unsigned long MODE_BUTTON_PRESS_DURATION = 500;
-    const unsigned long MODE_BUTTON_PRESS_TIMEOUT = 1000;
+    const unsigned long MODE_BUTTON_PRESS_TIMEOUT = 2000;
     const uint8_t MODE_BUTTON_PRESS_COUNT = 10;
     unsigned long modeButtonPressCount = 0;
     unsigned long modeButtonPressDelta = 0;

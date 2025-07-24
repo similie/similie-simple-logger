@@ -204,7 +204,7 @@ char *VideoCapture::getVersion()
     for (u_int8_t i = 0; i < VERSION_CHECK; i++)
     {
         char *checkedVersion = cam.getVersion();
-        Serial.print("CHECKING VERSION AND SHIT");
+        Serial.print("CHECKING VERSION");
         Serial.println(checkedVersion);
         if (checkedVersion != 0)
         {

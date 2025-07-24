@@ -1,3 +1,4 @@
+#include <SDI12.h>
 #include "Particle.h"
 #include "string.h"
 #include "resources/devices/device.h"
@@ -8,36 +9,76 @@
 #include "resources/utils/utils.h"
 #include <stdint.h>
 
+#ifndef sdi_object
+#define sdi_object
+#define SDI12_PIN D5
+/**
+ * @brief We do this because we want to have a single instance of the SDI12 object
+ * There are a number of devices using this object and we want to ensure that we only have one.
+ * throughout the application lifecycle.
+ */
+class SDI12DeviceManager
+{
+private:
+    SDI12 *sdi12;
+    SDI12DeviceManager()
+    {
+        sdi12 = new SDI12(SDI12_PIN);
+    }
+
+    ~SDI12DeviceManager()
+    {
+        sdi12->end();
+    }
+
+public:
+    static SDI12DeviceManager &getInstance()
+    {
+        static SDI12DeviceManager instance;
+        return instance;
+    }
+
+    void sendCommand(String cmd)
+    {
+        return sdi12->sendCommand(cmd);
+    }
+
+    int read()
+    {
+        return sdi12->read();
+    }
+
+    int available()
+    {
+        return sdi12->available();
+    }
+
+    void start()
+    {
+        if (sdi12->isActive())
+        {
+            return;
+        }
+        sdi12->begin();
+        delay(1000);
+    }
+
+    SDI12DeviceManager(const SDI12DeviceManager &) = delete;
+    SDI12DeviceManager &operator=(const SDI12DeviceManager &) = delete;
+};
+
+#endif
+
 #ifndef sdi_12_h
 #define sdi_12_h
-#define READ_OVER_WIRE true
 #define SINGLE_SAMPLE true
 #define READ_ON_LOW_ONLY true
 #define DEVICE_CONNECTED_PIN D7
+#define SDI12_PIN D5
 
 enum
 {
-    // all weather
-    solar = 0,
-    precipitation = 1,
-    strikes = 2,
-    strike_distance = 3,
-    wind_speed = 4,
-    wind_direction = 5,
-    gust_wind_speed = 6,
-    air_temperature = 7,
-    vapor_pressure = 8,
-    atmospheric_pressure = 9,
-    relative_humidity = 10,
-    humidity_sensor_temperature = 11,
-    x_orientation = 12,
-    y_orientation = 13,
-    null_val = 14,
-    wind_speed_north = 15,
-    wind_speed_east = 16,
-    // soil moisture
-    vwc = 0,
-    soil_temp = 1,
+    impossible_index = 999
 };
 
 class SDIParamElements
@@ -82,24 +123,31 @@ public:
     {
         valueHold[iteration][index] = value;
     }
+
+    virtual size_t nullValue()
+    {
+        return impossible_index;
+    }
 };
 
 class SDI12Device
 {
 protected:
+    // SDI12 *sdi12;
+    SDI12DeviceManager &manager = SDI12DeviceManager::getInstance();
     Bootstrap *boots;
     SDIParamElements *childElements;
     String serialMsgStr = "~R0!";
     Utils utils;
+    const u_int8_t READ_FAILOVER_ATTEMPTS = 10;
+    u_int8_t readAttempts = 0;
     void parseSerial(String ourReading);
     bool readyRead = false;
     bool readCompile = false;
     bool readReady();
-
     bool isConnected();
     u_int8_t maintenanceTick = 0;
     String ourReading = "";
-    String getReadContent();
     bool hasSerialIdentity();
     String constrictSerialIdentity();
     String serialResponseIdentity();
@@ -109,12 +157,12 @@ protected:
     size_t readAttempt = 0;
     int sendIdentity = -1;
     String fetchReading();
-    void readSerial();
     void readWire();
     static const unsigned long WIRE_TIMEOUT = 1800;
     String getWire(String);
     void runSingleSample();
     String getCmd();
+    String readSDI();
 
 public:
     ~SDI12Device();

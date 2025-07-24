@@ -14,6 +14,12 @@ struct VWCStruct
     double multiple;
 };
 
+enum
+{ // soil moisture
+    vwc = 0,
+    soil_temp = 1,
+};
+
 class SoilMoistureElements : public SDIParamElements
 {
 private:
@@ -126,6 +132,11 @@ public:
     {
         this->sendIdentity = identity;
         setValues();
+    }
+
+    size_t nullValue()
+    {
+        return impossible_index;
     }
 };
 

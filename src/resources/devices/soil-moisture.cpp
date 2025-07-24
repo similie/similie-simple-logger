@@ -6,10 +6,6 @@
  * Works the the Terros 11 all-in-one weather sensor from Meter.
  * https://www.metergroup.com/environment/products/teros-11/
  *
- * Since particle does not support SDI-12, we use a 32u4 co-processor.
- * https://www.adafruit.com/product/2796
- * The source code we use can be found: https://github.com/similie/sdi12-allweather-interface
- *
  */
 
 /**
@@ -95,87 +91,6 @@ int SoilMoisture::setMineralSoilCalibration(String read)
     elements->setMineralSoil(mineral_soil);
     return 1;
 }
-
-// /**
-//  *
-//  * @brief applySoilMoistureEquation
-//  *
-//  * Processes the equation for soil calibration
-//  *
-//  * @param value
-//  * @return float
-//  */
-// float SoilMoisture::applySoilMoistureEquation(float value)
-// {
-//     const double MINERAL_SOIL_MULTIPLE = multiple;                                           // 3.879e-4; // pow(3.879, -4); //  0.0003879;
-//     const double SOILESS_MEDIA_MULTIPLE[] = {0.0000000006771, 0.000005105, 0.01302, 10.848}; // {6.771e-10, 5.105e-6, 1.302e-2, 10.848}; // 0.00000000006771;
-//     if (mineral_soil)
-//     {
-//         return roundf(((MINERAL_SOIL_MULTIPLE * value) - 0.6956) * 100);
-//     }
-//     else
-//     {
-//         double eq = ((SOILESS_MEDIA_MULTIPLE[0] * pow(value, 3.0)) - (SOILESS_MEDIA_MULTIPLE[1] * pow(value, 2.0)) + (SOILESS_MEDIA_MULTIPLE[2] * value)) - SOILESS_MEDIA_MULTIPLE[3];
-//         return roundf(eq * 100);
-//     }
-// }
-
-// /**
-//  * @private
-//  *
-//  * multiplyValue
-//  *
-//  * Returns the selected value with the configured multiplyer
-//  *
-//  * @return float
-//  */
-// float SoilMoisture::multiplyValue(float value)
-// {
-//     return ((value == NO_VALUE) ? NO_VALUE : applySoilMoistureEquation(value));
-// }
-
-// /**
-//  * @private
-//  *
-//  * extractValue
-//  *
-//  * Applies any specific action or function to a specific parameter
-//  *
-//  * @param float values[] - the values of the param type
-//  * @param size_t key - the integer value of the param
-//  * @param size_t max - the max number of reads taken
-//  *
-//  * @return float
-//  */
-// float SoilMoisture::extractValue(float values[], size_t key, size_t max)
-// {
-//     switch (key)
-//     {
-//     case vwc:
-//         return multiplyValue(utils.getMedian(values, max));
-//     default:
-//         return utils.getMedian(values, max);
-//     }
-// }
-
-// /**
-//  * @private
-//  *
-//  * extractValue
-//  *
-//  * Applies any specific action or function to a specific parameter. Overloaded
-//  * as wrapper to extractValue above.
-//  *
-//  * @param float values[] - the values of the param type
-//  * @param size_t key - the integer value of the param
-//  *
-//  * @return float
-//  */
-// float SoilMoisture::extractValue(float values[], size_t key)
-// {
-//     size_t MAX = this->sdi->readSize();
-//     return extractValue(values, key, MAX);
-// }
 
 /**
  * @private
