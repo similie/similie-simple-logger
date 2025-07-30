@@ -1069,10 +1069,12 @@ void Bootstrap::restoreDefaults()
  */
 void Bootstrap::batteryController()
 {
-    bat.setup();
-    // PMIC pmic;
-    // pmic.begin();
-    // pmic.disableCharging();
+    bat.init();
+    PMIC pmic;
+    pmic.begin();
+    pmic.disableCharging();
+    pmic.disableOTG();
+    pmic.disableWatchdog();
 }
 
 /*
@@ -1088,8 +1090,6 @@ void Bootstrap::timers()
     {
         onModeButtonPressed();
     }
-
-    bat.loop();
     processSerial();
 
     if (strappingTimers)

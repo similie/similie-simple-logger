@@ -30,7 +30,7 @@ DeviceManager::DeviceManager(Processor *processor, bool debug)
     this->blood = new HeartBeat(System.deviceID());
     // end devices
     // set storage when we have a memory card reader
-    storage = new SerialStorage(processor, &boots);
+    // storage = new SerialStorage(processor, &boots);
     // instantiate the processor
     this->processor = processor;
     // turn on or off system logging
@@ -226,7 +226,7 @@ void DeviceManager::loop()
     process();
     boots.timers();
     processor->loop();
-    storage->loop();
+    // storage->loop();
     processTimers();
     iterateDevices(&DeviceManager::loopCallback, this);
 }
@@ -355,7 +355,7 @@ void DeviceManager::processRestoreDefaults()
  */
 void DeviceManager::storePayload(String payload, String topic)
 {
-    this->storage->storePayload(payload, topic);
+    this->storage.push(payload, topic);
 }
 
 /**
@@ -476,7 +476,7 @@ size_t DeviceManager::getBufferSize()
  */
 void DeviceManager::popOfflineCollection()
 {
-    this->storage->popOfflineCollection();
+    this->storage.popOfflineCollection();
 }
 
 /**

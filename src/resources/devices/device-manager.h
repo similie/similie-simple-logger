@@ -5,7 +5,7 @@
 #include "resources/processors/Processor.h"
 #include "resources/bootstrap/buffer-manager.h"
 #include "resources/utils/utils.h"
-#include "resources/utils/serial_storage.h"
+#include "resources/utils/storage.h"
 #include "resources/utils/configurator.h"
 #include "resources/heartbeat/heartbeat.h"
 #include "device.h"
@@ -45,7 +45,7 @@ const size_t DEVICE_AGGR_COUNT = SEVEN;
 class DeviceManager
 {
 private:
-    SerialStorage *storage;
+    PayloadStore storage;
     bool publishBusy = false;
     bool readBusy = false;
     bool rebootEvent = false;

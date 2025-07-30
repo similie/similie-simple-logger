@@ -65,21 +65,17 @@ void Battery::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 
 float Battery::getNormalizedSoC()
 {
-    return fuel.getNormalizedSoC();
+    return bat.getNormalizedSoC();
 }
 
 inline float Battery::batteryCharge()
 {
-#if PLATFORM_ID == 13
-    return System.batteryCharge();
-#elif PLATFORM_ID == 12
-    return 100;
-#endif
+    return bat.getNormalizedSoC();
 }
 
 float Battery::getVCell()
 {
-    return fuel.getVCell();
+    return bat.getVCell();
 }
 
 /**
@@ -132,11 +128,7 @@ void Battery::clear()
  */
 void Battery::print()
 {
-#if PLATFORM_ID == 13
-    Log.info("BATTERY POWER %.2f", System.batteryCharge());
-#elif PLATFORM_ID == 12
-    Log.info("BATTERY POWER %.2f", 100.00);
-#endif
+    Log.info("BATTERY POWER %.2f", batteryCharge());
 }
 
 /**

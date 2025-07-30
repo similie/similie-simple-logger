@@ -10,6 +10,7 @@
 class Battery : public Device
 {
 private:
+    SystemBattery bat;
     Bootstrap *boots;
     const char *percentname = "bat";
     const char *voltsname = "b_v";
