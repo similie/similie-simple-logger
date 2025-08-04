@@ -6,11 +6,17 @@ PayloadStore::PayloadStore()
 
 bool PayloadStore::push(String topic, String payload)
 {
+    Log.info("Pushing payload: %s", String(Storage.sdCardPresent() ? "True" : "False").c_str());
     if (!Storage.sdCardPresent())
     {
         return false;
     }
     uint64_t addPosition = Storage.appendln(storeFile, sanitize(topic + "|" + payload));
+    if (addPosition == 0)
+    {
+        Log.error("Failed to push payload: %s", payload.c_str());
+        return false;
+    }
     return addPosition > 0;
     // return Storage.appendlnAsync(storeFile, sanitize(topic + "|" + payload));
 }
@@ -97,55 +103,15 @@ bool PayloadStore::setPopPosition(unsigned long position)
 
 String PayloadStore::setStale(String payload)
 {
-    JSONValue root = JSONValue::parseCopy(payload.c_str());
-    if (!root.isValid() || !root.isObject())
+    int index = payload.lastIndexOf("}");
+    if (index == -1)
     {
+        Log.error("Invalid JSON payload: %s", payload.c_str());
         return payload;
     }
-
-    // Allocate output buffer (orig length + overhead)
-    size_t outSize = payload.length() + 32;
-    char outBuf[outSize];
-    memset(outBuf, 0, outSize);
-
-    JSONBufferWriter writer(outBuf, outSize - 1);
-    writer.beginObject();
-
-    // Copy existing fields
-    JSONObjectIterator iter(root);
-    while (iter.next())
-    {
-        // Use .data() to get a const char*
-        const char *key = iter.name().data();
-        writer.name(key);
-
-        JSONValue v = iter.value();
-        switch (v.type())
-        {
-        case JSON_TYPE_BOOL:
-            writer.value(v.toBool());
-            break;
-        case JSON_TYPE_NUMBER:
-            writer.value(v.toDouble());
-            break;
-        case JSON_TYPE_STRING:
-            // toString() returns JSONString, use .data()
-            writer.value(v.toString().data());
-            break;
-        default:
-            // Fallback: stringify any other type
-            writer.value(v.toString().data());
-        }
-    }
-
-    // Append the stale flag
-    writer.name("stale").value(true);
-
-    writer.endObject();
-    // Null-terminate safely
-    writer.buffer()[std::min(writer.bufferSize(), writer.dataSize())] = 0;
-
-    return String(outBuf);
+    // Insert the stale flag before the closing brace
+    String altered = payload.substring(0, index) + ",\"stale\":true" + payload.substring(index);
+    return altered;
 }
 
 void PayloadStore::addBackOntoStore(uint8_t startIndex, String *result, uint8_t size)

@@ -353,9 +353,9 @@ void DeviceManager::processRestoreDefaults()
  * A payload need to be stored to a given memory card
  * @return void
  */
-void DeviceManager::storePayload(String payload, String topic)
+void DeviceManager::storePayload(String topic, String payload)
 {
-    this->storage.push(payload, topic);
+    this->storage.push(topic, payload);
 }
 
 /**
@@ -612,7 +612,7 @@ void DeviceManager::publisher()
     if (!maintenance && !success)
     {
         Utils::log("SENDING PAYLOAD FAILED. Storing", result);
-        storePayload(result, topic);
+        storePayload(topic, result);
     }
     else if (success)
     {

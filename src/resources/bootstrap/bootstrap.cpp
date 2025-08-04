@@ -5,6 +5,7 @@ static bool publishHeartbeat = false;
 static bool readReleased = false;
 static bool publishReleased = false;
 static bool staticBootstrapped = false;
+static bool beachResetValue = false;
 // for memory debugging
 static uint32_t freememLast = 0;
 /**
@@ -55,12 +56,17 @@ void printMemory()
     freememLast = freemem;
 }
 
+void runBeachReset()
+{
+    beachResetValue = true;
+}
+
 #ifndef TIMERBUILD
 // timer setup. This are the heartbeat of the system. Triggers system events
 Timer publishtimer(Bootstrap::ONE_MINUTE, releasePublishRead);
 Timer readtimer(Bootstrap::ONE_MINUTE, releaseRead);
 Timer heartBeatTimer(Bootstrap::HEARTBEAT_TIMER, releaseHeartbeat);
-Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true);
+Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, runBeachReset, true);
 Timer memoryPrinter(10000, printMemory);
 #define TIMERBUILD 1
 #endif
@@ -185,6 +191,11 @@ void Bootstrap::init()
     Particle.variable("publicationInterval", publishedInterval);
     Particle.variable("batterySleepThreshold", batterySleepThresholdValue);
     Particle.variable("timezone", localTimezone);
+
+    if (!beachedTimer.isActive())
+    {
+        beachedTimer.start();
+    }
 }
 
 /**
@@ -893,6 +904,7 @@ EpromStruct Bootstrap::getsavedConfig()
  */
 void Bootstrap::resetBeachCount()
 {
+    beachResetValue = false;
     beachReset();
 }
 
@@ -907,6 +919,7 @@ void Bootstrap::beachReset()
     Log.info("BEACH RESET > %u", Bootstrap::BEACH_ADDRESS);
     BeachStruct rebeach = {0, 0};
     EEPROM.put(Bootstrap::BEACH_ADDRESS, rebeach);
+    Log.info("BEACH RESET DONE");
 }
 
 bool Bootstrap::isWire()
@@ -956,6 +969,7 @@ uint8_t Bootstrap::beachCount()
 bool Bootstrap::isBeached()
 {
     uint8_t bCount = beachCount();
+    Log.info("BEACH COUNT %u", bCount);
     uint8_t beachedIncrement = bCount + 1;
     BeachStruct beachBase = {0, beachedIncrement};
     EEPROM.put(BEACH_ADDRESS, beachBase);
@@ -1097,9 +1111,10 @@ void Bootstrap::timers()
         return;
     }
 
-    if (!beachedTimer.isActive())
+    if (beachResetValue)
     {
-        beachedTimer.start();
+        resetBeachCount();
+        beachedTimer.stop();
     }
 
     if (!readtimer.isActive())

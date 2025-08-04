@@ -80,6 +80,7 @@ private:
         FW_32u4
     };
     int localTimezone = TIMEZONE;
+
     unsigned long debugWireDisconnectTime = millis();
     const unsigned long MODE_BUTTON_PRESS_DURATION = 500;
     const unsigned long MODE_BUTTON_PRESS_TIMEOUT = 2000;

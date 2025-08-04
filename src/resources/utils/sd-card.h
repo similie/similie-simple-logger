@@ -45,7 +45,7 @@ public:
 private:
     // Internal helper to lock SPI and call sd.begin()
     bool guardedBegin();
-
+    void cardDetectISR();
     // To be run in main code context whenever card state changed
     void handleCardDetectEvent();
     // Card-detect pin
@@ -56,7 +56,7 @@ private:
 
     SdFat sd;
     bool initialized = false;
-    const uint8_t chipSelect = SS;
+    const uint8_t chipSelect = D8;
 
     // Disable copy
     SDCard(const SDCard &) = delete;

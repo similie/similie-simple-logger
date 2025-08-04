@@ -8,6 +8,8 @@ SDCard::SDCard()
 {
     // Create SPI mutex once
     pinMode(cdPin, INPUT_PULLUP);
+    // Attach interrupt for card detect
+    attachInterrupt(cdPin, &SDCard::cardDetectISR, this, CHANGE);
     // Record initial state
     _cardPresent = sdCardPresent();
 }
@@ -15,6 +17,18 @@ SDCard::SDCard()
 SDCard::~SDCard()
 {
     // Nothing to free
+}
+
+void SDCard::cardDetectISR()
+{
+    // Debounce logic
+    uint32_t now = millis();
+    if (now - _lastDebounce > 50) // 50 ms debounce time
+    {
+        _lastDebounce = now;
+        _cardPresent = !digitalRead(cdPin); // LOW means card present
+        _pendingEvent = true;               // Set flag to handle in main loop
+    }
 }
 
 bool SDCard::sdCardPresent() const
@@ -33,18 +47,22 @@ bool SDCard::guardedBegin()
 bool SDCard::init()
 {
     // Called when you want to ensure SD.begin() is called once the card is present
-    if (initialized)
+    if (initialized && _cardPresent)
         return true;
 
     if (!sdCardPresent())
-        return false;
-
-    if (!guardedBegin())
     {
-        initialized = false;
+        Log.error("SDCard not present");
         return false;
     }
 
+    if (!guardedBegin())
+    {
+        Log.error("SDCard initialization failed");
+        initialized = false;
+        return false;
+    }
+    Log.info("SDCard initialized successfully");
     initialized = true;
     return true;
 }
@@ -59,7 +77,10 @@ String SDCard::read(const String &path, unsigned long &startPoint, char terminat
 {
     String result;
     if (!init())
+    {
+        Log.error("SDCard not initialized or card not present");
         return result;
+    }
 
     SdFile file;
     if (file.open(path.c_str(), O_READ) && file.seekSet(startPoint))
@@ -94,6 +115,7 @@ bool SDCard::overwrite(const char *path, const char *newContent)
 
 uint64_t SDCard::appendln(const String &path, const String &message)
 {
+
     if (!init())
         return 0;
 
