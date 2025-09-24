@@ -1,8 +1,8 @@
-#include "Turbidity.h"
+#include "turbidity.h"
 /**
  *
  * This is the primary api for the Turbidity classes. All public attributes must be inherited by the
- * Turbidity object, even of they provide no operational function to the working of the object. Just
+ * Turbidity object, even if they provide no operational function to the working of the object. Just
  * leave the function blank as below.
  *
  */
