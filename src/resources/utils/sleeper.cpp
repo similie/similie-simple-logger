@@ -23,6 +23,7 @@ bool Sleeper::checkSleepValues()
     if (needsSleep())
     {
         return goodNight();
+        // return false;
     }
     return false;
 }
@@ -187,6 +188,8 @@ bool Sleeper::needsSleep()
     }
 
     float volts = getVCell();
+    Serial.print("VOLTAGE: ");
+    Serial.println(volts);
     if (volts > 0)
     {
         return getVCell() < (float)threshold;

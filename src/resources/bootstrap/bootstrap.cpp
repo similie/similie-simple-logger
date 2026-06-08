@@ -5,6 +5,7 @@ static bool publishHeartbeat = false;
 static bool readReleased = false;
 static bool publishReleased = false;
 static bool staticBootstrapped = false;
+static bool beachResetValue = false;
 // for memory debugging
 static uint32_t freememLast = 0;
 /**
@@ -54,12 +55,21 @@ void printMemory()
     Utils::log("MEMORY CHANGE", String::format("current %lu, last %lu, delta %d", freemem, freememLast, delta));
     freememLast = freemem;
 }
+
+void runBeachReset()
+{
+    beachResetValue = true;
+}
+
+#ifndef TIMERBUILD
 // timer setup. This are the heartbeat of the system. Triggers system events
 Timer publishtimer(Bootstrap::ONE_MINUTE, releasePublishRead);
 Timer readtimer(Bootstrap::ONE_MINUTE, releaseRead);
 Timer heartBeatTimer(Bootstrap::HEARTBEAT_TIMER, releaseHeartbeat);
-Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true);
-// Timer memoryPrinter(10000, printMemory);
+Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, runBeachReset, true);
+Timer memoryPrinter(10000, printMemory);
+#define TIMERBUILD 1
+#endif
 
 /**
  * @constructor Bootstrap
@@ -67,8 +77,89 @@ Timer beachedTimer(Bootstrap::BEACH_TIMEOUT_RESTORE, Bootstrap::beachReset, true
 Bootstrap::~Bootstrap()
 {
     int interval = (int)publicationIntervalInMinutes;
-    this->READ_TIMER = (MINUTE_IN_SECONDS * interval) / MAX_SEND_TIME * MILISECOND;
-    this->PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILISECOND;
+    this->READ_TIMER = (MINUTE_IN_SECONDS * interval) / MAX_SEND_TIME * MILLISECOND;
+    this->PUBLISH_TIMER = interval * MINUTE_IN_SECONDS * MILLISECOND;
+}
+
+void button_handler(system_event_t event, int duration, void *)
+{
+    if (!duration)
+    { // just pressed
+        RGB.control(true);
+        RGB.color(255, 0, 255); // MAGENTA
+    }
+    else
+    { // just released
+        RGB.control(false);
+    }
+}
+
+void Bootstrap::setButtonClick()
+{
+    System.on(button_status, &Bootstrap::onModeButtonClick, this);
+    // System.on(button_status, button_handler);
+}
+
+void Bootstrap::onModeButtonPressed()
+{
+    Utils::log("WE ARE SETTING THE SIM ", "MODE_BUTTON_PRESSED");
+#if PLATFORM_ID == 13
+    modeButtonPressActive = false;
+    Cellular.disconnect();
+    Cellular.clearCredentials();
+    SimType simType = Cellular.getActiveSim();
+    Utils::log("WE ARE SETTING THE SIM ", String(simType));
+    if (simType == INTERNAL_SIM)
+    {
+        // change to external
+        Cellular.setActiveSim(EXTERNAL_SIM);
+        Cellular.setCredentials("internet");
+    }
+    else if (simType == EXTERNAL_SIM)
+    {
+        // change to internal
+        Cellular.setActiveSim(INTERNAL_SIM);
+        Utils::log("SET_SIM", "INTERNAL_SIM");
+    }
+    Cellular.connect();
+    delay(5000);
+    Utils::log("SET_SIM", "ACTION_COMPLETE");
+#endif
+}
+
+void Bootstrap::onModeButtonClick()
+{
+    // Check if the mode button is currently pressed
+    uint16_t duration = System.buttonPushed();
+    if (duration == 0)
+    {
+        return;
+    }
+
+    Serial.print("DURATION ");
+    Serial.print(duration);
+    Serial.print(" COUNT ");
+    Serial.println(modeButtonPressCount);
+
+    if (duration > MODE_BUTTON_PRESS_DURATION || duration < 10 || (modeButtonPressDelta && millis() - modeButtonPressDelta > MODE_BUTTON_PRESS_TIMEOUT))
+    {
+        modeButtonPressCount = 0;
+        modeButtonPressDelta = 0;
+        return;
+    }
+
+    // If the mode button is not pressed, reset the state
+    // modeButtonPressed = false;
+    modeButtonPressCount++;
+    modeButtonPressDelta = millis();
+    if (modeButtonPressCount < MODE_BUTTON_PRESS_COUNT)
+    {
+        return;
+    }
+    modeButtonPressCount = 0;
+    modeButtonPressDelta = 0;
+    modeButtonPressActive = true;
+    // delay(100); // Small delay to prevent excessive processing
 }
 
 /**
@@ -79,22 +170,32 @@ Bootstrap::~Bootstrap()
  */
 void Bootstrap::init()
 {
+    setButtonClick();
     setFunctions();
-    this->setMetaAddresses();
-    this->pullRegistration();
-    this->batteryController();
-    // memoryPrinter.start();
+    setMetaAddresses();
+    pullRegistration();
+    batteryController();
+    memoryPrinter.start();
     // Cellular.setCredentials("internet");
-    Time.zone(TIMEZONE);
-    Particle.syncTime();
     Particle.keepAlive(30);
-    Particle.variable("publicationInterval", publishedInterval);
-    Particle.variable("batterySleepThreshold", batterySleepThresholdValue);
 
     beachedTimer.start();
     heartBeatTimer.start();
-    this->bootstrap();
-    this->serialInit();
+    communicator.begin();
+    communicator.setCoprocessorAddress(Bootstrap::coProcessorAddress);
+    bootstrap();
+    serialInit();
+    applyTimeZone();
+    Particle.syncTime();
+
+    Particle.variable("publicationInterval", publishedInterval);
+    Particle.variable("batterySleepThreshold", batterySleepThresholdValue);
+    Particle.variable("timezone", localTimezone);
+
+    if (!beachedTimer.isActive())
+    {
+        beachedTimer.start();
+    }
 }
 
 /**
@@ -108,15 +209,41 @@ void Bootstrap::init()
  */
 void Bootstrap::storeDevice(String device, int index)
 {
-    DeviceConfig confg = {1};
+    DeviceConfig config = {1};
     if (device.equals(""))
     {
-        confg = {255};
+        config = {255};
     }
-    Utils::machineNameDirect(device, confg.device);
-    uint16_t address = deviceConfigAdresses[index];
-    Utils::log("STORING_DEVICE_CONFIGURATION", "Device " + device + String::format(" Address %u Version %u Index %u", address, confg.version, index));
-    EEPROM.put(address, confg);
+    Utils::machineNameDirect(device, config.device);
+    uint16_t address = deviceConfigAddresses[index];
+    Utils::log("STORING_DEVICE_CONFIGURATION", "Device " + device + String::format(" Address %u Version %u Index %u", address, config.version, index));
+    EEPROM.put(address, config);
+}
+
+/**
+ * @name getCommunicator
+ * @brief gets the communication wrapper for I2C Wire
+ *  Protocol
+ * @return {WireComms}
+ */
+WireComms Bootstrap::getCommunicator()
+{
+    return communicator;
+}
+
+unsigned long Bootstrap::defaultWireTimeout()
+{
+    return WireComms::DEFAULT_WIRE_TIMEOUT;
+}
+
+unsigned long Bootstrap::defaultWireWait()
+{
+    return WireComms::DEFAULT_WIRE_WAIT;
+}
+
+bool Bootstrap::wireContainsError(String response)
+{
+    return communicator.containsError(response);
 }
 
 /**
@@ -132,7 +259,7 @@ void Bootstrap::strapDevices(String *devices)
 {
     for (uint8_t i = 0; i < MAX_DEVICES; i++)
     {
-        uint16_t address = deviceConfigAdresses[i];
+        uint16_t address = deviceConfigAddresses[i];
         DeviceConfig confg;
         EEPROM.get(address, confg);
         if (Utils::validConfigIdentity(confg.version))
@@ -178,6 +305,19 @@ void Bootstrap::sendBatteryValueToConfig(double val)
 }
 
 /*
+ * @private sendTimezoneValueToConfig:
+ *
+ * Called to set the timezone
+ * @return void
+ */
+void Bootstrap::sendTimezoneValueToConfig(int val)
+{
+    EpromStruct config = getsavedConfig();
+    config.timezone = val;
+    putSavedConfig(config);
+}
+
+/*
  * @private buildSleepThreshold:
  *
  * Called to set the sleeper threshold
@@ -216,6 +356,34 @@ int Bootstrap::setBatterySleepThreshold(String read)
     return 1;
 }
 
+void Bootstrap::applyTimeZone()
+{
+    if (!validTimezone(localTimezone))
+    {
+        return;
+    }
+    Time.zone(localTimezone);
+}
+
+int Bootstrap::setTimeZone(String read)
+{
+
+    int val = (int)atoi(read);
+    if (!validTimezone(val))
+    {
+        return -1;
+    }
+    localTimezone = val;
+    applyTimeZone();
+    sendTimezoneValueToConfig(localTimezone);
+    return val;
+}
+
+bool Bootstrap::validTimezone(int val)
+{
+    return val >= -12 && val <= 12;
+}
+
 /**
  * @private setFunctions
  *
@@ -226,6 +394,7 @@ void Bootstrap::setFunctions()
 {
     Particle.function("setMaintenanceMode", &Bootstrap::setMaintenanceMode, this);
     Particle.function("setBatterySleepThreshold", &Bootstrap::setBatterySleepThreshold, this);
+    Particle.function("setTimezone", &Bootstrap::setTimeZone, this);
 }
 
 /**
@@ -288,7 +457,7 @@ void Bootstrap::collectDevices()
          * Device meta address only contains the details for the device where it actually
          * stores the address pool details
          */
-        uint16_t address = deviceMetaAdresses[i];
+        uint16_t address = deviceMetaAddresses[i];
         Utils::log("DEVICE_REGISTRATION_ADDRESSES", "VALUE:: " + String(address));
         // DeviceStruct device;
         EEPROM.get(address, devices[i]);
@@ -468,9 +637,9 @@ void Bootstrap::setMetaAddresses()
     uint16_t sizeConf = sizeof(DeviceConfig);
     for (uint8_t i = 0; i < MAX_DEVICES; i++)
     {
-        deviceMetaAdresses[i] = DEVICE_CONFIG_STORAGE_META_ADDRESS + (size * i) + i;
-        deviceConfigAdresses[i] = DEVICE_HOLD_ADDRESS + (sizeConf * i) + i;
-        Utils::log("DEVICE_CONFIGURATION_ADDRESS, index " + String(i), "META ADDRESS " + String(deviceMetaAdresses[i]) + " DEVICE ADDRESS " + String(deviceConfigAdresses[i]));
+        deviceMetaAddresses[i] = DEVICE_CONFIG_STORAGE_META_ADDRESS + (size * i) + i;
+        deviceConfigAddresses[i] = DEVICE_HOLD_ADDRESS + (sizeConf * i) + i;
+        Utils::log("DEVICE_CONFIGURATION_ADDRESS, index " + String(i), "META ADDRESS " + String(deviceMetaAddresses[i]) + " DEVICE ADDRESS " + String(deviceConfigAddresses[i]));
     }
 }
 
@@ -501,7 +670,7 @@ void Bootstrap::addNewDeviceToStructure(DeviceStruct device)
         Utils::log("ERROR_ADDING_DEVICE: Address_EXCEEDED", String(device.address));
         return;
     }
-    uint16_t address = deviceMetaAdresses[deviceMeta.count];
+    uint16_t address = deviceMetaAddresses[deviceMeta.count];
     // now add based on to the next index
     Utils::log("DEVICE_IS_BEING_ADDED", String::format("Storing to %hu, At index, %u, With Version %u, And machine name %u", address, deviceMeta.count, device.version, device.name));
     devices[deviceMeta.count] = device;
@@ -549,7 +718,7 @@ bool Bootstrap::publishTimerFunc()
  * Sends back if a heartbeat event is available
  * @return bool - if ready
  */
-bool Bootstrap::heatbeatTimerFunc()
+bool Bootstrap::heartbeatTimerFunc()
 {
     return publishHeartbeat;
 }
@@ -584,7 +753,7 @@ void Bootstrap::setPublishTimer(bool time)
  * @param bool - sets a publish event
  * @return void
  */
-void Bootstrap::setHeatbeatTimer(bool time)
+void Bootstrap::setHeartbeatTimer(bool time)
 {
     publishHeartbeat = time;
 }
@@ -696,8 +865,8 @@ void Bootstrap::buildSendInterval(int interval)
     strappingTimers = true;
     publicationIntervalInMinutes = (uint8_t)interval;
     publishedInterval = interval;
-    this->READ_TIMER = (unsigned int)(MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILISECOND;
-    this->PUBLISH_TIMER = (unsigned int)(publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILISECOND);
+    this->READ_TIMER = (unsigned int)(MINUTE_IN_SECONDS * publicationIntervalInMinutes) / MAX_SEND_TIME * MILLISECOND;
+    this->PUBLISH_TIMER = (unsigned int)(publicationIntervalInMinutes * MINUTE_IN_SECONDS * MILLISECOND);
     haultPublication();
     publishtimer.changePeriod(PUBLISH_TIMER);
     readtimer.changePeriod(READ_TIMER);
@@ -721,7 +890,7 @@ EpromStruct Bootstrap::getsavedConfig()
     EEPROM.get(EPROM_ADDRESS, values);
     if (values.version != 1)
     {
-        EpromStruct defObject = {1, 1};
+        EpromStruct defObject = {1, 1, TIMEZONE, 0};
         values = defObject;
     }
     return values;
@@ -735,6 +904,7 @@ EpromStruct Bootstrap::getsavedConfig()
  */
 void Bootstrap::resetBeachCount()
 {
+    beachResetValue = false;
     beachReset();
 }
 
@@ -749,6 +919,27 @@ void Bootstrap::beachReset()
     Log.info("BEACH RESET > %u", Bootstrap::BEACH_ADDRESS);
     BeachStruct rebeach = {0, 0};
     EEPROM.put(Bootstrap::BEACH_ADDRESS, rebeach);
+    Log.info("BEACH RESET DONE");
+}
+
+bool Bootstrap::isWire()
+{
+    return NO_SERIAL_START && hasWireComms;
+}
+
+/**
+ * @brief checks if the system has a coprocessor
+ *
+ * @return true
+ * @return false
+ */
+bool Bootstrap::hasCoprocessor()
+{
+    if (NO_SERIAL_START)
+    {
+        return hasWireComms;
+    }
+    return hasSerialComms;
 }
 
 /**
@@ -778,11 +969,12 @@ uint8_t Bootstrap::beachCount()
 bool Bootstrap::isBeached()
 {
     uint8_t bCount = beachCount();
+    Log.info("BEACH COUNT %u", bCount);
     uint8_t beachedIncrement = bCount + 1;
     BeachStruct beachBase = {0, beachedIncrement};
     EEPROM.put(BEACH_ADDRESS, beachBase);
     Log.info("GOT THIS BEACH COUNT %u of %u and increment %u", bCount, BEACHED_THRSHOLD, beachBase.count);
-    return bCount >= BEACHED_THRSHOLD;
+    return NO_BEACH_MODE ? false : bCount >= BEACHED_THRSHOLD;
 }
 
 /**
@@ -793,10 +985,10 @@ bool Bootstrap::isBeached()
  */
 void Bootstrap::beach()
 {
-
+#if PLATFORM_ID == 13
     uint8_t fail = 0;
     uint8_t FAIL_POINT = 4;
-
+    Log.info("BEACHING SYSTEM");
     int value = 0;
     char response[64] = "";
     Cellular.command(Utils::simCallback, response, BEACH_LISTEN_TIME, "AT+COPS=0,2\r\n");
@@ -821,6 +1013,7 @@ void Bootstrap::beach()
     Cellular.command("AT+COPS=0,2\r\n");
     resetBeachCount();
     delay(2000);
+#endif
 }
 
 /*
@@ -855,6 +1048,11 @@ void Bootstrap::bootstrap()
     // a default version is 2 or 0 when instantiated.
     buildSendInterval((int)values.pub);
     buildSleepThreshold(values.sleep);
+    if (Utils::validConfigIdentity(values.version) && validTimezone(values.timezone))
+    {
+        localTimezone = values.timezone;
+        applyTimeZone();
+    }
     bootstrapped = true;
     staticBootstrapped = true;
 }
@@ -870,7 +1068,7 @@ void Bootstrap::restoreDefaults()
     // EEPROM.clear();
     buildSendInterval(DEFAULT_PUB_INTERVAL);
     sleep.clear();
-    EpromStruct defObject = {1, publicationIntervalInMinutes, 0};
+    EpromStruct defObject = {1, publicationIntervalInMinutes, TIMEZONE, 0};
     putSavedConfig(defObject);
 }
 
@@ -885,9 +1083,12 @@ void Bootstrap::restoreDefaults()
  */
 void Bootstrap::batteryController()
 {
+    bat.init();
     PMIC pmic;
     pmic.begin();
     pmic.disableCharging();
+    pmic.disableOTG();
+    pmic.disableWatchdog();
 }
 
 /*
@@ -899,6 +1100,10 @@ void Bootstrap::batteryController()
 void Bootstrap::timers()
 {
 
+    if (modeButtonPressActive)
+    {
+        onModeButtonPressed();
+    }
     processSerial();
 
     if (strappingTimers)
@@ -906,9 +1111,10 @@ void Bootstrap::timers()
         return;
     }
 
-    if (!beachedTimer.isActive())
+    if (beachResetValue)
     {
-        beachedTimer.start();
+        resetBeachCount();
+        beachedTimer.stop();
     }
 
     if (!readtimer.isActive())
@@ -925,6 +1131,31 @@ void Bootstrap::timers()
     {
         heartBeatTimer.start();
     }
+    debugNetworkDisconnect();
+}
+/**
+ * debugNetworkDisconnect
+ * @brief Used to test a disconnection event
+ */
+void Bootstrap::debugNetworkDisconnect()
+{
+    if (!DEBUG_WIRE_DISCONNECT)
+    {
+        return;
+    }
+
+    if (!Particle.connected())
+    {
+        return;
+    }
+
+    if (millis() - debugWireDisconnectTime < DEBUG_WIRE_DISCONNECT)
+    {
+        return;
+    }
+    Utils::log("DEBUG_WIRE_DISCONNECT", "Disconnected");
+    debugWireDisconnectTime = millis();
+    Particle.disconnect();
 }
 
 /**
@@ -936,9 +1167,9 @@ void Bootstrap::timers()
 void Bootstrap::serialInit()
 {
     // SERIAL_COMMS_BAUD
-    if (!SERIAL_COMMS_BAUD)
+    if (!SERIAL_COMMS_BAUD || NO_SERIAL_START)
     {
-        return;
+        return pingSerialComms();
     }
 
     Serial1.begin(SERIAL_COMMS_BAUD);
@@ -1041,9 +1272,9 @@ void Bootstrap::storeSerialContent()
 {
     if (serialReadContent.startsWith("pong"))
     {
-        processorName = serialReadContent.substring(5);
+        processPong(serialReadContent);
         serialReadContent = "";
-        return pingPong();
+        return;
     }
     if (serialStoreIndex < 0 || serialStoreIndex >= serial_buffer_length)
     {
@@ -1139,7 +1370,6 @@ int Bootstrap::getProcessorEnum(String name)
             break;
         }
     }
-
     return index;
 }
 
@@ -1153,6 +1383,15 @@ int Bootstrap::getProcessorEnum(String name)
  * */
 String Bootstrap::fetchSerial(String identity)
 {
+    if (!Serial1.isEnabled())
+    {
+        if (!SERIAL_COMMS_BAUD)
+        {
+            return "";
+        }
+        Serial1.begin(SERIAL_COMMS_BAUD);
+    }
+
     if (!wantsSerial)
     {
         wantsSerial = true;
@@ -1224,7 +1463,34 @@ String Bootstrap::getProcessorName()
  * */
 void Bootstrap::pingPong()
 {
-    hasSerialComms = true;
+    if (NO_SERIAL_START)
+    {
+        hasWireComms = true;
+    }
+    else
+    {
+        hasSerialComms = true;
+    }
+}
+
+/**
+ * @brief removes the \n character from the end of a string
+ *
+ */
+String Bootstrap::removeNewLine(String value)
+{
+    return Utils::removeNewLine(value);
+}
+
+/**
+ * @brief processes the pong result from the coprocessor
+ *
+ * @param response
+ */
+void Bootstrap::processPong(String response)
+{
+    processorName = removeNewLine(response.startsWith("pong") ? response.substring(5) : response);
+    pingPong();
 }
 
 /**
@@ -1238,5 +1504,11 @@ void Bootstrap::pingPong()
  * */
 void Bootstrap::pingSerialComms()
 {
+    if (NO_SERIAL_START)
+    {
+        String pong = communicator.sendAndWaitForResponse("ping");
+        return processPong(pong);
+    }
+
     Serial1.println("ping");
 }

@@ -1,174 +1,174 @@
-#include "device.h"
+#include "turbidity.h"
 /**
- * 
- * This is the primary api for the device classes. All public attributes must be inherited by the
- * device object, even of they provide no operational function to the working of the object. Just 
+ *
+ * This is the primary api for the Turbidity classes. All public attributes must be inherited by the
+ * Turbidity object, even if they provide no operational function to the working of the object. Just
  * leave the function blank as below.
- * 
+ *
  */
 
 /**
  * @deconstructor
  */
-Device::~Device()
+Turbidity::~Turbidity()
 {
 }
 
 /**
  * @constructor
  */
-Device::Device(Bootstrap *boots)
+Turbidity::Turbidity(Bootstrap *boots)
 {
 }
 
 /**
  * @constructor
  */
-Device::Device()
+Turbidity::Turbidity()
 {
 }
 
 /**
  * @public
- * 
+ *
  * publish
- * 
+ *
  * Called during a publish event
- * 
+ *
  * @return void
  */
-void Device::publish(JSONBufferWriter &writer, uint8_t attempt_count)
+void Turbidity::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 {
 }
 
 /**
  * @public
- * 
+ *
  * restoreDefaults
- * 
+ *
  * Called when defaults should be restored
- * 
+ *
  * @return void
  */
-void Device::restoreDefaults()
+void Turbidity::restoreDefaults()
 {
 }
 
 /**
  * @public
- * 
+ *
  * name
- * 
- * Returns the device name
+ *
+ * Returns the Turbidity name
  * @return String
  */
-String Device::name()
+String Turbidity::name()
 {
     return "";
 }
 
 /**
  * @public
- * 
+ *
  * paramCount
- * 
+ *
  * Returns the number of params returned
- * 
+ *
  * @return uint8_t
  */
-uint8_t Device::paramCount()
+uint8_t Turbidity::paramCount()
 {
     return 0;
 }
 
 /**
  * @public
- * 
+ *
  * maintenanceCount
- * 
- * Is the device functional
- * 
+ *
+ * Is the Turbidity functional
+ *
  * @return uint8_t
  */
-uint8_t Device::maintenanceCount()
+uint8_t Turbidity::maintenanceCount()
 {
     return 0;
 }
 
 /**
  * @public
- * 
+ *
  * read
- * 
+ *
  * Called during a read event
- * 
+ *
  * @return void
  */
-void Device::read()
+void Turbidity::read()
 {
 }
 
 /**
  * @public
- * 
+ *
  * loop
- * 
+ *
  * Called during a loop event
- * 
+ *
  * @return void
  */
-void Device::loop()
+void Turbidity::loop()
 {
 }
 
 /**
  * @public
- * 
+ *
  * clear
- * 
+ *
  * Called during a clear event
- * 
+ *
  * @return void
  */
-void Device::clear()
+void Turbidity::clear()
 {
 }
 
 /**
  * @public
- * 
+ *
  * print
- * 
+ *
  * Called during a print event
- * 
+ *
  * @return void
  */
-void Device::print()
+void Turbidity::print()
 {
 }
 
 /**
  * @public
- * 
+ *
  * init
- * 
+ *
  * Called at setup
- * 
+ *
  * @return void
  */
-void Device::init()
+void Turbidity::init()
 {
 }
 /**
  * @public
- * 
+ *
  * buffSize
- * 
- * Returns the payload size the device requires for sending data
- * 
+ *
+ * Returns the payload size the Turbidity requires for sending data
+ *
  * @return size_t
  */
-size_t Device::buffSize()
+size_t Turbidity::buffSize()
 {
     return 300;
 }

@@ -10,6 +10,7 @@
 class Battery : public Device
 {
 private:
+    SystemBattery bat;
     Bootstrap *boots;
     const char *percentname = "bat";
     const char *voltsname = "b_v";
@@ -27,7 +28,7 @@ public:
     void print();
     void init();
     String name();
-    uint8_t matenanceCount();
+    uint8_t maintenanceCount();
     uint8_t paramCount();
     size_t buffSize();
     void restoreDefaults();

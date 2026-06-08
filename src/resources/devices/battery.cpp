@@ -65,17 +65,17 @@ void Battery::publish(JSONBufferWriter &writer, uint8_t attempt_count)
 
 float Battery::getNormalizedSoC()
 {
-    return fuel.getNormalizedSoC();
+    return bat.getNormalizedSoC();
 }
 
 inline float Battery::batteryCharge()
 {
-    return System.batteryCharge();
+    return bat.getNormalizedSoC();
 }
 
 float Battery::getVCell()
 {
-    return fuel.getVCell();
+    return bat.getVCell();
 }
 
 /**
@@ -128,7 +128,7 @@ void Battery::clear()
  */
 void Battery::print()
 {
-    Log.info("BATTERY POWER %.2f", System.batteryCharge());
+    Log.info("BATTERY POWER %.2f", batteryCharge());
 }
 
 /**
@@ -175,13 +175,13 @@ uint8_t Battery::paramCount()
 /**
  * @public
  *
- * matenanceCount
+ * maintenanceCount
  *
  * Is the device functional
  *
  * @return uint8_t
  */
-uint8_t Battery::matenanceCount()
+uint8_t Battery::maintenanceCount()
 {
     return 0;
 }

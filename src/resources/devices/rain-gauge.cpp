@@ -159,13 +159,13 @@ uint8_t RainGauge::paramCount()
 /**
  * @public
  * 
- * matenanceCount
+ * maintenanceCount
  * 
  * Is the device functional
  * 
  * @return uint8_t
  */
-uint8_t RainGauge::matenanceCount()
+uint8_t RainGauge::maintenanceCount()
 {
     return errorCount;
 }

@@ -1,20 +1,17 @@
-#include "Particle.h"
-#include "string.h"
-#include <stdint.h>
-#include "resources/bootstrap/bootstrap.h"
-#include "resources/processors/Processor.h"
-#ifndef device_h
-#define device_h
+#include "resources/devices/device.h"
 
-class Device
+#ifndef turbidity_h
+#define turbidity_h
+
+class Turbidity : public Device
 {
 private:
     Bootstrap *boots;
 
 public:
-    virtual ~Device();
-    Device();
-    Device(Bootstrap *boots);
+    virtual ~Turbidity();
+    Turbidity();
+    Turbidity(Bootstrap *boots);
     virtual String name();
     virtual void read();
     virtual void loop();

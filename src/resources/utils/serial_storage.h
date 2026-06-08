@@ -30,15 +30,20 @@ private:
     void invalidatePopArray();
     short int findValidPopIndex();
     bool sendPop(popContent content);
+    bool sendPop(String content);
     void resetPopElement(short int index);
     popContent payloadRestorator(String payload);
     void processPop(String value);
     String getPopStartIndex(String read);
+    String setStale(String);
+    void sendPayloadOverWire(String);
     // bool sendPopRead();
     short int firstSpaceIndex(String value, uint8_t index);
     Processor *holdProcessor;
     Bootstrap *boots;
     String popString = "";
+    void popWire();
+    bool checkValidPopString(String);
 
 public:
     ~SerialStorage();

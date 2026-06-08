@@ -4,3 +4,4 @@ target
 *.bin
 lib/*
 src/SimilieLogger.cpp
+*_ec_new.*

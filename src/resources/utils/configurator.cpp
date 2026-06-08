@@ -60,7 +60,7 @@ bool Configurator::noIdentity(String configurationStore[], int index)
  *
  *
  */
-bool Configurator::violatesOccurances(String value, int occrances)
+bool Configurator::violatesOccurrences(String value, int occrances)
 {
     int index = getEnumIndex(value);
     switch (index)
@@ -144,7 +144,7 @@ void Configurator::loadConfigurationStorage(String payload, String configuration
  */
 int Configurator::getEnumIndex(String value)
 {
-    return Utils::containsValue(devicesAvaliable, CURRENT_DEVICES_COUNT, value);
+    return Utils::containsValue(devicesAvailable, CURRENT_DEVICES_COUNT, value);
 }
 
 /**
@@ -263,7 +263,18 @@ Device *Configurator::pullDeviceType(String configurationStore[], Bootstrap *boo
     case video_capture:
         return new VideoCapture(boots);
     case rika_airquality:
-        return new RikaAirQuality(boots);
+        return new RikaAirQuality(boots, configurationStore[DEVICE_IDENTITY_INDEX],
+                                  parseIdentity(configurationStore[DEVICE_PIN_INDEX]));
+    case relay:
+        if (!configurationStore[DEVICE_PIN_INDEX].equals(""))
+        {
+            return new Relay(boots, parseIdentity(configurationStore[DEVICE_PIN_INDEX]), configurationStore[DEVICE_IDENTITY_INDEX]);
+        }
+        else if (!configurationStore[DEVICE_IDENTITY_INDEX].equals(""))
+        {
+            return new Relay(boots, parseIdentity(configurationStore[DEVICE_IDENTITY_INDEX]));
+        }
+        return new Relay(boots);
     default:
         return NULL;
     }

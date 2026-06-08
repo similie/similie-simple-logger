@@ -91,13 +91,13 @@ uint8_t VideoCapture::paramCount()
 /**
  * @public
  *
- * matenanceCount
+ * maintenanceCount
  *
  * Is the VideoCapture functional
  *
  * @return uint8_t
  */
-uint8_t VideoCapture::matenanceCount()
+uint8_t VideoCapture::maintenanceCount()
 {
     return 0;
 }
@@ -204,7 +204,7 @@ char *VideoCapture::getVersion()
     for (u_int8_t i = 0; i < VERSION_CHECK; i++)
     {
         char *checkedVersion = cam.getVersion();
-        Serial.print("CHECKING VERSION AND SHIT");
+        Serial.print("CHECKING VERSION");
         Serial.println(checkedVersion);
         if (checkedVersion != 0)
         {

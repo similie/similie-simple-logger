@@ -38,15 +38,17 @@ void HeartBeat::setSystemDeets(JSONBufferWriter &writer)
     writer.name("version").value(version);
     writer.endObject();
 }
-void HeartBeat::setPowerlDeets(JSONBufferWriter &writer)
+void HeartBeat::setPowerDeets(JSONBufferWriter &writer)
 {
     writer.name("power").beginObject();
     float vCel = fuel.getVCell();
     writer.name("v_cel").value(vCel);
     float soc = fuel.getSoC();
     writer.name("SoC").value(soc);
+#if PLATFORM_ID == 13
     float bat = System.batteryCharge();
     writer.name("bat").value(bat);
+#endif
     if (HAS_LOCAL_POWER)
     {
         // @todo:: pull some boomo board power
@@ -56,6 +58,7 @@ void HeartBeat::setPowerlDeets(JSONBufferWriter &writer)
 
 void HeartBeat::setCellDeets(JSONBufferWriter &writer)
 {
+#if PLATFORM_ID == 13
     CellularSignal sig = Cellular.RSSI();
     writer.name("cellular").beginObject();
     int rat = sig.getAccessTechnology();
@@ -78,20 +81,21 @@ void HeartBeat::setCellDeets(JSONBufferWriter &writer)
     String imei = CellularHelper.getIMEI();
     writer.name("IMEI").value(imei);
     writer.endObject();
+#endif
 }
 
 String HeartBeat::pump()
 {
-    char buf[800];
-    memset(buf, 0, sizeof(buf));
-    JSONBufferWriter writer(buf, sizeof(buf) - 1);
+    // memset(buf, 0, sizeof(buf));
+    BufferManager::clearWriteBuffer();
+    JSONBufferWriter writer(BufferManager::WRITE_BUFFER, HEART_BUFFER_SIZE - 1);
     writer.beginObject();
     writer.name("device").value(this->deviceID);
     writer.name("date").value(Time.format(Time.now(), TIME_FORMAT_ISO8601_FULL));
     setCellDeets(writer);
-    setPowerlDeets(writer);
+    setPowerDeets(writer);
     setSystemDeets(writer);
     writer.endObject();
-    String pump = String(buf);
+    String pump = String(BufferManager::WRITE_BUFFER);
     return pump;
 }

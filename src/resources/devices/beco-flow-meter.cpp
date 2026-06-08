@@ -177,7 +177,7 @@ uint8_t BecoFlowMeter::paramCount()
     return 2;
 }
 
-uint8_t BecoFlowMeter::matenanceCount()
+uint8_t BecoFlowMeter::maintenanceCount()
 {
     return exceedsMax(totalMilliLitres) ? paramCount() : 0;
 }

@@ -128,7 +128,7 @@ uint8_t FlowMeter::paramCount()
     return 4;
 }
 
-uint8_t FlowMeter::matenanceCount()
+uint8_t FlowMeter::maintenanceCount()
 {
     return 0;
 }

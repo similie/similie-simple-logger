@@ -11,7 +11,7 @@
 #define DEF_DISTANCE_READ_AN_CALIBRATION 0.335
 #ifndef wl_device_h
 #define wl_device_h
-#define DIG_PIN D6 // D3  blue off port3
+#define DIG_PIN D5 // D3  blue off port3
 #define AN_PIN A1  // stripe blue line off port0
 
 const size_t WL_PARAM_SIZE = 1;
@@ -80,7 +80,7 @@ public:
     void clear();
     void print();
     void init();
-    uint8_t matenanceCount();
+    uint8_t maintenanceCount();
     uint8_t paramCount();
     size_t buffSize();
     void publish(JSONBufferWriter &writer, uint8_t attempt_count);
